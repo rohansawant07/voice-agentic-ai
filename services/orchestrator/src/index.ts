@@ -1,20 +1,26 @@
 import Fastify from "fastify";
 import websocket from "@fastify/websocket";
+import cors from "@fastify/cors";
 import { randomUUID } from "node:crypto";
-import type { ModelMessage } from "ai";
 import { bus } from "./bus.js";
 import { connectMcp, mcpReady } from "./mcp.js";
-import { runOrchestrator } from "./orchestrator.js";
+import { runTurn } from "./sessions.js";
+import { registerVoiceRoute } from "./voice/route.js";
+import { sttEnabled } from "./voice/stt.js";
+import { ttsEnabled } from "./voice/tts.js";
 
 const PORT = Number(process.env.PORT ?? 8080);
 
-// Session history — in-memory for M1; Redis lands with M4/M5 (README §4).
-const sessions = new Map<string, ModelMessage[]>();
-
 const app = Fastify({ logger: true });
 await app.register(websocket);
+// The Next.js dev server (:3000) talks to us cross-origin locally.
+await app.register(cors, { origin: true });
 
-app.get("/healthz", async () => ({ ok: true, service: "orchestrator" }));
+app.get("/healthz", async () => ({
+  ok: true,
+  service: "orchestrator",
+  voice: { stt: sttEnabled(), tts: ttsEnabled() },
+}));
 app.get("/readyz", async (_req, reply) => {
   if (!mcpReady()) return reply.code(503).send({ ready: false });
   return { ready: true };
@@ -33,23 +39,15 @@ app.get("/ws", { websocket: true }, (socket, req) => {
   socket.on("close", unsubscribe);
 });
 
-/** Text-in / text-out loop (M1). Voice wraps this same path in M2. */
+/** Text-in / text-out loop (M1). Voice (/voice WS) wraps the same runTurn. */
 app.post("/api/chat", async (req, reply) => {
   const body = req.body as { sessionId?: string; message?: string };
   if (!body?.message?.trim()) {
     return reply.code(400).send({ error: "message required" });
   }
   const sessionId = body.sessionId ?? randomUUID();
-  const history = sessions.get(sessionId) ?? [];
-  if (history.length === 0) {
-    bus.emit({ type: "session_started", sessionId, ts: Date.now() });
-  }
-  history.push({ role: "user", content: body.message });
-
   try {
-    const text = await runOrchestrator(sessionId, history);
-    history.push({ role: "assistant", content: text });
-    sessions.set(sessionId, history);
+    const text = await runTurn(sessionId, body.message);
     return { sessionId, text };
   } catch (err) {
     req.log.error(err);
@@ -62,6 +60,9 @@ app.post("/api/chat", async (req, reply) => {
     return reply.code(500).send({ sessionId, error: "run_failed" });
   }
 });
+
+/** Spoken round-trip (M2): binary audio in, TTS audio out. */
+registerVoiceRoute(app);
 
 await connectMcp();
 await app.listen({ port: PORT, host: "0.0.0.0" });

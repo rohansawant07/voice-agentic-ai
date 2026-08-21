@@ -14,7 +14,7 @@
 | 2 | M0 — monorepo, core types, agent registry, CI | ✅ done | `33ac1ac` |
 | 3 | M1 — 3 MCP servers (travel/weather/agency, mock data) | ✅ done | `dbd4583` |
 | 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | 🟡 code complete — live demo blocked on `ANTHROPIC_API_KEY` | `2409022` |
-| 5 | M2 — voice pipeline (STT/TTS) | ⬜ not started | |
+| 5 | M2 — voice pipeline (STT/TTS) | 🟡 code complete — live audio needs Deepgram/OpenAI keys | |
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ⬜ not started | |
 | 7 | M3 — evals (golden dataset, judges, tracing) | ⬜ not started | |
 | 8 | M4 — Docker, compose, Helm on k3d | ⬜ not started | |
@@ -60,6 +60,10 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 
 - Specialists downgraded **Sonnet 5 → Haiku 4.5** — they're narrow, dedicated tool tasks; only orchestration keeps the big model (Opus 4.8). Judges move **Haiku → Sonnet 5** (keeps judge ≠ agent models). Happy path drops **$0.20 → ~$0.13** uncached (~$0.08–0.10 cached); conversation ~$0.35–0.55. Per-agent `model` override stays as the escape hatch if evals show Haiku fumbling a specific specialist. Touched: README §2.2/§7.2/§7.5/§8/decision 5a, `.env.example`, `specialist.ts`, DESIGN §7.
 - Voice architecture Q&A: Deepgram is **STT only** (ears), Claude does all reasoning, OpenAI TTS speaks — a deliberate cascade rather than a realtime speech-to-speech model, to keep the orchestrator/specialist structure, model choice, and evals.
+
+### 2026-08-21 — M2 voice pipeline (backend)
+
+- **M2 voice backend**: `voice/stt.ts` (Deepgram nova-3 primary, OpenAI whisper-1 fallback, `none` = text-only — all via `VOICE_STT`), `voice/tts.ts` (OpenAI `gpt-4o-mini-tts` / ElevenLabs turbo streaming, via `VOICE_TTS`), and a `/voice` WebSocket: binary mic frames in → `audio_end` → STT → shared `runTurn` → `reply` JSON + streamed TTS audio chunks (`tts_start`/binary/`tts_end`), with `cancel` for barge-in and a `text` message type so the socket works keyless. Session turns extracted to `sessions.ts` (shared by `/api/chat` and `/voice`); `@fastify/cors` added for the Next.js dev origin; `/healthz` now reports voice capability. Smoke-tested: `/voice` handshake + disabled-STT guard respond correctly. Live audio still needs `DEEPGRAM_API_KEY`/`OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` for the turn itself).
 
 ### 2026-08-21 — Diagrams upgraded to Mermaid
 
