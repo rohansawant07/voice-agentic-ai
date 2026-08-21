@@ -9,7 +9,7 @@ import type {
 import { bus } from "./bus.js";
 import { toolsFor } from "./mcp.js";
 
-const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL ?? "claude-sonnet-5";
+const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL ?? "claude-haiku-4-5";
 
 /** Sensitive keys masked before tool args reach the activity feed. */
 const MASK_KEYS = new Set(["customerId", "email", "authorization", "token"]);

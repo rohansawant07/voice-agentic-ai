@@ -1,6 +1,6 @@
 # Concierge — Voice Agentic AI for a Travel Agency
 
-> **This document is the brain of the operation.** Every architectural decision, agent definition, contract, and milestone lives here. Code follows this spec — if the code and this README disagree, fix one of them in the same PR. **UI/UX lives in [DESIGN.md](DESIGN.md)** — the design brain, same rules.
+> **This document is the brain of the operation.** Every architectural decision, agent definition, contract, and milestone lives here. Code follows this spec — if the code and this README disagree, fix one of them in the same PR. **UI/UX lives in [DESIGN.md](DESIGN.md)** — the design brain, same rules. **Build progress lives in [EXECUTION.md](EXECUTION.md)** — updated in the same commit as every change.
 
 A voice-driven multi-agent system that acts as the support desk for a travel agency serving **US + territories leisure travel** (international later). A customer speaks a request ("book me a long weekend in San Juan under $1,500"), a top-level **Orchestrator Agent** interprets it, delegates to a fixed roster of **specialist agents** as needed (in parallel where possible), each specialist uses tools exposed by **MCP servers**, and the merged result is spoken back to the customer.
 
@@ -79,7 +79,7 @@ interface AgentDefinition {
   description: string;           // shown to orchestrator — this IS the routing prompt
   systemPrompt: string;          // the specialist's instructions
   mcpServers: string[];          // which MCP servers' tools it may use
-  model?: string;                // defaults to SPECIALIST_MODEL (claude-sonnet-5)
+  model?: string;                // defaults to SPECIALIST_MODEL (claude-haiku-4-5)
   maxSteps: number;              // tool-loop budget
   outputSchema: ZodSchema;       // structured result returned to orchestrator
 }
@@ -231,7 +231,7 @@ Dataset composition (~50 cases to start): happy paths, ambiguous requests (must 
 
 ### 7.2 LLM-as-judge — `evals/judges/`
 
-Claude scores each final response 1–5 on: **groundedness** (every fact traceable to a tool result — no hallucinated flights), **helpfulness**, **speakability** (would sound natural read aloud). Judge model: `claude-haiku-4-5` (cheap, and ≠ the agent models). Gate: mean ≥ 4.0, no groundedness score < 3.
+Claude scores each final response 1–5 on: **groundedness** (every fact traceable to a tool result — no hallucinated flights), **helpfulness**, **speakability** (would sound natural read aloud). Judge model: `claude-sonnet-5` (≠ both agent models, and judging quality matters more than judge cost at 10% sampling). Gate: mean ≥ 4.0, no groundedness score < 3.
 
 ### 7.3 Online / production
 
@@ -246,11 +246,11 @@ Per-MTok pricing (2026-08): Opus 4.8 $5 in / $25 out · Sonnet 5 $3/$15 · Haiku
 | Happy path (S1, one round trip) | Model | Tokens in/out | Cost |
 |---|---|---|---|
 | Orchestrator (route + synthesize, 2 turns) | Opus 4.8 | ~9k / ~1.1k | ~$0.07 |
-| 4 specialists × ~3-step MCP tool loops | Sonnet 5 | ~24k / ~2.4k | ~$0.11 |
+| 4 specialists × ~3-step MCP tool loops | Haiku 4.5 | ~24k / ~2.4k | ~$0.04 |
 | STT (~30s speech) + TTS (~400 chars) | Deepgram / OpenAI | — | ~$0.02 |
-| **Total, uncached** | | | **≈ $0.20** |
+| **Total, uncached** | | | **≈ $0.13** |
 
-With prompt caching (stable system prompts + tool schemas), effective cost ≈ **$0.10–0.12 per happy path**; a 3–4-turn conversation ≈ **$0.50–0.80**. Budget mode (Sonnet 5 everywhere) ≈ half. **Prompt caching is a design requirement**: prompt assembly must order stable content first (tools → system → history), volatile content last, and never interpolate timestamps/IDs into the prefix.
+With prompt caching (stable system prompts + tool schemas), effective cost ≈ **$0.08–0.10 per happy path**; a 3–4-turn conversation ≈ **$0.35–0.55**. Specialists run Haiku because they are narrow, tool-driven tasks; the per-agent `model` override exists for any specialist evals prove too weak on Haiku. **Prompt caching is a design requirement**: prompt assembly must order stable content first (tools → system → history), volatile content last, and never interpolate timestamps/IDs into the prefix.
 
 ---
 
@@ -261,8 +261,8 @@ All config via env (12-factor). `.env.example` is exhaustive; nothing works from
 ```
 ANTHROPIC_API_KEY=            # required — agent brains
 ORCHESTRATOR_MODEL=claude-opus-4-8
-SPECIALIST_MODEL=claude-sonnet-5
-JUDGE_MODEL=claude-haiku-4-5  # eval judges + cheap high-volume jobs
+SPECIALIST_MODEL=claude-haiku-4-5
+JUDGE_MODEL=claude-sonnet-5   # eval judges — deliberately ≠ both agent models
 VOICE_STT=deepgram|whisper|none      # none = text-only mode
 VOICE_TTS=openai|elevenlabs|none
 DEEPGRAM_API_KEY=             # if VOICE_STT=deepgram
@@ -301,13 +301,14 @@ Build order. Each milestone is independently demoable; don't start N+1 until N's
 | 3 | **Static agent registry**, no dynamic agent spawning | Predictable routing = evaluable routing; "spawning" is delegation, not process creation | A genuine open-ended planner use-case appears |
 | 4 | **MCP for all tools**, streamable HTTP | Swappable providers, per-service scaling on K8s, demo-friendly | Latency overhead proves material vs. in-process tools |
 | 5 | **AI SDK v6 + Claude** | ToolLoopAgent + MCP client built-in; best agentic model | — |
-| 5a | Model split: **Opus 4.8 orchestrator, Sonnet 5 specialists, Haiku 4.5 judges** | Capability/latency/cost balance. Fable 5 rejected for orchestrator: 2× price and long deliberation vs the ≤2s voice budget | Latency p95 blows budget → try Sonnet 5 orchestrator |
+| 5a | Model split: **Opus 4.8 orchestrator, Haiku 4.5 specialists, Sonnet 5 judges** | Orchestration is the hard part; specialists are scoped tool tasks a small model handles at 1/5 the price. Fable 5 rejected for orchestrator: 2× price and long deliberation vs the ≤2s voice budget | A specialist's tool-call correctness drops below the eval gate → bump that agent's `model` override |
 | 5b | **Prompt caching mandatory** | Stable-prefix ordering targets ~0.1× input cost on repeat traffic (§7.5) | — |
 | 6 | **Mock-first data**, live providers opt-in | Deterministic evals, $0 demos, CI without secrets | — |
 | 7 | **EKS + Helm**, k3d locally | Industry-standard ask from spec; chart works on both | Budget → stay on k3d/Fargate |
 | 8 | **Langfuse self-hosted** for traces/evals | OSS, runs in-cluster, LLM-native tracing | Team prefers managed (Braintrust) |
 | 9 | STT **Deepgram**, TTS **OpenAI**, both switchable | Best latency/quality per $; abstraction keeps them swappable | — |
 | 10 | Fastify + WS on orchestrator (not Next.js API routes) | Long-lived WS + OTel + K8s probes fit a plain Node service better | — |
+| 11 | **AI SDK (npm `ai`) despite AWS/K8s deployment** | It's an MIT library (maintained by Vercel), not the Vercel platform — runs in any Node container; gives us the tool loop, MCP client, and provider abstraction. Zero platform lock-in; deploy target stays ECR→EKS | Want zero Vercel-adjacent deps → Anthropic SDK + hand-rolled MCP wiring |
 
 ---
 
