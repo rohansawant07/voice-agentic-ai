@@ -5,7 +5,7 @@
   "packageManager": "pnpm@11.22.0",
   "engines": { "node": ">=22" },
   "scripts": {
-    "typecheck": "pnpm -r --if-present typecheck",
+    "typecheck": "pnpm build && pnpm -r --if-present typecheck",
     "lint": "eslint .",
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test"

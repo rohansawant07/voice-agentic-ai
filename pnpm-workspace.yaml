@@ -3,3 +3,5 @@ packages:
   - services/*
   - apps/*
   - evals
+allowBuilds:
+  esbuild: true
