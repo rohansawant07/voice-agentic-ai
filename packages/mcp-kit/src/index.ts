@@ -61,8 +61,10 @@ export function serveMcp(opts: {
   app.get("/mcp", methodNotAllowed);
   app.delete("/mcp", methodNotAllowed);
 
-  app.listen(opts.port, () => {
-    console.log(`[${opts.name}] MCP on :${opts.port}/mcp`);
+  // Loopback by default; deployments (containers, EKS) set HOST=0.0.0.0.
+  const host = process.env.HOST ?? "127.0.0.1";
+  app.listen(opts.port, host, () => {
+    console.log(`[${opts.name}] MCP on ${host}:${opts.port}/mcp`);
   });
 }
 

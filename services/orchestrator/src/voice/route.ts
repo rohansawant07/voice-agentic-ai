@@ -24,8 +24,15 @@ import { synthesize, ttsEnabled } from "./tts.js";
  * Agent activity (delegation/tool events) stays on /ws — same bus, same
  * sessionId — so the activity feed needs no new backend surface.
  */
-export function registerVoiceRoute(app: FastifyInstance): void {
+export function registerVoiceRoute(
+  app: FastifyInstance,
+  originAllowed: (origin: string | undefined) => boolean,
+): void {
   app.get("/voice", { websocket: true }, (socket, req) => {
+    if (!originAllowed(req.headers.origin)) {
+      socket.close(1008, "origin not allowed");
+      return;
+    }
     const sessionId =
       (req.query as { sessionId?: string }).sessionId ?? randomUUID();
 

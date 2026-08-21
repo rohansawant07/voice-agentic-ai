@@ -68,6 +68,14 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 
 - **M2 voice backend**: `voice/stt.ts` (Deepgram nova-3 primary, OpenAI whisper-1 fallback, `none` = text-only — all via `VOICE_STT`), `voice/tts.ts` (OpenAI `gpt-4o-mini-tts` / ElevenLabs turbo streaming, via `VOICE_TTS`), and a `/voice` WebSocket: binary mic frames in → `audio_end` → STT → shared `runTurn` → `reply` JSON + streamed TTS audio chunks (`tts_start`/binary/`tts_end`), with `cancel` for barge-in and a `text` message type so the socket works keyless. Session turns extracted to `sessions.ts` (shared by `/api/chat` and `/voice`); `@fastify/cors` added for the Next.js dev origin; `/healthz` now reports voice capability. Smoke-tested: `/voice` handshake + disabled-STT guard respond correctly. Live audio still needs `DEEPGRAM_API_KEY`/`OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` for the turn itself).
 
+### 2026-08-21 — Security hardening (post-review, pre-M3)
+
+- Security review of the M2 diff found no exploitable vulnerabilities; the one dismissed candidate (permissive CORS + unchecked WS origins on the unauthenticated dev stack) was fixed anyway as pre-M5 hardening:
+  - **CORS allowlist**: `origin: true` → `origin: [WEB_ORIGIN]` (env, default `http://localhost:3000`).
+  - **WS origin checks**: `/ws` and `/voice` upgrades reject browser Origins ≠ `WEB_ORIGIN` (close 1008); origin-less non-browser clients (websocat, evals, curl) still allowed — the check defends against drive-by pages, not CLIs.
+  - **Loopback bind**: orchestrator and all MCP servers bind `HOST` env, default `127.0.0.1` (was `0.0.0.0`); containers/EKS will set `HOST=0.0.0.0` in M4/M5 manifests.
+- Verified live: allowed origin gets ACAO, evil-origin preflight gets none, evil-origin WS upgrade closed 1008, no-origin WS still connects. `.env.example` gained `HOST`/`WEB_ORIGIN`.
+
 ### 2026-08-21 — Docs sync after M2
 
 - **README**: milestones M0–M2 checked off (with a pointer here for the API-key caveat); the two stale **AI SDK v6** references corrected to **v7** (§2.1 loop row, decision #5); §2.1 `respond_to_customer` tool removed — in the built code the orchestrator's final assistant text *is* the customer reply, there is no separate respond tool.
