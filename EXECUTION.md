@@ -13,15 +13,20 @@
 | 1 | Docs: model & cost decisions locked | ✅ done | `98b23ab` |
 | 2 | M0 — monorepo, core types, agent registry, CI | ✅ done | `33ac1ac` |
 | 3 | M1 — 3 MCP servers (travel/weather/agency, mock data) | ✅ done | `dbd4583` |
-| 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | 🟡 code complete — live demo blocked on `ANTHROPIC_API_KEY` | `2409022` |
-| 5 | M2 — voice pipeline (STT/TTS) | 🟡 code complete — live audio needs Deepgram/OpenAI keys | |
-| 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — verified against mock event stream | |
+| 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | ✅ done — live demo ran (clarify → 4-agent fan-out → $1,220/$1,500) | `2409022` |
+| 5 | M2 — voice pipeline (STT/TTS) | 🟡 STT live-verified (Deepgram); TTS code done, awaiting OpenAI/ElevenLabs key | `b59d390` `7ca22ce` |
+| 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
 | 7 | M3 — evals (golden dataset, judges, tracing) | ⬜ not started | |
 | 8 | M4 — Docker, compose, Helm on k3d | ⬜ not started | |
 | 9 | M5 — AWS (EKS, ECR, OIDC deploy, secrets, ALB) | ⬜ not started | |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
 
-**Current blocker:** no `ANTHROPIC_API_KEY` in the dev environment — everything boots and connects (16 MCP tools discovered, `/readyz` green) but the live LLM fan-out demo hasn't run yet. Unblock: `echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env && ./scripts/dev.sh`.
+**Current blocker:** none. `ANTHROPIC_API_KEY` + `DEEPGRAM_API_KEY` are in local `.env` (gitignored); text loop, UI, and voice input all ran live. Spoken *replies* need an `OPENAI_API_KEY` (+ `VOICE_TTS=openai`) — optional.
+
+**Known gaps (tracked for M3+):**
+- Card selection is visual-only — the ✓ doesn't yet recompute the budget meter or inform the orchestrator on the next turn (DESIGN §5.2 selection model; stub in `page.tsx onSelectionChange`).
+- Full fan-out turn ≈60–80s — far above the ≤2s first-spoken-token budget; needs streaming + tracing (M3).
+- Weather specialist mis-geocoded "San Juan" in one live run and gracefully failed — seed case for the golden dataset.
 
 ---
 
@@ -67,6 +72,10 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 ### 2026-08-21 — M2 voice pipeline (backend)
 
 - **M2 voice backend**: `voice/stt.ts` (Deepgram nova-3 primary, OpenAI whisper-1 fallback, `none` = text-only — all via `VOICE_STT`), `voice/tts.ts` (OpenAI `gpt-4o-mini-tts` / ElevenLabs turbo streaming, via `VOICE_TTS`), and a `/voice` WebSocket: binary mic frames in → `audio_end` → STT → shared `runTurn` → `reply` JSON + streamed TTS audio chunks (`tts_start`/binary/`tts_end`), with `cancel` for barge-in and a `text` message type so the socket works keyless. Session turns extracted to `sessions.ts` (shared by `/api/chat` and `/voice`); `@fastify/cors` added for the Next.js dev origin; `/healthz` now reports voice capability. Smoke-tested: `/voice` handshake + disabled-STT guard respond correctly. Live audio still needs `DEEPGRAM_API_KEY`/`OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` for the turn itself).
+
+### 2026-08-21 — Live browser session (M2 demo walked)
+
+- Full multi-turn session in the real UI: clarifying question → date negotiation ("cheapest live dates in December") → 4-night plan under the $1,500 cap with flight/hotel cards and a day-by-day itinerary on the canvas; hotel card selection (✓) exercised; voice input used live after the recorder fixes below. Status board updated: M1 ✅ live, M2 UI ✅ live, M2 voice 🟡 (STT live, TTS awaiting key). Known gaps promoted to their own list above (selection stub, fan-out latency, weather geocode case).
 
 ### 2026-08-21 — First live runs + voice input bugfixes
 

@@ -336,7 +336,7 @@ Build order. Each milestone is independently demoable; don't start N+1 until N's
 - [x] **M0 — Skeleton**: monorepo, `packages/core` types, agent registry defined, CI (lint+typecheck).
 - [x] **M1 — Text loop**: orchestrator agent + all 5 specialists + 3 MCP servers (mock data), text in → text out, agent activity events over WS. *Demo: "plan me a San Juan weekend" fans out to 3 agents in parallel.*
 - [x] **M2 — Voice loop**: STT + TTS wired, Next.js mic UI with live activity feed, session memory. *Demo: full spoken round-trip < 3s.*
-  *(M0–M2 code complete + UI verified against a mock event stream; the live LLM/voice demos still need `ANTHROPIC_API_KEY` + voice keys in `.env` — see EXECUTION.md status board.)*
+  *(M0–M2 verified live: text fan-out, browser UI, and Deepgram voice input all ran end-to-end with real keys. Spoken TTS replies await an OpenAI/ElevenLabs key. Known gaps + latency notes: EXECUTION.md status board.)*
 - [ ] **M3 — Evals**: golden dataset (50 cases), harness, judges, CI gate, Langfuse tracing end-to-end.
 - [ ] **M4 — Containers**: Dockerfiles, docker-compose full stack, k3d + Helm chart working locally.
 - [ ] **M5 — AWS**: EKS via Terraform (or eksctl), ECR, GitHub Actions OIDC deploy, External Secrets, ALB + TLS. *Demo: public URL, phone mic, live.*
