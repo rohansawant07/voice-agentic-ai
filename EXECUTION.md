@@ -61,6 +61,10 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 - Specialists downgraded **Sonnet 5 → Haiku 4.5** — they're narrow, dedicated tool tasks; only orchestration keeps the big model (Opus 4.8). Judges move **Haiku → Sonnet 5** (keeps judge ≠ agent models). Happy path drops **$0.20 → ~$0.13** uncached (~$0.08–0.10 cached); conversation ~$0.35–0.55. Per-agent `model` override stays as the escape hatch if evals show Haiku fumbling a specific specialist. Touched: README §2.2/§7.2/§7.5/§8/decision 5a, `.env.example`, `specialist.ts`, DESIGN §7.
 - Voice architecture Q&A: Deepgram is **STT only** (ears), Claude does all reasoning, OpenAI TTS speaks — a deliberate cascade rather than a realtime speech-to-speech model, to keep the orchestrator/specialist structure, model choice, and evals.
 
+### 2026-08-21 — Diagrams upgraded to Mermaid
+
+- README §1 system diagram and §6 deployment diagram replaced ASCII art with **Mermaid** (GitHub renders it natively; stays version-controlled, no image files). DESIGN.md ASCII wireframes intentionally kept — they're UI wireframes, not architecture.
+
 ## FAQ / recurring decisions
 
 **"Why Vercel if we deploy on AWS + Kubernetes?"** We don't use Vercel — the platform — anywhere. The **AI SDK** (`ai` npm package) is an open-source MIT *library* that happens to be maintained by Vercel, the same way React is maintained by Meta. It runs in any Node process, including our containers on EKS. We chose it for three things: the agent tool-loop, the built-in **MCP client** (core to our architecture), and model/provider abstraction via env vars. No Vercel account, hosting, key, or service exists in this stack; the deploy target is unchanged: **Docker → ECR → EKS via Helm** (README §6). If we ever want zero Vercel-adjacent code, the swap is the Anthropic SDK + hand-rolled MCP wiring — tracked as decision #11 in README §10.

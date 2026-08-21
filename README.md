@@ -8,38 +8,61 @@ A voice-driven multi-agent system that acts as the support desk for a travel age
 
 ## 1. System Overview
 
-```
-                                   ┌──────────────────────────┐
-  🎤 Customer voice ──────────────▶│   apps/web (Next.js)     │
-  🔊 Spoken response ◀─────────────│   mic capture / playback │
-                                   └───────────┬──────────────┘
-                                               │ WebSocket + HTTP (audio/text)
-                                   ┌───────────▼──────────────┐
-                                   │  services/orchestrator   │
-                                   │  ┌────────────────────┐  │
-                                   │  │  Voice Pipeline    │  │   STT (Deepgram/Whisper)
-                                   │  │  STT ─▶ LLM ─▶ TTS │  │   TTS (OpenAI/ElevenLabs)
-                                   │  └─────────┬──────────┘  │
-                                   │  ┌─────────▼──────────┐  │
-                                   │  │ ORCHESTRATOR AGENT │  │   Claude (via AI SDK v6)
-                                   │  │ routes & synthesizes│ │
-                                   │  └─────────┬──────────┘  │
-                                   │    delegate tool calls    │
-                                   │  ┌───┬───┬─┴─┬───┬────┐  │
-                                   │  │✈️ │🏨 │🗺️ │💰 │🎫  │  │   Specialist agents
-                                   │  └─┬─┴─┬─┴─┬─┴─┬─┴─┬──┘  │   (defined in registry)
-                                   └────┼───┼───┼───┼───┼─────┘
-                                        │ MCP (streamable HTTP)
-              ┌─────────────────┬───────┴────────┬──────────────────┐
-              ▼                 ▼                ▼                  ▼
-      ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-      │ mcp-travel   │  │ mcp-weather  │  │ mcp-agency   │  │ (future MCPs)│
-      │ flights,     │  │ forecast,    │  │ bookings DB, │  │ visa, events,│
-      │ hotels       │  │ climate      │  │ customers,   │  │ currency ... │
-      │              │  │              │  │ tickets      │  │              │
-      └──────────────┘  └──────┬───────┘  └──────┬───────┘  └──────────────┘
-                               │                 │
-                        Open-Meteo API     Postgres (RDS)
+```mermaid
+flowchart TB
+    classDef client fill:#0E7C66,stroke:#0A5C4C,color:#fff
+    classDef brain fill:#1A2028,stroke:#E8865A,color:#fff
+    classDef spec fill:#243244,stroke:#2BB39A,color:#fff
+    classDef mcp fill:#3D2E4F,stroke:#9B7BC7,color:#fff
+    classDef ext fill:#F4F1EA,stroke:#B4690E,color:#1A1D21
+    classDef voice fill:#5C3A2E,stroke:#E8865A,color:#fff
+
+    Customer(("🎤 Customer")):::client
+
+    subgraph WEB["apps/web · Next.js on EKS"]
+        UI["Split-pane UI<br/>transcript · results canvas · agents graph · voice orb"]:::client
+    end
+
+    subgraph ORCH["services/orchestrator · Fastify :8080 on EKS"]
+        STT["STT<br/>Deepgram nova-3"]:::voice
+        TTS["TTS<br/>OpenAI"]:::voice
+        ORC["🧠 Orchestrator Agent<br/>Claude Opus 4.8<br/><i>the only agent that talks to the customer</i>"]:::brain
+        FL["✈️ flight-agent<br/>Haiku 4.5"]:::spec
+        HO["🏨 hotel-agent<br/>Haiku 4.5"]:::spec
+        IT["🗺️ itinerary-agent<br/>Haiku 4.5"]:::spec
+        BU["💰 budget-agent<br/>Haiku 4.5"]:::spec
+        SU["🎫 support-agent<br/>Haiku 4.5"]:::spec
+    end
+
+    subgraph MCPL["MCP servers · streamable HTTP · one Deployment each"]
+        MT["mcp-travel :8101<br/>flights · hotels · activities"]:::mcp
+        MW["mcp-weather :8102<br/>forecast · climate"]:::mcp
+        MA["mcp-agency :8103<br/>bookings · customers · tickets"]:::mcp
+    end
+
+    OM["Open-Meteo API"]:::ext
+    PG[("Postgres · RDS")]:::ext
+    RD[("Redis · ElastiCache<br/>session state")]:::ext
+    LF["Langfuse<br/>traces + evals"]:::ext
+
+    Customer -- "voice / text" --> UI
+    UI -- "audio + text · WS/HTTP" --> STT
+    STT --> ORC
+    ORC --> TTS
+    TTS -- "spoken reply" --> UI
+    ORC -. "live agent events · WS" .-> UI
+
+    ORC == "parallel delegations" ==> FL & HO & IT & BU & SU
+
+    FL & HO & BU --> MT
+    IT --> MW
+    IT --> MT
+    SU --> MA
+
+    MW --> OM
+    MA --> PG
+    ORC -.-> RD
+    ORC -.-> LF
 ```
 
 **Core principles**
@@ -193,6 +216,34 @@ voice_agentic_ai/
 ## 6. Deployment (AWS + Kubernetes)
 
 **Target: EKS.** Everything also runs identically on k3d/kind locally — the Helm chart is the single source of deployment truth.
+
+```mermaid
+flowchart LR
+    classDef aws fill:#232F3E,stroke:#FF9900,color:#fff
+    classDef k8s fill:#326CE5,stroke:#1A4FBF,color:#fff
+    classDef ci fill:#1A2028,stroke:#2BB39A,color:#fff
+
+    DEV["git push · main"]:::ci --> GHA["GitHub Actions<br/>lint · typecheck · evals"]:::ci
+    GHA -- "OIDC (no long-lived keys)" --> ECR["ECR<br/>images by git SHA"]:::aws
+    GHA -- "helm upgrade --atomic" --> EKS
+
+    subgraph EKS["EKS cluster"]
+        ALB["ALB Ingress<br/>TLS · WebSocket"]:::aws
+        W["web"]:::k8s
+        O["orchestrator<br/>HPA"]:::k8s
+        M1s["mcp-travel ×2"]:::k8s
+        M2s["mcp-weather ×2"]:::k8s
+        M3s["mcp-agency ×2"]:::k8s
+        LFP["langfuse"]:::k8s
+        ESO["External Secrets"]:::k8s
+    end
+
+    ALB --> W & O
+    O --> M1s & M2s & M3s
+    ESO --> SM["Secrets Manager"]:::aws
+    O --> RDS[("RDS")]:::aws
+    O --> EC[("ElastiCache")]:::aws
+```
 
 | Concern | Choice |
 |---|---|
