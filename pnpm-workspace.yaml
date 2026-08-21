@@ -5,3 +5,4 @@ packages:
   - evals
 allowBuilds:
   esbuild: true
+  sharp: true

@@ -15,7 +15,7 @@
 | 3 | M1 — 3 MCP servers (travel/weather/agency, mock data) | ✅ done | `dbd4583` |
 | 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | 🟡 code complete — live demo blocked on `ANTHROPIC_API_KEY` | `2409022` |
 | 5 | M2 — voice pipeline (STT/TTS) | 🟡 code complete — live audio needs Deepgram/OpenAI keys | |
-| 6 | M2 — Next.js web UI (split pane, canvas, orb) | ⬜ not started | |
+| 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — verified against mock event stream | |
 | 7 | M3 — evals (golden dataset, judges, tracing) | ⬜ not started | |
 | 8 | M4 — Docker, compose, Helm on k3d | ⬜ not started | |
 | 9 | M5 — AWS (EKS, ECR, OIDC deploy, secrets, ALB) | ⬜ not started | |
@@ -29,7 +29,10 @@
 
 ```bash
 pnpm install
-./scripts/dev.sh          # starts mcp-travel :8101, mcp-weather :8102, mcp-agency :8103, orchestrator :8080
+./scripts/dev.sh          # starts mcp-travel :8101, mcp-weather :8102, mcp-agency :8103, orchestrator :8080, web UI :3000
+
+# open the split-pane UI (M2)
+open http://localhost:3000
 
 # text loop (M1 demo)
 curl -s localhost:8080/api/chat -H 'content-type: application/json' \
@@ -64,6 +67,13 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 ### 2026-08-21 — M2 voice pipeline (backend)
 
 - **M2 voice backend**: `voice/stt.ts` (Deepgram nova-3 primary, OpenAI whisper-1 fallback, `none` = text-only — all via `VOICE_STT`), `voice/tts.ts` (OpenAI `gpt-4o-mini-tts` / ElevenLabs turbo streaming, via `VOICE_TTS`), and a `/voice` WebSocket: binary mic frames in → `audio_end` → STT → shared `runTurn` → `reply` JSON + streamed TTS audio chunks (`tts_start`/binary/`tts_end`), with `cancel` for barge-in and a `text` message type so the socket works keyless. Session turns extracted to `sessions.ts` (shared by `/api/chat` and `/voice`); `@fastify/cors` added for the Next.js dev origin; `/healthz` now reports voice capability. Smoke-tested: `/voice` handshake + disabled-STT guard respond correctly. Live audio still needs `DEEPGRAM_API_KEY`/`OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` for the turn itself).
+
+### 2026-08-21 — M2 web UI (apps/web)
+
+- **M2 web UI**: Next.js 15 app (`apps/web`, port 3000) implementing DESIGN §5 — split-pane session screen (conversation 40% / canvas 60%), Results tab (FLIGHTS/STAYS/ITINERARY/BUDGET/BOOKINGS sections appear per specialist with live status chips, card entrance motion, failed-state notes), Agents tab (orchestrator fan-out, per-node state/duration, tool-call ticker with masked args), bottom bar (CSS orb with idle/listening/thinking/speaking states, Space = PTT, Esc = stop speaking, always-visible text field). Design tokens from DESIGN §8 as CSS variables, light + dark, `prefers-reduced-motion` respected. Cards typed directly off `@concierge/core` schemas (FlightOption, HotelOption, ItineraryDay, BudgetAgentOutput, SupportAgentOutput). Client wires `/ws` (activity feed) + `/voice` (mic frames up via MediaRecorder, TTS audio down, barge-in cancel) + `POST /api/chat` (text fallback).
+- **Verified without API keys**: Playwright screenshots in light + dark, zero page errors (fixed an SSR hydration mismatch by making sessionId client-only), and a scratchpad mock orchestrator replaying a canned San Juan event stream — all card types, status chips, and the agents graph rendered correctly.
+- **Deviation from DESIGN**: Orb is hand-rolled CSS (orb-ui kept as anatomy reference only — no extra dependency); DESIGN §5.3/§6 amended. TTS playback buffers per-utterance (Blob → Audio) rather than streaming via MediaSource — fine for M2, revisit if first-audible-token latency misses budget. Deferred to later steps: map panel with pins, suggestion/clarify chips from live model output, confirmation card wiring, karaoke highlight (D7/D8).
+- `scripts/dev.sh` now also starts the web app; `pnpm-workspace.yaml` allows the sharp build; root ESLint ignores generated `next-env.d.ts`.
 
 ### 2026-08-21 — Diagrams upgraded to Mermaid
 

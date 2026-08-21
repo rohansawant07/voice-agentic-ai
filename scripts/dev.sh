@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the full M1 stack locally: 3 MCP servers + orchestrator.
+# Run the full stack locally: 3 MCP servers + orchestrator + web UI (:3000).
 # Requires ANTHROPIC_API_KEY in the environment or in .env at repo root.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,4 +12,5 @@ trap 'kill 0' EXIT
 (cd services/mcp-agency  && pnpm dev) &
 sleep 2
 (cd services/orchestrator && pnpm dev) &
+(cd apps/web && pnpm dev) &
 wait

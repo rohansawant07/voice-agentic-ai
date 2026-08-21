@@ -164,7 +164,7 @@ Read-only shareable page once a plan is settled: hero, day cards, bookings, tota
 
 ### 5.3 Bottom bar — Voice
 
-- **Orb** (orb-ui): `idle` breathing → `listening` audio-reactive ripple (user's mic) → `thinking` slow internal swirl → `speaking` waveform pulse (TTS energy).
+- **Orb** (hand-rolled CSS, orb-ui-inspired — no extra dependency, see EXECUTION.md M2): `idle` breathing → `listening` audio-reactive ripple (user's mic) → `thinking` slow internal swirl → `speaking` waveform pulse (TTS energy).
 - **Interactions**: tap = toggle listening; hold = push-to-talk; `Space` = PTT on desktop; `Esc` = stop speaking.
 - **Status label** under orb: "listening…", "thinking…", "3 agents working…" (live count from WS events).
 - **Text field** sits beside the orb, always visible (Principle 1).
@@ -190,7 +190,7 @@ Every card maps 1:1 to a specialist `outputSchema` (README §2.2). Fields listed
 | **BookingCard** | support-agent | confirmation code, trip label, dates, status (`confirmed / pending-change / cancelled / refund-issued`), refund amount + method | — |
 | **ConfirmationCard** | orchestrator | action sentence, monetary consequence, Confirm/Keep-it | — |
 | **AgentNode / ToolTicker** | WS events | id, state, duration, current tool + masked args | — |
-| **StatusChip, SuggestionChip, MapPanel, TranscriptBubble, Orb** | — | shared primitives | orb-ui for Orb |
+| **StatusChip, SuggestionChip, MapPanel, TranscriptBubble, Orb** | — | shared primitives | Orb: hand-rolled CSS (orb-ui as anatomy reference) |
 
 ---
 
