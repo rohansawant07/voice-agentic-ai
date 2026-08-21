@@ -203,6 +203,7 @@ Every card maps 1:1 to a specialist `outputSchema` (README §2.2). Fields listed
 - **Destructive confirmation**: spoken "yes / confirm / go ahead" (or tapping Confirm) required after the ConfirmationCard renders. Anything else = abort, state unchanged. 100% eval gate (README §7.1).
 - **Speakable style rules** (orchestrator prompt + judge rubric): ≤3 sentences per turn before yielding; round prices in speech ("about two-ninety round trip"), exact on cards; never enumerate more than 2 options aloud — "I've put three on your screen"; no URLs, no spelling out codes.
 - **Multi-turn memory**: "actually make it 3 nights" re-delegates with prior context (session history, README §4); changed cards animate a diff (old price struck through, 400ms).
+- **Latency & cost engineering**: the ≤2s first-spoken-token budget shapes the model choice (Opus 4.8 orchestrator, streaming; Fable 5 rejected as too deliberate for voice) and the UX — filler speech covers the specialist fan-out, and the canvas absorbs the wait visually. A 3–4-turn conversation costs ≈ $0.50–0.80, which the session shape (suggestion chips steering toward efficient follow-ups) is designed around. Numbers live in README §7.5 — single source of truth, don't duplicate here.
 
 ---
 

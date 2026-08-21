@@ -58,7 +58,7 @@ A voice-driven multi-agent system that acts as the support desk for a travel age
 
 | | |
 |---|---|
-| **Model** | `claude-sonnet-5` (configurable via `ORCHESTRATOR_MODEL`) |
+| **Model** | `claude-opus-4-8` (configurable via `ORCHESTRATOR_MODEL`) — see §7.5 Cost model |
 | **Loop** | AI SDK v6 `ToolLoopAgent`, `stopWhen: stepCountIs(10)` |
 | **Tools** | One `delegate_to_<agent>` tool per registry entry + `respond_to_customer` |
 | **Never does** | Call MCP tools directly, invent agents, answer domain questions from its own knowledge |
@@ -142,6 +142,7 @@ mic (browser MediaRecorder, webm/opus)
 - **Latency budget: ≤ 2.0s to first spoken token** (p50). Measured per-stage in traces: STT ≤ 400ms, first LLM token ≤ 800ms, TTS first chunk ≤ 500ms.
 - While specialists work, the client UI shows a **live agent activity feed** (WS events: `delegation_started`, `tool_called`, `delegation_finished`) — this is the demo money-shot. Optionally TTS a filler ("Let me check flights and hotels for you…") when a run will exceed ~3s.
 - Text input is a first-class fallback (same pipeline minus STT/TTS) — the system must be fully demoable and testable without any voice API keys.
+- STT must be a server API. Consumer dictation tools (e.g. Wispr Flow) were considered and excluded — no public API to call from the pipeline.
 - Sessions: `sessionId` per conversation, history in Redis (in-memory fallback locally), so "actually make it 3 nights" works.
 
 ---
@@ -230,13 +231,26 @@ Dataset composition (~50 cases to start): happy paths, ambiguous requests (must 
 
 ### 7.2 LLM-as-judge — `evals/judges/`
 
-Claude scores each final response 1–5 on: **groundedness** (every fact traceable to a tool result — no hallucinated flights), **helpfulness**, **speakability** (would sound natural read aloud). Judge model ≠ agent model version where possible. Gate: mean ≥ 4.0, no groundedness score < 3.
+Claude scores each final response 1–5 on: **groundedness** (every fact traceable to a tool result — no hallucinated flights), **helpfulness**, **speakability** (would sound natural read aloud). Judge model: `claude-haiku-4-5` (cheap, and ≠ the agent models). Gate: mean ≥ 4.0, no groundedness score < 3.
 
 ### 7.3 Online / production
 
 - Every production trace logged to Langfuse with session, latency per stage, token cost.
 - Sampled traces (10%) auto-scored by the same judges; scores dashboarded.
 - Voice-specific: STT WER tracked on a 20-clip audio set; E2E latency p50/p95 alarms.
+
+### 7.5 Cost model
+
+Per-MTok pricing (2026-08): Opus 4.8 $5 in / $25 out · Sonnet 5 $3/$15 · Haiku 4.5 $1/$5. Cache reads ≈ 0.1× input price.
+
+| Happy path (S1, one round trip) | Model | Tokens in/out | Cost |
+|---|---|---|---|
+| Orchestrator (route + synthesize, 2 turns) | Opus 4.8 | ~9k / ~1.1k | ~$0.07 |
+| 4 specialists × ~3-step MCP tool loops | Sonnet 5 | ~24k / ~2.4k | ~$0.11 |
+| STT (~30s speech) + TTS (~400 chars) | Deepgram / OpenAI | — | ~$0.02 |
+| **Total, uncached** | | | **≈ $0.20** |
+
+With prompt caching (stable system prompts + tool schemas), effective cost ≈ **$0.10–0.12 per happy path**; a 3–4-turn conversation ≈ **$0.50–0.80**. Budget mode (Sonnet 5 everywhere) ≈ half. **Prompt caching is a design requirement**: prompt assembly must order stable content first (tools → system → history), volatile content last, and never interpolate timestamps/IDs into the prefix.
 
 ---
 
@@ -246,8 +260,9 @@ All config via env (12-factor). `.env.example` is exhaustive; nothing works from
 
 ```
 ANTHROPIC_API_KEY=            # required — agent brains
-ORCHESTRATOR_MODEL=claude-sonnet-5
+ORCHESTRATOR_MODEL=claude-opus-4-8
 SPECIALIST_MODEL=claude-sonnet-5
+JUDGE_MODEL=claude-haiku-4-5  # eval judges + cheap high-volume jobs
 VOICE_STT=deepgram|whisper|none      # none = text-only mode
 VOICE_TTS=openai|elevenlabs|none
 DEEPGRAM_API_KEY=             # if VOICE_STT=deepgram
@@ -286,6 +301,8 @@ Build order. Each milestone is independently demoable; don't start N+1 until N's
 | 3 | **Static agent registry**, no dynamic agent spawning | Predictable routing = evaluable routing; "spawning" is delegation, not process creation | A genuine open-ended planner use-case appears |
 | 4 | **MCP for all tools**, streamable HTTP | Swappable providers, per-service scaling on K8s, demo-friendly | Latency overhead proves material vs. in-process tools |
 | 5 | **AI SDK v6 + Claude** | ToolLoopAgent + MCP client built-in; best agentic model | — |
+| 5a | Model split: **Opus 4.8 orchestrator, Sonnet 5 specialists, Haiku 4.5 judges** | Capability/latency/cost balance. Fable 5 rejected for orchestrator: 2× price and long deliberation vs the ≤2s voice budget | Latency p95 blows budget → try Sonnet 5 orchestrator |
+| 5b | **Prompt caching mandatory** | Stable-prefix ordering targets ~0.1× input cost on repeat traffic (§7.5) | — |
 | 6 | **Mock-first data**, live providers opt-in | Deterministic evals, $0 demos, CI without secrets | — |
 | 7 | **EKS + Helm**, k3d locally | Industry-standard ask from spec; chart works on both | Budget → stay on k3d/Fargate |
 | 8 | **Langfuse self-hosted** for traces/evals | OSS, runs in-cluster, LLM-native tracing | Team prefers managed (Braintrust) |
