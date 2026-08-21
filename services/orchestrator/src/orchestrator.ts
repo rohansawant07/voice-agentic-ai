@@ -1,0 +1,92 @@
+import { generateText, isStepCount, tool, type ModelMessage, type ToolSet } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { z } from "zod";
+import { AGENT_REGISTRY } from "@concierge/core";
+import { bus } from "./bus.js";
+import { runSpecialist } from "./specialist.js";
+
+const ORCHESTRATOR_MODEL = process.env.ORCHESTRATOR_MODEL ?? "claude-opus-4-8";
+
+/**
+ * System prompt ordering matters for prompt caching (README §7.5):
+ * this string is frozen — no dates, no session data. Volatile context
+ * goes at the end of the message list.
+ */
+const SYSTEM = `You are Concierge, the voice of a US leisure travel agency (US states + territories only, all prices USD).
+
+You are the ONLY agent who talks to the customer. Specialists do the domain work; you delegate to them with the delegate_to_* tools and synthesize their results.
+
+Routing rules:
+- Decompose the request and delegate. Issue INDEPENDENT delegations in the SAME step so they run in parallel (e.g. flights + hotels + itinerary at once).
+- Pass each specialist a self-contained task plus all known facts in context (dates, origin, party size, budget, customerId).
+- Never answer domain questions from your own knowledge — no invented flights, hotels, prices, or weather.
+- If origin city, dates, or party size are missing AND materially change results, ask ONE compound clarifying question instead of delegating.
+- Out-of-domain requests (not travel): politely redirect in one sentence, no delegations.
+- Out-of-scope travel (international, visas, loyalty points): say gracefully that you currently cover US destinations and territories, and offer what you CAN do.
+
+Destructive actions (cancel, modify, hold a booking):
+- First state the action and its consequence (money, dates) and ask the customer to confirm.
+- Only after the customer explicitly says yes, delegate with confirmed: true in the context.
+- Never pass confirmed: true without that explicit yes in this conversation.
+
+Speaking style (your reply is read aloud by TTS):
+- At most 3 short sentences before yielding. Warm, plain, no markdown, no lists, no URLs.
+- Round prices in speech ("about two-ninety round trip"); exact numbers live on the customer's screen.
+- Never enumerate more than 2 options aloud — say "I've put three options on your screen."
+- If a specialist failed, say what you couldn't get and what you'll try instead — never expose internals.`;
+
+function delegateTools(sessionId: string): ToolSet {
+  const tools: ToolSet = {};
+  for (const def of AGENT_REGISTRY) {
+    tools[`delegate_to_${def.id.replace(/-/g, "_")}`] = tool({
+      description: def.description,
+      inputSchema: z.object({
+        task: z.string().describe("Self-contained natural-language sub-task"),
+        context: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe(
+            "Structured facts already known: dates, origin, partySize, budgetUSD, customerId, confirmed…",
+          ),
+      }),
+      execute: async ({ task, context }) =>
+        runSpecialist(def, { task, context }, sessionId),
+    });
+  }
+  return tools;
+}
+
+export async function runOrchestrator(
+  sessionId: string,
+  history: ModelMessage[],
+): Promise<string> {
+  const started = Date.now();
+  const { text } = await generateText({
+    model: anthropic(ORCHESTRATOR_MODEL),
+    system: SYSTEM,
+    tools: delegateTools(sessionId),
+    stopWhen: isStepCount(10),
+    messages: [
+      ...history,
+      // volatile context stays AFTER the cacheable prefix
+      {
+        role: "user" as const,
+        content: `[context] Today's date: ${new Date().toISOString().slice(0, 10)}. Respond to the conversation above.`,
+      },
+    ],
+  });
+
+  bus.emit({
+    type: "assistant_message",
+    sessionId,
+    ts: Date.now(),
+    text,
+  });
+  bus.emit({
+    type: "run_finished",
+    sessionId,
+    ts: Date.now(),
+    durationMs: Date.now() - started,
+  });
+  return text;
+}
