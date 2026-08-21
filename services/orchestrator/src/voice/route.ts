@@ -9,7 +9,8 @@ import { synthesize, ttsEnabled } from "./tts.js";
  * /voice WebSocket — the spoken round-trip (README §4).
  *
  * Client → server:
- *   binary frames        mic audio chunks (MediaRecorder webm/opus)
+ *   binary frames        mic audio chunks (MediaRecorder webm/opus or mp4)
+ *   {"type":"audio_reset"} new utterance starting — drop buffered chunks
  *   {"type":"audio_end"} utterance finished (browser-side endpointing)
  *   {"type":"text","text":"..."} text turn over the same socket (fallback path)
  *   {"type":"cancel"}    barge-in — stop streaming TTS immediately
@@ -143,6 +144,10 @@ export function registerVoiceRoute(
         }
         case "text":
           if (msg.text?.trim()) void handleTurn(msg.text);
+          break;
+        case "audio_reset":
+          // client starts a fresh utterance — drop any stale/aborted chunks
+          chunks = [];
           break;
         case "cancel":
           ttsCancelled = true;

@@ -25,6 +25,7 @@ export default function SessionPage() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
+      if (e.repeat) return; // held Space auto-repeats keydown
       if (e.code === "Space" && s.voiceAvailable && s.orb !== "listening") {
         e.preventDefault();
         void s.startListening();

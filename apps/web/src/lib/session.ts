@@ -174,6 +174,8 @@ export function useSession(): SessionState {
           break;
         }
         case "error":
+          // failed/empty STT: drop the "…" placeholder instead of stranding it
+          setMessages((prev) => prev.filter((b) => !b.partial));
           setOrb("idle");
           break;
         default:
@@ -214,30 +216,38 @@ export function useSession(): SessionState {
   const startListening = useCallback(async () => {
     const ws = voiceWs.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    // One recorder at a time — a second start while recording would interleave
+    // two webm streams into one server buffer and corrupt the audio.
+    if (recorder.current) return;
     player.current?.pause(); // barge-in: stop playback, tell server to stop streaming
     ws.send(JSON.stringify({ type: "cancel" }));
+    ws.send(JSON.stringify({ type: "audio_reset" }));
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const rec = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    // Chrome/Firefox record webm/opus; Safari records mp4 — tell the server which.
+    const mime = MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : "audio/mp4";
+    const rec = new MediaRecorder(stream, { mimeType: mime });
     rec.ondataavailable = (e) => {
       if (e.data.size > 0 && ws.readyState === WebSocket.OPEN)
         void e.data.arrayBuffer().then((buf) => ws.send(buf));
     };
     rec.onstop = () => {
       stream.getTracks().forEach((t) => t.stop());
-      ws.send(JSON.stringify({ type: "audio_end", mime: "audio/webm" }));
+      recorder.current = null;
+      ws.send(JSON.stringify({ type: "audio_end", mime }));
     };
     recorder.current = rec;
     rec.start(250);
     setOrb("listening");
     setMessages((prev) => [
-      ...prev,
+      ...prev.filter((b) => !b.partial),
       { role: "user", text: "…", partial: true },
     ]);
   }, []);
 
   const stopListening = useCallback(() => {
-    recorder.current?.stop();
-    recorder.current = null;
+    recorder.current?.stop(); // onstop clears recorder.current and sends audio_end
     setOrb("thinking");
   }, []);
 

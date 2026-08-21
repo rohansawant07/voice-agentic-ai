@@ -68,6 +68,13 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 
 - **M2 voice backend**: `voice/stt.ts` (Deepgram nova-3 primary, OpenAI whisper-1 fallback, `none` = text-only — all via `VOICE_STT`), `voice/tts.ts` (OpenAI `gpt-4o-mini-tts` / ElevenLabs turbo streaming, via `VOICE_TTS`), and a `/voice` WebSocket: binary mic frames in → `audio_end` → STT → shared `runTurn` → `reply` JSON + streamed TTS audio chunks (`tts_start`/binary/`tts_end`), with `cancel` for barge-in and a `text` message type so the socket works keyless. Session turns extracted to `sessions.ts` (shared by `/api/chat` and `/voice`); `@fastify/cors` added for the Next.js dev origin; `/healthz` now reports voice capability. Smoke-tested: `/voice` handshake + disabled-STT guard respond correctly. Live audio still needs `DEEPGRAM_API_KEY`/`OPENAI_API_KEY` (and `ANTHROPIC_API_KEY` for the turn itself).
 
+### 2026-08-21 — First live runs + voice input bugfixes
+
+- **First live LLM demo ran** (key now in local `.env`): clarifying question on ambiguous dates, then full parallel fan-out — flights + hotel + itinerary + budget, ≈$1,220 vs the $1,500 cap, honest hurricane-season caveat. Full fan-out turn took ~80s — latency work deferred to M3 tracing.
+- **Voice input fixed after real-browser testing**: rapid orb taps / held-Space auto-repeat spawned multiple parallel MediaRecorders whose chunks interleaved into one server buffer → Deepgram 400 "corrupt data", plus stranded "…" placeholder bubbles. Fixes: single-recorder guard + `e.repeat` ignore, `audio_reset` control message (server drops stale chunks per utterance), placeholder cleanup on STT error, Safari support via `audio/mp4` fallback when webm is unsupported.
+- **Voice verified end-to-end without a mic**: macOS `say` → wav → `/voice` WS → Deepgram transcript (word-perfect) → orchestrator → specialist → reply. STT is live; TTS still off (no OpenAI/ElevenLabs key yet).
+- Weather specialist mis-matched "San Juan" in Open-Meteo geocoding on the live run and correctly returned a graceful failure instead of guessing — candidate M3 eval case.
+
 ### 2026-08-21 — Security hardening (post-review, pre-M3)
 
 - Security review of the M2 diff found no exploitable vulnerabilities; the one dismissed candidate (permissive CORS + unchecked WS origins on the unauthenticated dev stack) was fixed anyway as pre-M5 hardening:
