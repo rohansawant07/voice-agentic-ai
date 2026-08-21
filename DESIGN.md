@@ -237,16 +237,16 @@ Every card maps 1:1 to a specialist `outputSchema` (README §2.2). Fields listed
 
 Step-by-step, each tied to a README milestone. Don't start a step until the one before it demos.
 
-| Step | Deliverable | Unblocks |
-|---|---|---|
-| D1 | Low-fi wireframes of the 3 screens (this doc's ASCII → Figma-or-HTML rough) validated against scenarios S1–S7 | M1 |
-| D2 | Design tokens implemented as CSS variables + light/dark toggle; type/spacing sheet | M1 |
-| D3 | Static component set: TranscriptBubble, chips, FlightCard, HotelCard, ItineraryDayCard, BudgetMeter, BookingCard, ConfirmationCard, StatusChip (mock data, Storybook-style page) | M1 demo (text loop renders real cards) |
-| D4 | Orb integration (orb-ui): 4 states wired to real mic/TTS energy; bottom bar with PTT + text field | M2 |
-| D5 | Canvas streaming behavior: sections appear on WS events, card entrance motion, section status chips, failed states | M2 demo |
-| D6 | Agents tab: fan-out graph, tool ticker, node detail sheet — driven by the same WS events | M2/M3 demos |
-| D7 | MapPanel with card↔pin linking; Trip summary screen + share/PDF | M3 |
-| D8 | Responsive/mobile pass; reduced-motion; AA contrast audit; empty/error states sweep | M4+ |
+| Step | Deliverable | Unblocks | Status |
+|---|---|---|---|
+| D1 | Low-fi wireframes of the 3 screens (this doc's ASCII → Figma-or-HTML rough) validated against scenarios S1–S7 | M1 | ✅ (ASCII wireframes served as the low-fi pass) |
+| D2 | Design tokens implemented as CSS variables + light/dark toggle; type/spacing sheet | M1 | ✅ `apps/web/src/app/globals.css` |
+| D3 | Static component set: TranscriptBubble, chips, FlightCard, HotelCard, ItineraryDayCard, BudgetMeter, BookingCard, ConfirmationCard, StatusChip (mock data, Storybook-style page) | M1 demo (text loop renders real cards) | 🟡 all cards built + verified vs mock events; ConfirmationCard + Storybook page pending |
+| D4 | Orb integration: 4 states wired to real mic/TTS energy; bottom bar with PTT + text field | M2 | 🟡 states + PTT + Esc wired; audio-reactive energy pending |
+| D5 | Canvas streaming behavior: sections appear on WS events, card entrance motion, section status chips, failed states | M2 demo | ✅ |
+| D6 | Agents tab: fan-out graph, tool ticker, node detail sheet — driven by the same WS events | M2/M3 demos | 🟡 graph + ticker done; node detail sheet pending |
+| D7 | MapPanel with card↔pin linking; Trip summary screen + share/PDF | M3 | ⬜ |
+| D8 | Responsive/mobile pass; reduced-motion; AA contrast audit; empty/error states sweep | M4+ | 🟡 reduced-motion + pane stacking done; audit sweep pending |
 
 **Definition of done per step**: works in light *and* dark, keyboard path exists, and the relevant scenario from §2 can be walked through on screen.
 

@@ -82,8 +82,8 @@ flowchart TB
 | | |
 |---|---|
 | **Model** | `claude-opus-4-8` (configurable via `ORCHESTRATOR_MODEL`) — see §7.5 Cost model |
-| **Loop** | AI SDK v6 `ToolLoopAgent`, `stopWhen: stepCountIs(10)` |
-| **Tools** | One `delegate_to_<agent>` tool per registry entry + `respond_to_customer` |
+| **Loop** | AI SDK v7 `generateText` tool loop, `stopWhen: isStepCount(10)` |
+| **Tools** | One `delegate_to_<agent>` tool per registry entry; the final assistant text is the customer reply |
 | **Never does** | Call MCP tools directly, invent agents, answer domain questions from its own knowledge |
 
 Responsibilities:
@@ -333,9 +333,10 @@ LANGFUSE_HOST= / _PUBLIC_KEY= / _SECRET_KEY=   # optional locally
 
 Build order. Each milestone is independently demoable; don't start N+1 until N's demo works.
 
-- [ ] **M0 — Skeleton**: monorepo, `packages/core` types, agent registry defined, CI (lint+typecheck).
-- [ ] **M1 — Text loop**: orchestrator agent + all 5 specialists + 3 MCP servers (mock data), text in → text out, agent activity events over WS. *Demo: "plan me a San Juan weekend" fans out to 3 agents in parallel.*
-- [ ] **M2 — Voice loop**: STT + TTS wired, Next.js mic UI with live activity feed, session memory. *Demo: full spoken round-trip < 3s.*
+- [x] **M0 — Skeleton**: monorepo, `packages/core` types, agent registry defined, CI (lint+typecheck).
+- [x] **M1 — Text loop**: orchestrator agent + all 5 specialists + 3 MCP servers (mock data), text in → text out, agent activity events over WS. *Demo: "plan me a San Juan weekend" fans out to 3 agents in parallel.*
+- [x] **M2 — Voice loop**: STT + TTS wired, Next.js mic UI with live activity feed, session memory. *Demo: full spoken round-trip < 3s.*
+  *(M0–M2 code complete + UI verified against a mock event stream; the live LLM/voice demos still need `ANTHROPIC_API_KEY` + voice keys in `.env` — see EXECUTION.md status board.)*
 - [ ] **M3 — Evals**: golden dataset (50 cases), harness, judges, CI gate, Langfuse tracing end-to-end.
 - [ ] **M4 — Containers**: Dockerfiles, docker-compose full stack, k3d + Helm chart working locally.
 - [ ] **M5 — AWS**: EKS via Terraform (or eksctl), ECR, GitHub Actions OIDC deploy, External Secrets, ALB + TLS. *Demo: public URL, phone mic, live.*
@@ -351,7 +352,7 @@ Build order. Each milestone is independently demoable; don't start N+1 until N's
 | 2 | Orchestrator–specialist via **tool-call delegation** (not agent-to-agent chat) | Deterministic, traceable, parallelizable, evaluable | Specialists need multi-turn negotiation with each other |
 | 3 | **Static agent registry**, no dynamic agent spawning | Predictable routing = evaluable routing; "spawning" is delegation, not process creation | A genuine open-ended planner use-case appears |
 | 4 | **MCP for all tools**, streamable HTTP | Swappable providers, per-service scaling on K8s, demo-friendly | Latency overhead proves material vs. in-process tools |
-| 5 | **AI SDK v6 + Claude** | ToolLoopAgent + MCP client built-in; best agentic model | — |
+| 5 | **AI SDK v7 + Claude** (v7.0.70 — newer than the v6 originally planned) | Agent tool loop + `@ai-sdk/mcp` client built-in; best agentic model | — |
 | 5a | Model split: **Opus 4.8 orchestrator, Haiku 4.5 specialists, Sonnet 5 judges** | Orchestration is the hard part; specialists are scoped tool tasks a small model handles at 1/5 the price. Fable 5 rejected for orchestrator: 2× price and long deliberation vs the ≤2s voice budget | A specialist's tool-call correctness drops below the eval gate → bump that agent's `model` override |
 | 5b | **Prompt caching mandatory** | Stable-prefix ordering targets ~0.1× input cost on repeat traffic (§7.5) | — |
 | 6 | **Mock-first data**, live providers opt-in | Deterministic evals, $0 demos, CI without secrets | — |
