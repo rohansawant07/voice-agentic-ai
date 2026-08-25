@@ -53,6 +53,13 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 
 ## Changelog
 
+### 2026-08-25 — Dietary preferences + car rentals (post-M2 capability add)
+
+- **Dietary restrictions** now flow end-to-end: orchestrator folds an optional "any dietary needs?" ask into its single clarifying question (never blocks on it), remembers preferences stated at any point, and passes them as `context.dietary`; `search_activities` gained a `dietary` filter (every tag must be accommodated; non-food activities unaffected, honest note when picks were dropped); itinerary-agent instructs food picks to honor ALL restrictions and fills a new `dietaryNote` field, rendered in the UI's itinerary section. Mock data: dietary tags on all food activities, plus new food picks for HNL/MCO/STT so filtering never comes up empty.
+- **Car rentals** added as an opt-in capability: new `search_car_rentals` tool on mcp-travel (per-day + trip-total pricing, seeded mock, island-destination price bump), new `car-rental-agent` registry entry (`CarRentalOption`/`CarRentalAgentOutput` schemas), orchestrator delegates only when the customer wants a car (offers in one sentence when the destination clearly rewards one), budget segments gained a `car` label (+ meter color), and the UI got a selectable `CarRentalCard` + RENTAL CARS canvas section + 🚗 fan-out node.
+- Verified: `pnpm lint && pnpm typecheck && pnpm build` green; direct MCP smoke test against `mcp-travel` exercised `search_car_rentals` (SJU, 4 days, budget filter) and the dietary filter (Sedona vegan+GF match; St. Thomas vegan → empty with note). No live LLM turn run (cost); first live exercise folds into the next demo/M3 evals.
+- Note: car selection ✓ shares the existing known gap — visual-only until the selection-model work lands.
+
 ### 2026-08-21 — Docs + M0 + M1
 
 - **`1e8d010` docs**: README.md (architecture brain: agent roster, MCP servers, voice pipeline, EKS deployment, evals, milestones, decision log) and DESIGN.md (design brain: principles, scenarios S1–S7, split-pane UI spec, component inventory, voice UX, design tokens, build order D1–D8).

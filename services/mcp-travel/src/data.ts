@@ -6,8 +6,37 @@ export interface Destination {
   region: string;
   beach: boolean;
   hotels: { name: string; star: number; neighborhood: string; base: number }[];
-  activities: { title: string; kind: string; cost: number }[];
+  /** dietary tags only meaningful on kind "food" entries */
+  activities: { title: string; kind: string; cost: number; dietary?: string[] }[];
 }
+
+export const DIETARY_TAGS = [
+  "vegetarian",
+  "vegan",
+  "gluten-free",
+  "halal",
+  "kosher",
+  "dairy-free",
+  "nut-free",
+] as const;
+
+export const RENTAL_COMPANIES = [
+  { name: "Hertz", tier: 1.15 },
+  { name: "Enterprise", tier: 1.1 },
+  { name: "Avis", tier: 1.05 },
+  { name: "Budget", tier: 0.95 },
+  { name: "Sixt", tier: 1.0 },
+  { name: "Thrifty", tier: 0.85 },
+];
+
+export const CAR_CLASSES = [
+  { carClass: "economy", model: "Nissan Versa or similar", seats: 4, base: 38 },
+  { carClass: "compact", model: "Toyota Corolla or similar", seats: 5, base: 45 },
+  { carClass: "midsize", model: "Honda Accord or similar", seats: 5, base: 55 },
+  { carClass: "suv", model: "Toyota RAV4 or similar", seats: 5, base: 72 },
+  { carClass: "minivan", model: "Chrysler Pacifica or similar", seats: 7, base: 89 },
+  { carClass: "convertible", model: "Ford Mustang convertible or similar", seats: 4, base: 98 },
+] as const;
 
 export const CARRIERS = [
   { code: "B6", name: "JetBlue" },
@@ -38,7 +67,7 @@ export const DESTINATIONS: Destination[] = [
       { title: "El Yunque rainforest hike", kind: "outdoors", cost: 60 },
       { title: "Bioluminescent bay kayak (Fajardo)", kind: "outdoors", cost: 65 },
       { title: "Condado beach day", kind: "beach", cost: 0 },
-      { title: "Rum distillery tour", kind: "food", cost: 35 },
+      { title: "Rum distillery tour", kind: "food", cost: 35, dietary: ["vegetarian", "gluten-free"] },
     ],
   },
   {
@@ -55,7 +84,7 @@ export const DESTINATIONS: Destination[] = [
     activities: [
       { title: "Art Deco district tour", kind: "culture", cost: 30 },
       { title: "Everglades airboat trip", kind: "outdoors", cost: 75 },
-      { title: "Little Havana food walk", kind: "food", cost: 55 },
+      { title: "Little Havana food walk", kind: "food", cost: 55, dietary: ["vegetarian", "gluten-free", "halal"] },
       { title: "South Beach day", kind: "beach", cost: 0 },
     ],
   },
@@ -74,6 +103,7 @@ export const DESTINATIONS: Destination[] = [
       { title: "Pearl Harbor memorial", kind: "culture", cost: 30 },
       { title: "North Shore surf lesson", kind: "outdoors", cost: 90 },
       { title: "Waikiki beach day", kind: "beach", cost: 0 },
+      { title: "Kaka'ako poke & food-truck crawl", kind: "food", cost: 40, dietary: ["vegetarian", "vegan", "gluten-free"] },
     ],
   },
   {
@@ -90,6 +120,7 @@ export const DESTINATIONS: Destination[] = [
       { title: "Theme park day (Magic Kingdom)", kind: "family", cost: 140 },
       { title: "Kennedy Space Center day trip", kind: "culture", cost: 80 },
       { title: "Wekiwa Springs kayaking", kind: "outdoors", cost: 40 },
+      { title: "East End Market tasting tour", kind: "food", cost: 50, dietary: ["vegetarian", "vegan", "gluten-free", "kosher"] },
     ],
   },
   {
@@ -104,7 +135,7 @@ export const DESTINATIONS: Destination[] = [
     activities: [
       { title: "Rocky Mountain NP day trip", kind: "outdoors", cost: 35 },
       { title: "Red Rocks concert or hike", kind: "outdoors", cost: 20 },
-      { title: "RiNo street-art & brewery walk", kind: "food", cost: 45 },
+      { title: "RiNo street-art & brewery walk", kind: "food", cost: 45, dietary: ["vegetarian", "vegan", "gluten-free"] },
     ],
   },
   {
@@ -120,7 +151,7 @@ export const DESTINATIONS: Destination[] = [
       { title: "Cathedral Rock hike", kind: "outdoors", cost: 0 },
       { title: "Grand Canyon day trip", kind: "outdoors", cost: 55 },
       { title: "Vortex jeep tour", kind: "outdoors", cost: 95 },
-      { title: "Tlaquepaque arts village + dinner", kind: "food", cost: 70 },
+      { title: "Tlaquepaque arts village + dinner", kind: "food", cost: 70, dietary: ["vegetarian", "vegan", "gluten-free", "dairy-free"] },
     ],
   },
   {
@@ -135,7 +166,7 @@ export const DESTINATIONS: Destination[] = [
     activities: [
       { title: "Blue Ridge Parkway drive + hikes", kind: "outdoors", cost: 0 },
       { title: "Biltmore Estate", kind: "culture", cost: 90 },
-      { title: "South Slope brewery & food tour", kind: "food", cost: 60 },
+      { title: "South Slope brewery & food tour", kind: "food", cost: 60, dietary: ["vegetarian", "vegan", "gluten-free"] },
     ],
   },
   {
@@ -151,6 +182,7 @@ export const DESTINATIONS: Destination[] = [
       { title: "Magens Bay beach day", kind: "beach", cost: 5 },
       { title: "St. John / Trunk Bay ferry + snorkel", kind: "outdoors", cost: 70 },
       { title: "Charlotte Amalie old town walk", kind: "culture", cost: 0 },
+      { title: "Frenchtown seafood & rum dinner", kind: "food", cost: 65, dietary: ["gluten-free", "dairy-free"] },
     ],
   },
 ];

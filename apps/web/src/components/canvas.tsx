@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type {
   BudgetAgentOutput,
+  CarRentalAgentOutput,
   FlightAgentOutput,
   HotelAgentOutput,
   ItineraryAgentOutput,
@@ -12,6 +13,7 @@ import type { AgentActivity } from "../lib/session";
 import {
   BookingCard,
   BudgetMeter,
+  CarRentalCard,
   FlightCard,
   HotelCard,
   ItineraryDayCard,
@@ -54,18 +56,20 @@ export function ResultsCanvas({
   onSelectionChange,
 }: {
   agents: Map<string, AgentActivity>;
-  onSelectionChange: (kind: "flight" | "hotel", id: string) => void;
+  onSelectionChange: (kind: "flight" | "hotel" | "car", id: string) => void;
 }) {
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<string | null>(null);
+  const [selectedCar, setSelectedCar] = useState<string | null>(null);
 
   const flight = agents.get("flight-agent");
   const hotel = agents.get("hotel-agent");
+  const car = agents.get("car-rental-agent");
   const itinerary = agents.get("itinerary-agent");
   const budget = agents.get("budget-agent");
   const support = agents.get("support-agent");
 
-  if (!flight && !hotel && !itinerary && !budget && !support) {
+  if (!flight && !hotel && !car && !itinerary && !budget && !support) {
     return (
       <div className="scroll">
         <div className="muted" style={{ margin: "auto", color: "var(--text-muted)" }}>
@@ -77,6 +81,7 @@ export function ResultsCanvas({
 
   const flightData = flight?.data as FlightAgentOutput | undefined;
   const hotelData = hotel?.data as HotelAgentOutput | undefined;
+  const carData = car?.data as CarRentalAgentOutput | undefined;
   const itinData = itinerary?.data as ItineraryAgentOutput | undefined;
   const budgetData = budget?.data as BudgetAgentOutput | undefined;
   const supportData = support?.data as SupportAgentOutput | undefined;
@@ -125,6 +130,27 @@ export function ResultsCanvas({
           )}
         </section>
       )}
+      {car && (
+        <section className="section">
+          <SectionHeader label="RENTAL CARS" icon="🚗" agent={car} />
+          {car.state === "failed" && <FailedNote agent={car} />}
+          {carData?.options && (
+            <div className="card-row">
+              {carData.options.map((r) => (
+                <CarRentalCard
+                  key={r.id}
+                  rental={r}
+                  selected={selectedCar === r.id}
+                  onSelect={() => {
+                    setSelectedCar(r.id);
+                    onSelectionChange("car", r.id);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       {itinerary && (
         <section className="section">
           <SectionHeader label="ITINERARY" icon="🗺️" agent={itinerary} />
@@ -135,6 +161,9 @@ export function ResultsCanvas({
                 <ItineraryDayCard key={d.date} day={d} />
               ))}
             </div>
+          )}
+          {itinData?.dietaryNote && (
+            <div className="muted">🥗 {itinData.dietaryNote}</div>
           )}
           {itinData?.destinations && (
             <div className="card-row">
@@ -177,6 +206,7 @@ export function ResultsCanvas({
 const AGENT_ICONS: Record<string, string> = {
   "flight-agent": "✈️",
   "hotel-agent": "🏨",
+  "car-rental-agent": "🚗",
   "itinerary-agent": "🗺️",
   "budget-agent": "💵",
   "support-agent": "🎫",

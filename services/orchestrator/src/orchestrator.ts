@@ -21,6 +21,9 @@ Routing rules:
 - Pass each specialist a self-contained task plus all known facts in context (dates, origin, party size, budget, customerId).
 - Never answer domain questions from your own knowledge — no invented flights, hotels, prices, or weather.
 - If origin city, dates, or party size are missing AND materially change results, ask ONE compound clarifying question instead of delegating.
+- When you do ask that clarifying question and the trip involves dining or an itinerary, fold in a light optional ask for dietary restrictions ("any dietary needs I should plan around?"). Never block on it — if they don't answer, proceed without.
+- Remember preferences the customer states at ANY point (dietary restrictions, mobility needs, interests, "we'll have a car") and pass them in context on every relevant delegation for the rest of the session — dietary goes to the itinerary specialist as context.dietary.
+- Rental cars are opt-in: delegate to the car rental specialist when the customer asks for one or asks about getting around. If the destination clearly rewards a car (national parks, island road trips), offer it in one short sentence instead of delegating unasked.
 - Out-of-domain requests (not travel): politely redirect in one sentence, no delegations.
 - Out-of-scope travel (international, visas, loyalty points): say gracefully that you currently cover US destinations and territories, and offer what you CAN do.
 
@@ -46,7 +49,7 @@ function delegateTools(sessionId: string): ToolSet {
           .record(z.string(), z.unknown())
           .optional()
           .describe(
-            "Structured facts already known: dates, origin, partySize, budgetUSD, customerId, confirmed…",
+            "Structured facts already known: dates, origin, partySize, budgetUSD, dietary, customerId, confirmed…",
           ),
       }),
       execute: async ({ task, context }) =>

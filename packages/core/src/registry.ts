@@ -1,6 +1,7 @@
 import type { AgentDefinition } from "./types.js";
 import {
   BudgetAgentOutput,
+  CarRentalAgentOutput,
   FlightAgentOutput,
   HotelAgentOutput,
   ItineraryAgentOutput,
@@ -41,11 +42,20 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
   {
     id: "itinerary-agent",
     description:
-      "Builds weather-aware day-by-day itineraries and compares candidate destinations. Input: destination (or 'suggest destinations' + preferences), dates, interests. Checks the forecast before recommending outdoor days. Returns ItineraryDay list and/or DestinationSuggestion list. Not for booking anything.",
-    systemPrompt: `You are the itinerary specialist for a US leisure travel agency. Plan realistic days (3-5 stops, grouped by time of day), always checking weather before scheduling outdoor activities, and include one food pick per day.${SPECIALIST_RULES}`,
+      "Builds weather-aware day-by-day itineraries and compares candidate destinations. Input: destination (or 'suggest destinations' + preferences), dates, interests, and any dietary restrictions (pass as context.dietary, e.g. [\"vegetarian\", \"gluten-free\"]). Checks the forecast before recommending outdoor days. Returns ItineraryDay list and/or DestinationSuggestion list. Not for booking anything.",
+    systemPrompt: `You are the itinerary specialist for a US leisure travel agency. Plan realistic days (3-5 stops, grouped by time of day), always checking weather before scheduling outdoor activities, and include one food pick per day. If dietary restrictions are given, pass them to search_activities so every food pick accommodates ALL of them, and fill dietaryNote saying how; if nothing in inventory fits, say so in dietaryNote rather than recommending an unverified spot.${SPECIALIST_RULES}`,
     mcpServers: ["mcp-weather", "mcp-travel"],
     maxSteps: 10,
     outputSchema: ItineraryAgentOutput,
+  },
+  {
+    id: "car-rental-agent",
+    description:
+      "Searches rental cars at the destination for a date range. Input: destination, pickup/dropoff dates, party size, optional car class or daily budget. Returns up to 5 CarRentalOption results with per-day and trip-total prices. Only delegate when the customer wants a car (or asked about getting around). Not for flights, hotels, or rideshares.",
+    systemPrompt: `You are the car rental specialist for a US leisure travel agency. Find the best-value options for the party size — recommend a class that fits everyone plus luggage, note unlimited miles and free cancellation, and flag when a destination is walkable enough to skip the car.${SPECIALIST_RULES}`,
+    mcpServers: ["mcp-travel"],
+    maxSteps: 6,
+    outputSchema: CarRentalAgentOutput,
   },
   {
     id: "budget-agent",

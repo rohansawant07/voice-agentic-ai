@@ -3,8 +3,11 @@ import { z } from "zod";
 import { serveMcp, toolResult, seededRandom } from "@concierge/mcp-kit";
 import {
   CARRIERS,
+  CAR_CLASSES,
   DESTINATIONS,
+  DIETARY_TAGS,
   FARE_CLASSES,
+  RENTAL_COMPANIES,
   destinationByQuery,
 } from "./data.js";
 
@@ -194,19 +197,91 @@ function createServer(): McpServer {
     "search_activities",
     {
       description:
-        "Things to do in a US destination, optionally filtered by kind (beach, outdoors, culture, food, family).",
+        "Things to do in a US destination, optionally filtered by kind (beach, outdoors, culture, food, family). Pass dietary restrictions to keep only food experiences that accommodate them (non-food activities are unaffected).",
       inputSchema: {
         destination: z.string(),
         kind: z.string().optional(),
+        dietary: z
+          .array(z.enum(DIETARY_TAGS))
+          .optional()
+          .describe('e.g. ["vegetarian", "gluten-free"] — every tag must be accommodated'),
       },
     },
-    async ({ destination, kind }) => {
+    async ({ destination, kind, dietary }) => {
       const dest = destinationByQuery(destination);
       if (!dest) return toolResult({ activities: [] });
       const activities = dest.activities
         .filter((a) => !kind || a.kind === kind)
-        .map((a) => ({ ...a, costUSD: a.cost }));
-      return toolResult({ destination: dest.city, activities });
+        .filter(
+          (a) =>
+            !dietary?.length ||
+            a.kind !== "food" ||
+            dietary.every((tag) => a.dietary?.includes(tag)),
+        )
+        .map((a) => ({ ...a, costUSD: a.cost, dietaryOptions: a.dietary }));
+      const droppedFood =
+        dietary?.length &&
+        dest.activities.some(
+          (a) => a.kind === "food" && !dietary.every((t) => a.dietary?.includes(t)),
+        );
+      return toolResult({
+        destination: dest.city,
+        activities,
+        ...(droppedFood
+          ? { note: "Some food experiences were filtered out by the dietary restrictions." }
+          : {}),
+      });
+    },
+  );
+
+  server.registerTool(
+    "search_car_rentals",
+    {
+      description:
+        "Search rental cars at a US destination for a date range. Returns per-day and trip-total prices by car class and company.",
+      inputSchema: {
+        destination: z.string().describe("IATA code or city — pickup at the destination airport"),
+        pickupDate: z.string().describe("YYYY-MM-DD"),
+        dropoffDate: z.string().describe("YYYY-MM-DD"),
+        carClass: z
+          .enum(["economy", "compact", "midsize", "suv", "minivan", "convertible"])
+          .optional()
+          .describe("Omit to see all classes"),
+        maxDailyUSD: z.number().optional(),
+      },
+    },
+    async ({ destination, pickupDate, dropoffDate, carClass, maxDailyUSD }) => {
+      const dest = destinationByQuery(destination);
+      if (!dest) return toolResult({ rentals: [], note: `No inventory for "${destination}"` });
+      const days = Math.max(
+        1,
+        Math.round((Date.parse(dropoffDate) - Date.parse(pickupDate)) / 86_400_000),
+      );
+      const rand = seededRandom(`${dest.code}|${pickupDate}|cars`);
+      // island destinations run pricier
+      const islandBump = dest.region.includes("territory") || dest.code === "HNL" ? 1.25 : 1;
+      const rentals = CAR_CLASSES.filter((c) => !carClass || c.carClass === carClass)
+        .flatMap((c) => {
+          const company = RENTAL_COMPANIES[Math.floor(rand() * RENTAL_COMPANIES.length)]!;
+          const daily = Math.round(c.base * company.tier * islandBump * (0.9 + rand() * 0.3));
+          return [
+            {
+              id: `${dest.code}-${company.name.toLowerCase()}-${c.carClass}`,
+              company: company.name,
+              carClass: c.carClass,
+              exampleModel: c.model,
+              seats: c.seats,
+              pricePerDay: { amount: daily, currency: "USD" as const },
+              totalForTrip: { amount: daily * days, currency: "USD" as const },
+              pickupLocation: `${dest.code} airport`,
+              unlimitedMiles: rand() < 0.8,
+              freeCancellation: rand() < 0.7,
+            },
+          ];
+        })
+        .filter((r) => !maxDailyUSD || r.pricePerDay.amount <= maxDailyUSD)
+        .sort((a, b) => a.pricePerDay.amount - b.pricePerDay.amount);
+      return toolResult({ destination: dest.city, days, rentals });
     },
   );
 

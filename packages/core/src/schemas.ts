@@ -97,9 +97,35 @@ export const DestinationSuggestion = z.object({
 export const ItineraryAgentOutput = z.object({
   days: z.array(ItineraryDay).optional(),
   destinations: z.array(DestinationSuggestion).optional(),
+  dietaryNote: z
+    .string()
+    .optional()
+    .describe('how food picks honor stated restrictions, e.g. "all dinner picks have vegan mains"'),
   notes: z.string().optional(),
 });
 export type ItineraryAgentOutput = z.infer<typeof ItineraryAgentOutput>;
+
+// ── car-rental-agent → CarRentalCard ─────────────────────────────
+
+export const CarRentalOption = z.object({
+  id: z.string(),
+  company: z.string(),
+  carClass: z.enum(["economy", "compact", "midsize", "suv", "minivan", "convertible"]),
+  exampleModel: z.string().describe('e.g. "Toyota Corolla or similar"'),
+  seats: z.number().int(),
+  pricePerDay: Money,
+  totalForTrip: Money,
+  pickupLocation: z.string().describe('e.g. "SJU airport" or "Condado downtown"'),
+  unlimitedMiles: z.boolean(),
+  freeCancellation: z.boolean(),
+});
+export type CarRentalOption = z.infer<typeof CarRentalOption>;
+
+export const CarRentalAgentOutput = z.object({
+  options: z.array(CarRentalOption).max(5),
+  notes: z.string().optional(),
+});
+export type CarRentalAgentOutput = z.infer<typeof CarRentalAgentOutput>;
 
 // ── budget-agent → BudgetMeter ───────────────────────────────────
 
@@ -107,7 +133,7 @@ export const BudgetAgentOutput = z.object({
   cap: Money.optional(),
   segments: z.array(
     z.object({
-      label: z.enum(["flights", "stay", "activities", "food", "other"]),
+      label: z.enum(["flights", "stay", "car", "activities", "food", "other"]),
       amount: Money,
     }),
   ),

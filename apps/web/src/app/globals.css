@@ -351,6 +351,7 @@ input {
 
 .meter .seg-flights { background: var(--accent); }
 .meter .seg-stay { background: var(--accent-warm); }
+.meter .seg-car { background: var(--info, #7c8ff0); }
 .meter .seg-activities { background: var(--warn); }
 .meter .seg-food { background: var(--success); }
 .meter .seg-other { background: var(--text-muted); }

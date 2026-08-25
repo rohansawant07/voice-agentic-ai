@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  CarRentalOption,
   FlightOption,
   HotelOption,
   ItineraryDay,
@@ -100,6 +101,47 @@ export function HotelCard({
         ))}
       </div>
       <div className="muted">{hotel.distanceNote}</div>
+      {selected && <span className="badge">✓ selected</span>}
+    </button>
+  );
+}
+
+export function CarRentalCard({
+  rental,
+  selected,
+  onSelect,
+}: {
+  rental: CarRentalOption;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      className={`card selectable${selected ? " selected" : ""}`}
+      onClick={onSelect}
+      aria-pressed={selected}
+      style={{ maxWidth: 240 }}
+    >
+      <div className="title">
+        {rental.company} · {rental.carClass}
+      </div>
+      <div className="muted">{rental.exampleModel}</div>
+      <div className="muted">
+        {rental.seats} seats · {rental.pickupLocation}
+      </div>
+      <div className="big-price price">
+        {usd(rental.pricePerDay.amount)}
+        <span className="muted" style={{ fontSize: 13 }}> /day</span>
+      </div>
+      <div className="muted price">{usd(rental.totalForTrip.amount)} total</div>
+      <div className="chip-row">
+        {rental.unlimitedMiles && (
+          <span className="chip" style={{ pointerEvents: "none" }}>unlimited miles</span>
+        )}
+        {rental.freeCancellation && (
+          <span className="chip" style={{ pointerEvents: "none" }}>free cancel</span>
+        )}
+      </div>
       {selected && <span className="badge">✓ selected</span>}
     </button>
   );
