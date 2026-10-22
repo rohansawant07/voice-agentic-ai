@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import websocket from "@fastify/websocket";
 import cors from "@fastify/cors";
-import { randomUUID } from "node:crypto";
+import { registerChatRoute } from "./chat-route.js";
 import { bus } from "./bus.js";
 import { connectMcp, mcpReady } from "./mcp.js";
 import { runTurn } from "./sessions.js";
@@ -56,25 +56,8 @@ app.get("/ws", { websocket: true }, (socket, req) => {
 });
 
 /** Text-in / text-out loop (M1). Voice (/voice WS) wraps the same runTurn. */
-app.post("/api/chat", async (req, reply) => {
-  const body = req.body as { sessionId?: string; message?: string };
-  if (!body?.message?.trim()) {
-    return reply.code(400).send({ error: "message required" });
-  }
-  const sessionId = body.sessionId ?? randomUUID();
-  try {
-    const text = await runTurn(sessionId, body.message);
-    return { sessionId, text };
-  } catch (err) {
-    req.log.error(err);
-    bus.emit({
-      type: "error",
-      sessionId,
-      ts: Date.now(),
-      message: "orchestrator run failed",
-    });
-    return reply.code(500).send({ sessionId, error: "run_failed" });
-  }
+registerChatRoute(app, runTurn, (sessionId) => {
+  bus.emit({ type: "error", sessionId, ts: Date.now(), message: "orchestrator run failed" });
 });
 
 /** Spoken round-trip (M2): binary audio in, TTS audio out. */

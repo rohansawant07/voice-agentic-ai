@@ -1,5 +1,7 @@
 # Concierge — Voice Agentic AI for a Travel Agency
 
+For the implemented local workflow and its current limits, see [Current architecture](ARCHITECTURE.md).
+
 > **This document is the brain of the operation.** Every architectural decision, agent definition, contract, and milestone lives here. Code follows this spec — if the code and this README disagree, fix one of them in the same PR. **UI/UX lives in [DESIGN.md](DESIGN.md)** — the design brain, same rules. **Build progress lives in [EXECUTION.md](EXECUTION.md)** — updated in the same commit as every change.
 
 A voice-driven multi-agent system that acts as the support desk for a travel agency serving **US + territories leisure travel** (international later). A customer speaks a request ("book me a long weekend in San Juan under $1,500"), a top-level **Orchestrator Agent** interprets it, delegates to a fixed roster of **specialist agents** as needed (in parallel where possible), each specialist uses tools exposed by **MCP servers**, and the merged result is spoken back to the customer.
@@ -372,3 +374,22 @@ Build order. Each milestone is independently demoable; don't start N+1 until N's
 - **MCP server** — a standalone service exposing tools over the Model Context Protocol.
 - **Mock mode** — deterministic seeded data in all MCP servers; the default everywhere.
 - **Golden dataset** — versioned eval cases in `evals/datasets/`; the definition of "working".
+
+## Reliability baseline (2026-10-22)
+
+HTTP and voice turns share a process-local concurrency guard. Only one model
+turn per session may run at once; HTTP overlap returns `409 session_busy`, and
+voice overlap returns an error message. Failed turns do not commit either the
+user message or assistant reply to conversation history. This does not roll
+back external tool side effects or make retries of mutations idempotent.
+
+`POST /api/chat` validates a nonblank message (maximum 8,000 characters) and an
+optional nonblank session ID (maximum 128 characters); malformed input returns
+`400 invalid_request` before a model call. Session IDs are not authentication.
+
+Run `pnpm test` for deterministic session and HTTP regression tests (no API keys
+or running MCP services required). CI runs these alongside lint and type checks.
+History, activity buffers, and agency data are still process-local; horizontal
+scaling requires shared persistence, session ownership, and distributed concurrency
+control. Retention limits, provider deadlines, and voice cancellation need further
+hardening before production use.

@@ -53,6 +53,21 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 
 ## Changelog
 
+### 2026-10-22 — First reliability pass
+
+- Added `ARCHITECTURE.md` documenting the current local workflow and separating
+  implemented behavior from planned infrastructure.
+
+- Added a shared per-session concurrency guard across text and voice model turns;
+  overlapping HTTP turns return 409 instead of racing conversation writes.
+- History commits only after successful completion; failures leave prior turns intact.
+- Added bounded, typed chat request validation with 400 responses for invalid input.
+- Added six deterministic regression tests for concurrency, failure recovery, input
+  validation, and HTTP errors, plus a CI test step. No live model calls required.
+- Remaining: streaming/voice latency, bounded session and audio storage, deadlines,
+  server-enforced ownership and confirmation, persistent state, and tool idempotency.
+
+
 ### 2026-08-25 — Dietary preferences + car rentals (post-M2 capability add)
 
 - **Dietary restrictions** now flow end-to-end: orchestrator folds an optional "any dietary needs?" ask into its single clarifying question (never blocks on it), remembers preferences stated at any point, and passes them as `context.dietary`; `search_activities` gained a `dietary` filter (every tag must be accommodated; non-food activities unaffected, honest note when picks were dropped); itinerary-agent instructs food picks to honor ALL restrictions and fills a new `dietaryNote` field, rendered in the UI's itinerary section. Mock data: dietary tags on all food activities, plus new food picks for HNL/MCO/STT so filtering never comes up empty.

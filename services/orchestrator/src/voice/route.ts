@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import { bus } from "../bus.js";
 import { runTurn } from "../sessions.js";
+import { SessionBusyError } from "../session-store.js";
 import { sttEnabled, transcribe } from "./stt.js";
 import { synthesize, ttsEnabled } from "./tts.js";
 
@@ -89,6 +90,10 @@ export function registerVoiceRoute(
         send({ type: "reply", text: reply });
         await speakAndSend(reply);
       } catch (err) {
+        if (err instanceof SessionBusyError) {
+          send({ type: "error", message: "turn already in progress" });
+          return;
+        }
         req.log.error(err);
         send({ type: "error", message: "run_failed" });
         bus.emit({
