@@ -8,7 +8,7 @@ import { runSpecialist } from "./specialist.js";
 const ORCHESTRATOR_MODEL = process.env.ORCHESTRATOR_MODEL ?? "claude-opus-4-8";
 
 /**
- * System prompt ordering matters for prompt caching (README §7.5):
+ * Stable prompt ordering supports potential provider prompt caching:
  * this string is frozen — no dates, no session data. Volatile context
  * goes at the end of the message list.
  */

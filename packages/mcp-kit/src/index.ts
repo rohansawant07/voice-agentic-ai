@@ -4,9 +4,9 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 
 /**
  * Serve an MCP server over stateless streamable HTTP at /mcp, with
- * /healthz (liveness) and /readyz (readiness) per README §6.
+ * /healthz (liveness) and /readyz (readiness); see docs/OPERATIONS.md.
  * A fresh server instance per request keeps the transport stateless,
- * which is what lets these scale horizontally on K8s.
+ * but shared backing data/locks are still required before stateful horizontal scaling.
  */
 export function serveMcp(opts: {
   name: string;

@@ -1,0 +1,898 @@
+{
+  "startedAt": "2026-10-26T18:43:31.814Z",
+  "node": "v23.11.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "concurrency": 1,
+  "note": "Warm local development processes; fresh sessions; no browser rendering, voice, token usage or load/capacity measurement. Nearest-rank percentiles; small samples are descriptive only.",
+  "probes": [
+    {
+      "name": "web",
+      "samplesMs": [
+        37.801959,
+        30.576750000000004,
+        25.462124999999986,
+        30.31979199999998,
+        37.26012499999999,
+        27.519082999999995,
+        23.993584,
+        26.146208,
+        26.233334000000013,
+        23.64308299999999,
+        24.66970900000001,
+        24.813666999999953,
+        23.36570899999998,
+        24.90558299999998,
+        23.17666700000001,
+        27.035916999999984,
+        24.26345900000001,
+        25.781333000000018,
+        23.820165999999972,
+        23.009250000000065
+      ],
+      "n": 20,
+      "p50Ms": 24.91,
+      "p95Ms": 37.26,
+      "minMs": 23.009250000000065,
+      "maxMs": 37.801959
+    },
+    {
+      "name": "orchestrator",
+      "samplesMs": [
+        1.5356250000000955,
+        0.8719580000000633,
+        0.4860830000000078,
+        0.5199579999999742,
+        0.3592079999999669,
+        0.44154100000002927,
+        0.4073750000000018,
+        0.5845829999999523,
+        0.3815829999999778,
+        0.42487500000004275,
+        0.4399590000000444,
+        0.29037500000004,
+        0.3380419999999731,
+        0.330791999999974,
+        0.304416999999944,
+        0.34375,
+        0.2443749999999909,
+        0.2691660000000411,
+        0.9500410000000556,
+        0.2610829999999851
+      ],
+      "n": 20,
+      "p50Ms": 0.38,
+      "p95Ms": 0.95,
+      "minMs": 0.2443749999999909,
+      "maxMs": 1.5356250000000955
+    },
+    {
+      "name": "travel",
+      "samplesMs": [
+        1.1538329999999632,
+        0.6385000000000218,
+        0.7493749999999864,
+        0.43770900000004076,
+        0.6557080000000042,
+        0.287708000000066,
+        0.7439580000000205,
+        0.30195800000001327,
+        0.25408299999992323,
+        0.3245000000000573,
+        0.293042000000014,
+        0.253832999999986,
+        0.25870899999995345,
+        0.5864579999999933,
+        2.1118750000000546,
+        0.22037499999999,
+        0.27604199999996126,
+        0.22612499999991087,
+        0.2404589999999871,
+        0.2297079999999596
+      ],
+      "n": 20,
+      "p50Ms": 0.29,
+      "p95Ms": 1.15,
+      "minMs": 0.22037499999999,
+      "maxMs": 2.1118750000000546
+    },
+    {
+      "name": "weather",
+      "samplesMs": [
+        1.5459999999999354,
+        0.4622910000000502,
+        0.62824999999998,
+        0.4489170000000513,
+        0.6701250000000982,
+        0.5833750000000464,
+        0.35170800000003055,
+        0.47720800000001873,
+        0.3332910000000311,
+        0.325917000000004,
+        0.24108300000000327,
+        0.21954100000004928,
+        0.25108400000010533,
+        0.21537499999999454,
+        0.28541599999994105,
+        0.26462499999990996,
+        0.22587499999997362,
+        0.2719999999999345,
+        0.5294589999999744,
+        0.2118750000000773
+      ],
+      "n": 20,
+      "p50Ms": 0.33,
+      "p95Ms": 0.67,
+      "minMs": 0.2118750000000773,
+      "maxMs": 1.5459999999999354
+    },
+    {
+      "name": "agency",
+      "samplesMs": [
+        2.951917000000094,
+        2.1052909999999656,
+        0.671291999999994,
+        0.3123750000000882,
+        0.4066249999999627,
+        0.39554199999997763,
+        0.29254100000002836,
+        0.3279579999999669,
+        0.27899999999999636,
+        0.5537500000000364,
+        0.2652090000000271,
+        0.27558399999998073,
+        0.2557090000000244,
+        0.2687500000000682,
+        0.23520800000005693,
+        0.7495000000000118,
+        0.40470799999991414,
+        0.4012079999999969,
+        3.868249999999989,
+        0.44783299999994597
+      ],
+      "n": 20,
+      "p50Ms": 0.4,
+      "p95Ms": 2.95,
+      "minMs": 0.23520800000005693,
+      "maxMs": 3.868249999999989
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "clarification",
+      "prompt": "I want a trip in the US. Please ask one short clarifying question; do not research destinations yet.",
+      "samples": [
+        {
+          "httpStatus": 200,
+          "elapsedMs": 2325.492917,
+          "replyCharacters": 152,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 2.3011249999999563
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 2324.505375
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 2324.562834,
+              "durationMs": 2323
+            }
+          ],
+          "firstDelegationMs": null,
+          "firstResultMs": null,
+          "serverRunMs": 2323,
+          "specialistFailures": 0
+        },
+        {
+          "httpStatus": 200,
+          "elapsedMs": 2964.862333,
+          "replyCharacters": 178,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 1.8744580000002316
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 2963.019083
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 2963.092791,
+              "durationMs": 2960
+            }
+          ],
+          "firstDelegationMs": null,
+          "firstResultMs": null,
+          "serverRunMs": 2960,
+          "specialistFailures": 0
+        },
+        {
+          "httpStatus": 200,
+          "elapsedMs": 1423.717458,
+          "replyCharacters": 220,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 2.1478750000005675
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 1421.6930420000008
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 1422.3148330000004,
+              "durationMs": 1420
+            }
+          ],
+          "firstDelegationMs": null,
+          "firstResultMs": null,
+          "serverRunMs": 1420,
+          "specialistFailures": 0
+        }
+      ],
+      "successes": 3,
+      "latency": {
+        "n": 3,
+        "p50Ms": 2325.49,
+        "p95Ms": 2964.86,
+        "minMs": 1423.717458,
+        "maxMs": 2964.862333
+      },
+      "firstDelegation": {
+        "n": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "minMs": null,
+        "maxMs": null
+      },
+      "firstResult": {
+        "n": 0,
+        "p50Ms": null,
+        "p95Ms": null,
+        "minMs": null,
+        "maxMs": null
+      }
+    },
+    {
+      "name": "regional-itinerary",
+      "prompt": "Build a brief one-day itinerary for Harpers Ferry, WV for two adults. No flights, hotel or budget needed.",
+      "samples": [
+        {
+          "httpStatus": 200,
+          "elapsedMs": 20735.06375,
+          "replyCharacters": 414,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 2.583499999999731
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 2994.236083,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9264.607582999999,
+              "agentId": "itinerary-agent",
+              "tool": "get_destination_guide"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9264.771083000001,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9264.856582999999,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 17919.716625,
+              "agentId": "itinerary-agent",
+              "status": "ok",
+              "durationMs": 14926
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 20733.757875000003
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 20733.806333,
+              "durationMs": 20730
+            }
+          ],
+          "firstDelegationMs": 2994.236083,
+          "firstResultMs": 17919.716625,
+          "serverRunMs": 20730,
+          "specialistFailures": 0
+        },
+        {
+          "httpStatus": 200,
+          "elapsedMs": 17206.019917,
+          "replyCharacters": 422,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 1.6389589999998861
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 3034.1682919999985,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 5756.767750000003,
+              "agentId": "itinerary-agent",
+              "tool": "get_destination_guide"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 5756.964959000001,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 5756.988625000002,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 14328.254875000002,
+              "agentId": "itinerary-agent",
+              "status": "ok",
+              "durationMs": 11293
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 17205.072334
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 17205.102209,
+              "durationMs": 17203
+            }
+          ],
+          "firstDelegationMs": 3034.1682919999985,
+          "firstResultMs": 14328.254875000002,
+          "serverRunMs": 17203,
+          "specialistFailures": 0
+        },
+        {
+          "httpStatus": 200,
+          "elapsedMs": 16188.689417000001,
+          "replyCharacters": 343,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 1.8040839999957825
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 3157.2522919999974,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 5892.765874999997,
+              "agentId": "itinerary-agent",
+              "tool": "get_destination_guide"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 5892.956833999997,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 5892.987667000001,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 13583.125499999995,
+              "agentId": "itinerary-agent",
+              "status": "ok",
+              "durationMs": 10426
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 16187.622624999996
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 16187.669792,
+              "durationMs": 16185
+            }
+          ],
+          "firstDelegationMs": 3157.2522919999974,
+          "firstResultMs": 13583.125499999995,
+          "serverRunMs": 16185,
+          "specialistFailures": 0
+        }
+      ],
+      "successes": 3,
+      "latency": {
+        "n": 3,
+        "p50Ms": 17206.02,
+        "p95Ms": 20735.06,
+        "minMs": 16188.689417000001,
+        "maxMs": 20735.06375
+      },
+      "firstDelegation": {
+        "n": 3,
+        "p50Ms": 3034.17,
+        "p95Ms": 3157.25,
+        "minMs": 2994.236083,
+        "maxMs": 3157.2522919999974
+      },
+      "firstResult": {
+        "n": 3,
+        "p50Ms": 14328.25,
+        "p95Ms": 17919.72,
+        "minMs": 13583.125499999995,
+        "maxMs": 17919.716625
+      }
+    },
+    {
+      "name": "multi-specialist",
+      "prompt": "Plan a three-night San Juan trip for two adults from JFK, November 13\u201316, 2026, under $2000 total. Compare flights and hotels and create a brief itinerary. No car and no booking or holds.",
+      "samples": [
+        {
+          "httpStatus": 200,
+          "elapsedMs": 35394.58691699999,
+          "replyCharacters": 887,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 2.9788750000006985
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 7122.557791999992,
+              "agentId": "flight-agent"
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 7126.783500000005,
+              "agentId": "hotel-agent"
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 7129.215916999994,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9534.675166999994,
+              "agentId": "hotel-agent",
+              "tool": "search_hotels"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 10426.117291999995,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 10426.224166999993,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 10426.240416999994,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 10426.295167000004,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 15365.08825,
+              "agentId": "hotel-agent",
+              "status": "ok",
+              "durationMs": 8238
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 19038.672875000004,
+              "agentId": "flight-agent",
+              "tool": "search_flights"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 20053.803750000006,
+              "agentId": "itinerary-agent",
+              "status": "ok",
+              "durationMs": 12924
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 22023.034625,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 22023.308000000005,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 22023.345791999993,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 22023.361000000004,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 29462.185625,
+              "agentId": "flight-agent",
+              "status": "ok",
+              "durationMs": 22340
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 35393.482334
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 35393.542334,
+              "durationMs": 35390
+            }
+          ],
+          "firstDelegationMs": 7122.557791999992,
+          "firstResultMs": 15365.08825,
+          "serverRunMs": 35390,
+          "specialistFailures": 0
+        },
+        {
+          "httpStatus": 200,
+          "elapsedMs": 46332.09237499999,
+          "replyCharacters": 767,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 1.478291999999783
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 6937.753959000009,
+              "agentId": "flight-agent"
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 6938.473542000007,
+              "agentId": "hotel-agent"
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 6940.407667000007,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9000.370334000007,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9000.549792000005,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9000.569625000004,
+              "agentId": "itinerary-agent",
+              "tool": "search_hotels"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9363.73408400001,
+              "agentId": "flight-agent",
+              "tool": "search_flights"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9517.477375000002,
+              "agentId": "hotel-agent",
+              "tool": "search_hotels"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 12340.087959000011,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 12340.280500000008,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 12340.297917000004,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 12340.311000000002,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 12780.963209000009,
+              "agentId": "itinerary-agent",
+              "status": "failed",
+              "durationMs": 5840
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 15540.789417000007,
+              "agentId": "hotel-agent",
+              "status": "ok",
+              "durationMs": 8602
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 18416.25912500001,
+              "agentId": "flight-agent",
+              "status": "ok",
+              "durationMs": 11479
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 23110.174709,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 25884.250792000006,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 25884.474917,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 25884.49441700001,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 28217.026084000012,
+              "agentId": "itinerary-agent",
+              "tool": "search_hotels"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 40403.83737500002,
+              "agentId": "itinerary-agent",
+              "status": "ok",
+              "durationMs": 17293
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 46330.788625
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 46331.019000000015,
+              "durationMs": 46329
+            }
+          ],
+          "firstDelegationMs": 6937.753959000009,
+          "firstResultMs": 15540.789417000007,
+          "serverRunMs": 46329,
+          "specialistFailures": 1
+        },
+        {
+          "httpStatus": 200,
+          "elapsedMs": 38096.468291999976,
+          "replyCharacters": 791,
+          "events": [
+            {
+              "type": "session_started",
+              "elapsedMs": 2.1889589999918826
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 6668.732958999986,
+              "agentId": "flight-agent"
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 6669.526374999987,
+              "agentId": "hotel-agent"
+            },
+            {
+              "type": "delegation_started",
+              "elapsedMs": 6669.980333999993,
+              "agentId": "itinerary-agent"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 8974.081916999974,
+              "agentId": "flight-agent",
+              "tool": "search_flights"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9133.294583999988,
+              "agentId": "hotel-agent",
+              "tool": "search_hotels"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9253.822709,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 9254.182374999975,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 12228.151874999981,
+              "agentId": "itinerary-agent",
+              "tool": "get_forecast"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 12228.416083999997,
+              "agentId": "itinerary-agent",
+              "tool": "get_climate_summary"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 16248.334124999994,
+              "agentId": "hotel-agent",
+              "tool": "search_hotels"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 17525.96187499998,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 17526.253041999997,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 17526.268208999973,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 17526.305583999987,
+              "agentId": "flight-agent",
+              "tool": "get_fare_rules"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 22199.471249999973,
+              "agentId": "hotel-agent",
+              "status": "ok",
+              "durationMs": 15530
+            },
+            {
+              "type": "tool_called",
+              "elapsedMs": 23586.730124999973,
+              "agentId": "itinerary-agent",
+              "tool": "search_activities"
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 25395.435916999995,
+              "agentId": "flight-agent",
+              "status": "ok",
+              "durationMs": 18727
+            },
+            {
+              "type": "delegation_finished",
+              "elapsedMs": 31830.914458999992,
+              "agentId": "itinerary-agent",
+              "status": "ok",
+              "durationMs": 25160
+            },
+            {
+              "type": "assistant_message",
+              "elapsedMs": 38095.29424999998
+            },
+            {
+              "type": "run_finished",
+              "elapsedMs": 38095.33062499997,
+              "durationMs": 38093
+            }
+          ],
+          "firstDelegationMs": 6668.732958999986,
+          "firstResultMs": 22199.471249999973,
+          "serverRunMs": 38093,
+          "specialistFailures": 0
+        }
+      ],
+      "successes": 3,
+      "latency": {
+        "n": 3,
+        "p50Ms": 38096.47,
+        "p95Ms": 46332.09,
+        "minMs": 35394.58691699999,
+        "maxMs": 46332.09237499999
+      },
+      "firstDelegation": {
+        "n": 3,
+        "p50Ms": 6937.75,
+        "p95Ms": 7122.56,
+        "minMs": 6668.732958999986,
+        "maxMs": 7122.557791999992
+      },
+      "firstResult": {
+        "n": 3,
+        "p50Ms": 15540.79,
+        "p95Ms": 22199.47,
+        "minMs": 15365.08825,
+        "maxMs": 22199.471249999973
+      }
+    }
+  ],
+  "voiceCapabilities": {
+    "ok": true,
+    "service": "orchestrator",
+    "voice": {
+      "stt": true,
+      "tts": false
+    }
+  },
+  "finishedAt": "2026-10-26T18:46:33.263Z",
+  "configurationEvidence": {
+    "sourceRevision": "83ae89f",
+    "modelConfiguration": "Source defaults: claude-opus-4-8 orchestrator, claude-haiku-4-5 specialists. No model overrides in root .env; runtime API does not expose model identity.",
+    "airbnb": "links in root .env",
+    "weather": "live default; no WEATHER_PROVIDER override in root .env",
+    "webMode": "Next.js development server"
+  }
+}

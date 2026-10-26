@@ -1,7 +1,7 @@
 /**
  * Text-to-speech, provider-switchable via VOICE_TTS (README §4).
- * Returns a chunked byte stream so the /voice socket can start playback
- * before synthesis finishes (first-chunk latency budget: ≤500ms).
+ * Returns a chunked byte stream to /voice. The current browser buffers those
+ * chunks until tts_end before playback; first-audio latency is not instrumented.
  */
 
 const TTS_PROVIDER = (process.env.VOICE_TTS ?? "none") as

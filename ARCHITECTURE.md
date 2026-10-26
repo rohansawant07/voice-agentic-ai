@@ -1,6 +1,6 @@
 # Current architecture
 
-Verified against the implementation on 2026-10-22. This describes the local
+Verified against the implementation on 2026-10-26. This describes the local
 application, not the planned AWS deployment.
 
 ```mermaid
@@ -66,7 +66,7 @@ upstream health.
 
 GitHub Actions installs dependencies, lints, builds/typechecks, runs deterministic
 regression tests, and builds the workspace. It does not deploy the application.
-The six new tests do not call live model or speech providers.
+The 12 regression tests do not call live model or speech providers. Separate opt-in benchmark scripts make live requests; see [performance measurements](docs/PERFORMANCE.md).
 
 ## Current boundaries
 
@@ -76,16 +76,31 @@ The six new tests do not call live model or speech providers.
 - Session identifiers and origin checks are not user authentication.
 - Cancellation targets TTS output; it does not abort the model/tool/STT pipeline.
 - Card selection is currently visual-only and does not update agent context.
-- Prior execution notes report 60–80-second fan-out turns; this pass did not
-  remeasure live latency.
+- Measured local text medians: 2.33s clarification, 17.21s regional itinerary,
+  38.10s multi-specialist trip (three runs each; not a production SLA).
+  See [benchmark methodology and raw data](docs/PERFORMANCE.md).
 - Redis, Postgres, distributed locks, bounded retention, full tracing/evals,
   containers, Helm, and EKS remain future work.
 
 ## October 26 additions
 
-The travel MCP service now exposes vacation-rental search through an independent
-Airbnb MCP child process, with time and concurrency limits and search-link fallback.
+Vacation-rental discovery defaults to direct Airbnb search links and does not
+call Airbnb. Opt-in live mode uses an independent MCP child process, with time
+and concurrency limits and search-link fallback.
 The existing three-service topology is unchanged. The results UI renders Airbnb
 links/listing cards and official itinerary sources. Curated regional guides are
 separate from the mock hotel catalog. The live Airbnb check was restricted; no
 partner credentials or booking access have been provisioned.
+
+## Persistence, caching and sharing
+
+No SQL/SQLite or Redis is wired. Conversation history has no TTL or global bound;
+activity replay keeps 500 events per session but does not expire sessions. Agency
+records are shared process-local arrays. MCP tool definitions are cached at startup;
+weather, travel and model outputs have no application response cache. Provider
+prompt-cache hits and token costs are not recorded. See [operations](docs/OPERATIONS.md).
+
+The public GitHub repository is not a hosted application. Remote browser testing
+needs a reachable HTTPS frontend/backend, correct build-time API URL and exact
+allowed origin, WebSocket support, and access controls before exposing provider
+usage. CI checks source but does not deploy.

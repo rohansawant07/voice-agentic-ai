@@ -7,10 +7,10 @@ cd "$(dirname "$0")/.."
 [ -f .env ] && set -a && source .env && set +a
 
 trap 'kill 0' EXIT
-(cd services/mcp-travel  && pnpm dev) &
-(cd services/mcp-weather && pnpm dev) &
-(cd services/mcp-agency  && pnpm dev) &
+(cd services/mcp-travel  && PORT=8101 pnpm dev) &
+(cd services/mcp-weather && PORT=8102 pnpm dev) &
+(cd services/mcp-agency  && PORT=8103 pnpm dev) &
 sleep 2
-(cd services/orchestrator && pnpm dev) &
-(cd apps/web && pnpm dev) &
+(cd services/orchestrator && PORT=8080 pnpm dev) &
+(cd apps/web && PORT=3000 pnpm dev) &
 wait

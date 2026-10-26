@@ -1,12 +1,14 @@
 # Roam — Execution Log
 
-> **The third doc in the trinity.** [README.md](README.md) says what we're building, [DESIGN.md](DESIGN.md) says how it looks — this file says **what has actually been built, when, and what's next**. Rule: **every change to code or docs updates this file in the same commit.** If it's not logged here, it didn't happen.
+Current facts live in [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [performance measurements](docs/PERFORMANCE.md). This file retains historical implementation notes; earlier proposed costs, latency targets and deployment plans are not current measurements.
 
-**Repo:** https://github.com/rohansawant07/voice-agentic-ai · **Stack:** TypeScript monorepo (pnpm) · AI SDK v7 + Claude · MCP · Fastify · Next.js (planned) · EKS/Helm (planned)
+**Repo:** https://github.com/rohansawant07/voice-agentic-ai · **Stack:** TypeScript/pnpm, AI SDK v7 + Claude, MCP, Fastify, Next.js. SQL/Redis, deployment and tracing remain unimplemented.
 
 ---
 
-## Status Board
+## Milestone history
+
+These rows track when earlier milestones first landed. For the current interface and measured performance, use the October 26 documentation and benchmark entries below.
 
 | # | Milestone | Status | Commit(s) |
 |---|---|---|---|
@@ -21,11 +23,11 @@
 | 9 | M5 — AWS (EKS, ECR, OIDC deploy, secrets, ALB) | ⬜ not started | |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
 
-**Current blocker:** none. `ANTHROPIC_API_KEY` + `DEEPGRAM_API_KEY` are in local `.env` (gitignored); text loop, UI, and voice input all ran live. Spoken *replies* need an `OPENAI_API_KEY` (+ `VOICE_TTS=openai`) — optional.
+**Local prototype status:** running; remote browser sharing still requires deployment and access controls. `ANTHROPIC_API_KEY` + `DEEPGRAM_API_KEY` are in local `.env` (gitignored); text loop, UI, and voice input all ran live. Spoken *replies* need an `OPENAI_API_KEY` (+ `VOICE_TTS=openai`) — optional.
 
 **Known gaps (tracked for M3+):**
 - Card selection is visual-only — the ✓ doesn't yet recompute the budget meter or inform the orchestrator on the next turn (DESIGN §5.2 selection model; stub in `page.tsx onSelectionChange`).
-- Full fan-out turn ≈60–80s — far above the ≤2s first-spoken-token budget; needs streaming + tracing (M3).
+- Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
 - Weather specialist mis-geocoded "San Juan" in one live run and gracefully failed — seed case for the golden dataset.
 
 ---
@@ -34,9 +36,11 @@
 
 ```bash
 pnpm install
+# Configure .env from .env.example first
+pnpm build
 ./scripts/dev.sh          # starts mcp-travel :8101, mcp-weather :8102, mcp-agency :8103, orchestrator :8080, web UI :3000
 
-# open the split-pane UI (M2)
+# open the current Roam workspace
 open http://localhost:3000
 
 # text loop (M1 demo)
@@ -47,11 +51,20 @@ curl -s localhost:8080/api/chat -H 'content-type: application/json' \
 websocat 'ws://localhost:8080/ws?sessionId=<id from response>'
 ```
 
-Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
+Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on every push).
 
 ---
 
 ## Changelog
+
+### 2026-10-26 — State audit, measurements and documentation refresh
+
+- Replaced the root README's aspirational infrastructure with verified setup and current limitations. Updated architecture/design and added operations/performance references.
+- Confirmed no database, SQLite fallback, Redis, response cache, token accounting or distributed state. Removed inactive example settings and documented actual configuration.
+- Added serial HTTP/activity and synthetic-WAV voice benchmark scripts with raw observations. Live runs use provider credits; default HTTP probes do not.
+- Fixed the launcher to give each service an explicit port, avoiding collisions when a root environment exports PORT.
+- Public repository remains shareable as source; no hosted URL or public tunnel was created. Imported skill README remains pinned upstream content.
+
 
 ### 2026-10-26 — Regional itineraries and Airbnb discovery
 

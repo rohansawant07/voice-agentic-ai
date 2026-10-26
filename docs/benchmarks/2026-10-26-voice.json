@@ -1,0 +1,71 @@
+{
+  "startedAt": "2026-10-26T18:48:49.467Z",
+  "node": "v23.11.0",
+  "concurrency": 1,
+  "fixture": {
+    "bytes": 176640,
+    "sha256": "042321a16740e330bdd2c4b6478e0a954923cd1c9ab7013ddde26292bb04b8af",
+    "mime": "audio/wav",
+    "durationSeconds": 5.392,
+    "generation": "macOS say, 180 words/minute, 16 kHz PCM WAV; synthetic sentence asking for one clarifying question.",
+    "text": "I want to plan a trip in the United States. Please ask me one short question about where I want to go."
+  },
+  "note": "Client-observed time from audio_end to transcript/reply, excluding recording time. Full WAV uploaded over loopback. Not first audible speech or pure provider latency. No transcript/reply content is saved.",
+  "samples": [
+    {
+      "events": [
+        {
+          "type": "transcript",
+          "elapsedMs": 775.4087499999999
+        },
+        {
+          "type": "reply",
+          "elapsedMs": 2219.0262079999998
+        }
+      ],
+      "capabilities": {
+        "stt": true,
+        "tts": false
+      },
+      "transcriptMs": 775.4087499999999,
+      "replyMs": 2219.0262079999998
+    },
+    {
+      "events": [
+        {
+          "type": "transcript",
+          "elapsedMs": 261.7598750000002
+        },
+        {
+          "type": "reply",
+          "elapsedMs": 1365.4968749999998
+        }
+      ],
+      "capabilities": {
+        "stt": true,
+        "tts": false
+      },
+      "transcriptMs": 261.7598750000002,
+      "replyMs": 1365.4968749999998
+    },
+    {
+      "events": [
+        {
+          "type": "transcript",
+          "elapsedMs": 167.506167
+        },
+        {
+          "type": "reply",
+          "elapsedMs": 1132.4354170000001
+        }
+      ],
+      "capabilities": {
+        "stt": true,
+        "tts": false
+      },
+      "transcriptMs": 167.506167,
+      "replyMs": 1132.4354170000001
+    }
+  ],
+  "finishedAt": "2026-10-26T18:48:54.229Z"
+}
