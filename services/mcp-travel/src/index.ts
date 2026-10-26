@@ -11,6 +11,9 @@ import {
   destinationByQuery,
 } from "./data.js";
 
+import { searchAirbnb } from "./airbnb.js";
+import { destinationGuide } from "./guides.js";
+
 const PORT = Number(process.env.PORT ?? 8101);
 
 // hold_booking writes here — audit record for destructive-action evals
@@ -47,6 +50,22 @@ function mockFlights(origin: string, destination: string, date: string, pax: num
 
 function createServer(): McpServer {
   const server = new McpServer({ name: "mcp-travel", version: "0.1.0" });
+
+  server.registerTool("search_vacation_rentals", {
+    description: "Search Airbnb vacation rentals for any US destination, independently of hotel inventory. May return live listings or a direct search link when access is restricted. Never claim a search link is verified inventory. Prices/availability must be verified on Airbnb.",
+    inputSchema: {
+      destination: z.string(), checkIn: z.string(), checkOut: z.string(),
+      adults: z.number().int().min(1).max(16).default(2),
+      children: z.number().int().min(0).max(10).default(0),
+      pets: z.number().int().min(0).max(5).default(0),
+      maxNightlyUSD: z.number().positive().optional(),
+    },
+  }, async (input) => toolResult(await searchAirbnb(input)));
+
+  server.registerTool("get_destination_guide", {
+    description: "Verified planning facts independent of booking inventory. Includes Harpers Ferry, WV and Shenandoah Valley/National Park, VA. Call for itinerary requests before concluding a destination is unsupported. Guides do not verify current fees, weather, restaurants or availability.",
+    inputSchema: { destination: z.string() },
+  }, async ({ destination }) => toolResult(destinationGuide(destination)));
 
   server.registerTool(
     "search_flights",
@@ -144,7 +163,7 @@ function createServer(): McpServer {
     },
     async ({ destination, checkIn, checkOut, guests, maxNightlyUSD }) => {
       const dest = destinationByQuery(destination);
-      if (!dest) return toolResult({ hotels: [], note: `No inventory for "${destination}"` });
+      if (!dest) return toolResult({ hotels: [], source: "mock", note: "No mock hotel inventory here. Use search_vacation_rentals for Airbnb stays at this destination; lack of hotel inventory is not an unsupported destination." });
       const nights = Math.max(
         1,
         Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000),
@@ -169,7 +188,7 @@ function createServer(): McpServer {
         })
         .filter((h) => !maxNightlyUSD || h.pricePerNight.amount <= maxNightlyUSD)
         .sort((a, b) => b.reviewScore - a.reviewScore);
-      return toolResult({ destination: dest.city, nights, hotels });
+      return toolResult({ destination: dest.city, source: "mock", availabilityVerified: false, nights, hotels });
     },
   );
 
@@ -209,7 +228,10 @@ function createServer(): McpServer {
     },
     async ({ destination, kind, dietary }) => {
       const dest = destinationByQuery(destination);
-      if (!dest) return toolResult({ activities: [] });
+      if (!dest) {
+        const guide = destinationGuide(destination);
+        return toolResult({ ...guide, activities: guide.activities.filter((a) => !kind || a.kind === (kind === "outdoor" ? "outdoors" : kind)) });
+      }
       const activities = dest.activities
         .filter((a) => !kind || a.kind === kind)
         .filter(

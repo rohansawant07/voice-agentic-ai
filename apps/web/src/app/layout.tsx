@@ -13,7 +13,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      {/* Grammarly can add body attributes before React hydrates. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

@@ -113,6 +113,33 @@ export function ResultsCanvas({
         <section className="section">
           <SectionHeader label="STAYS" icon="🏨" agent={hotel} />
           {hotel.state === "failed" && <FailedNote agent={hotel} />}
+          {hotelData?.notes && <div className="muted">{hotelData.notes}</div>}
+          {hotelData?.vacationRentals?.length ? (
+            <div className="card-row">
+              {hotelData.vacationRentals.map((rental) => (
+                <div className="card" key={rental.id} style={{ maxWidth: 280 }}>
+                  <span className="badge">Airbnb · verify availability</span>
+                  <div className="title">{rental.name}</div>
+                  {rental.priceText && <div className="price">{rental.priceText}</div>}
+                  {rental.priceDetail && <div className="muted">{rental.priceDetail}</div>}
+                  <a href={rental.url} target="_blank" rel="noopener noreferrer">View on Airbnb ↗</a>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {hotelData?.searchLinks?.length ? (
+            <div className="card-row">
+              {hotelData.searchLinks.map((link) => (
+                <div className="card" key={link.url} style={{ maxWidth: 300 }}>
+                  <div className="title">Airbnb · {link.destination}</div>
+                  <div className="muted">{hotelData.rentalSearchStatus === "live_results"
+                    ? "Check final dates, location, prices and fees on Airbnb."
+                    : "Search link only — live listings and prices have not been verified."}</div>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">Search stays on Airbnb ↗</a>
+                </div>
+              ))}
+            </div>
+          ) : null}
           {hotelData?.options && (
             <div className="card-row">
               {hotelData.options.map((h) => (
@@ -155,10 +182,14 @@ export function ResultsCanvas({
         <section className="section">
           <SectionHeader label="ITINERARY" icon="🗺️" agent={itinerary} />
           {itinerary.state === "failed" && <FailedNote agent={itinerary} />}
+          {itinData?.notes && <div className="muted">{itinData.notes}</div>}
+          {itinData?.sources?.map((source) => (
+            /^https:\/\//.test(source.url) && <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>
+          ))}
           {itinData?.days && (
             <div className="card-row">
               {itinData.days.map((d) => (
-                <ItineraryDayCard key={d.date} day={d} />
+                <ItineraryDayCard key={`${d.date}-${d.dayLabel}`} day={d} />
               ))}
             </div>
           )}

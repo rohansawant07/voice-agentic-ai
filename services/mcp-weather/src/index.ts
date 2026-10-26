@@ -13,11 +13,19 @@ const WMO: Record<number, string> = {
 };
 
 async function geocode(place: string) {
+  // NPS River Access coordinates; avoid similarly named or unrelated geocoder hits.
+  // https://www.nps.gov/hafe/planyourvisit/gettingaround.htm
+  if (/harper.?s ferry/i.test(place)) return {
+    name: "Harpers Ferry", admin1: "West Virginia",
+    latitude: 39.3216956806, longitude: -77.7432835354,
+  };
   const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
-  url.searchParams.set("name", place);
+  const query = /harper.?s ferry/i.test(place) ? "Harpers Ferry"
+    : /shenandoah valley|shenandoah national park/i.test(place) ? "Luray" : place;
+  url.searchParams.set("name", query);
   url.searchParams.set("count", "1");
   url.searchParams.set("countryCode", "US");
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   const json = (await res.json()) as {
     results?: { name: string; latitude: number; longitude: number; admin1?: string }[];
   };
@@ -82,7 +90,7 @@ function createServer(): McpServer {
       url.searchParams.set("start_date", startDate);
       url.searchParams.set("end_date", endDate);
       url.searchParams.set("timezone", "auto");
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
       if (!res.ok) return toolResult({ error: "forecast_unavailable", detail: res.status });
       const json = (await res.json()) as {
         daily?: {

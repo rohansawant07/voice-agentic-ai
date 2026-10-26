@@ -53,6 +53,24 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 
 ## Changelog
 
+### 2026-10-26 — Regional itineraries and Airbnb discovery
+
+- Added NPS-sourced Harpers Ferry and Shenandoah planning guides independent of
+  hotel inventory, plus weather place normalization and fetch deadlines.
+- Added bounded independent Airbnb search, input validation, original price labels,
+  safe listing URLs, and honest dated-link fallback for restricted/unavailable access.
+- Added vacation-rental/search-link cards, visible itinerary sources and notes.
+- Required a specialist data field and reject success without data; prompted
+  combined destination comparisons to avoid overwriting a specialist's results.
+- Five new deterministic travel tests cover both regions, date validation, price
+  provenance, link construction and provider failure paths (12 tests total).
+- User selected direct Airbnb links; links mode is now the default and skips all provider calls.
+- Live connector check returned restricted access; live listings remain unverified.
+- Browser smoke test rendered both Airbnb search links and six itinerary day cards
+  with official sources. Removed generated spending totals when guide prices are
+  unverified. Lint, build, typechecks and all 12 tests passed.
+
+
 ### 2026-10-22 — First reliability pass
 
 - Added `ARCHITECTURE.md` documenting the current local workflow and separating

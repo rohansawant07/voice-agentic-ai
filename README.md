@@ -393,3 +393,27 @@ History, activity buffers, and agency data are still process-local; horizontal
 scaling requires shared persistence, session ownership, and distributed concurrency
 control. Retention limits, provider deadlines, and voice cancellation need further
 hardening before production use.
+
+## Vacation rentals and regional planning (2026-10-26)
+
+The stays agent now uses `search_vacation_rentals` for Airbnb/cabin requests at
+US destinations outside the hotel catalog. It uses the independent
+`@openbnb/mcp-server-airbnb` connector with robots restrictions respected,
+20-second connection lifetime, two concurrent searches, and validated inputs.
+This is not Airbnb partner API access and cannot make reservations.
+
+The live check returned an access restriction. In that case the app displays
+**search links only**, preserving dates, party counts and nightly budget, with
+no invented listings or prices. `AIRBNB_SEARCH_MODE=links` is the default and skips the live attempt. Set it to `live` only to opt into the independent connector.
+Live results, when available, retain the provider's original price labels;
+final availability, currency, taxes and fees must be checked on Airbnb.
+
+`get_destination_guide` and `search_activities` supply curated NPS planning facts
+for Harpers Ferry, WV and Shenandoah Valley/National Park, VA, independently of
+mock hotel inventory. Source links appear on itinerary results. Missing weather
+or restaurant information no longer requires abandoning the sourced itinerary.
+These guides are not live operating-status or pricing feeds.
+
+## UI development skills
+
+Project-local design, accessibility review, and React performance skills are installed in `.agents/skills`. See [source revisions and attribution](.agents/skills/SOURCES.md) and [project guidance](AGENTS.md).

@@ -25,7 +25,8 @@ function maskArgs(args: unknown): Record<string, unknown> {
 }
 
 /** Wrap MCP tools so every invocation lands on the session event bus. */
-function instrument(tools: ToolSet, sessionId: string, agentId: string): ToolSet {
+function instrument(tools: ToolSet, sessionId: string, agentId: string,
+  provenance: { unpricedGuide: boolean }): ToolSet {
   const wrapped: ToolSet = {};
   for (const [name, t] of Object.entries(tools)) {
     wrapped[name] = {
@@ -40,7 +41,16 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string): ToolSet
           argsPreview: maskArgs(args),
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (t as any).execute(args, opts);
+        const result = await (t as any).execute(args, opts);
+        const envelope = z.object({ content: z.array(z.object({ type: z.string(), text: z.string().optional() })) }).safeParse(result);
+        for (const item of envelope.success ? envelope.data.content : []) {
+          if (item.type !== "text" || !item.text) continue;
+          try {
+            const payload = JSON.parse(item.text) as { source?: string; pricesVerified?: boolean };
+            if (payload.source === "curated-official-guide" && payload.pricesVerified === false) provenance.unpricedGuide = true;
+          } catch { /* Not every tool returns JSON text. */ }
+        }
+        return result;
       },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
@@ -52,7 +62,9 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string): ToolSet
 function resultSchema(def: AgentDefinition) {
   return z.object({
     status: z.enum(["ok", "failed", "needs_input"]),
-    data: (def.outputSchema as z.ZodTypeAny).optional(),
+    data: (def.outputSchema as z.ZodTypeAny).nullable().describe(
+      "REQUIRED: fill the complete specialist result for status ok, including cards, links, days and sources. Use null only for failed or needs_input.",
+    ),
     summary: z
       .string()
       .describe("One plain speakable sentence digest of the result"),
@@ -75,17 +87,30 @@ export async function runSpecialist(
     task: req.task,
   });
 
+  const provenance = { unpricedGuide: false };
   let result: DelegationResult;
   try {
     const { output } = await generateText({
       model: anthropic(def.model ?? SPECIALIST_MODEL),
       system: def.systemPrompt,
-      tools: instrument(toolsFor(def.mcpServers), sessionId, def.id),
+      tools: instrument(toolsFor(def.mcpServers), sessionId, def.id, provenance),
       stopWhen: isStepCount(def.maxSteps),
       output: Output.object({ schema: resultSchema(def) }),
       prompt: `Task: ${req.task}\n\nKnown context:\n${JSON.stringify(req.context ?? {}, null, 2)}\n\nToday's date: ${new Date().toISOString().slice(0, 10)}`,
     });
     result = output as DelegationResult;
+    // Curated guides contain no verified prices: never display invented totals.
+    if (def.id === "itinerary-agent" && provenance.unpricedGuide && result.data) {
+      const data = result.data as { days?: { estimatedDailySpend?: unknown; stops: { estimatedCost?: unknown }[] }[]; notes?: string };
+      for (const day of data.days ?? []) {
+        delete day.estimatedDailySpend;
+        for (const stop of day.stops) delete stop.estimatedCost;
+      }
+      data.notes = `${data.notes ?? ""} Activity fees and daily spending have not been verified; no cost totals are shown.`.trim();
+    }
+    if (result.status === "ok" && result.data == null) {
+      result = { status: "failed", summary: "The specialist did not return usable results.", reason: "missing_structured_data" };
+    }
   } catch (err) {
     result = {
       status: "failed",

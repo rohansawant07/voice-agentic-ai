@@ -60,8 +60,21 @@ export const HotelOption = z.object({
 });
 export type HotelOption = z.infer<typeof HotelOption>;
 
+export const AirbnbLink = z.string().url().refine((value) => {
+  return /^https:\/\/www\.airbnb\.com\//.test(value);
+}, "Expected an HTTPS Airbnb link");
+
+export const VacationRentalOption = z.object({
+  id: z.string(), name: z.string(), url: AirbnbLink,
+  priceText: z.string().optional(), priceDetail: z.string().optional(),
+});
+export type VacationRentalOption = z.infer<typeof VacationRentalOption>;
+
 export const HotelAgentOutput = z.object({
   options: z.array(HotelOption).max(5),
+  vacationRentals: z.array(VacationRentalOption).max(5).optional(),
+  searchLinks: z.array(z.object({ destination: z.string(), url: AirbnbLink })).max(5).optional(),
+  rentalSearchStatus: z.enum(["live_results", "search_link_only"]).optional(),
   notes: z.string().optional(),
 });
 export type HotelAgentOutput = z.infer<typeof HotelAgentOutput>;
@@ -97,6 +110,7 @@ export const DestinationSuggestion = z.object({
 export const ItineraryAgentOutput = z.object({
   days: z.array(ItineraryDay).optional(),
   destinations: z.array(DestinationSuggestion).optional(),
+  sources: z.array(z.object({ title: z.string(), url: z.string().url() })).max(8).optional(),
   dietaryNote: z
     .string()
     .optional()

@@ -80,3 +80,12 @@ The six new tests do not call live model or speech providers.
   remeasure live latency.
 - Redis, Postgres, distributed locks, bounded retention, full tracing/evals,
   containers, Helm, and EKS remain future work.
+
+## October 26 additions
+
+The travel MCP service now exposes vacation-rental search through an independent
+Airbnb MCP child process, with time and concurrency limits and search-link fallback.
+The existing three-service topology is unchanged. The results UI renders Airbnb
+links/listing cards and official itinerary sources. Curated regional guides are
+separate from the mock hotel catalog. The live Airbnb check was restricted; no
+partner credentials or booking access have been provisioned.
