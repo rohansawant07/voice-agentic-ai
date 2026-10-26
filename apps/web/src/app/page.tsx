@@ -70,7 +70,7 @@ export default function SessionPage() {
     <div className="shell">
       <header className="topbar">
         <span className="brand">
-          <span style={{ color: "var(--accent)" }}>◉</span> Concierge
+          <span style={{ color: "var(--accent)" }}>◉</span> Roam
         </span>
         <span className="session-label">
           {s.sessionId ? `#${s.sessionId.slice(0, 6)}` : ""}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Concierge",
+  title: "Roam",
   description: "Voice-first US travel concierge — multi-agent demo",
 };
 

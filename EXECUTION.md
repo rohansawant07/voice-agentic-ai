@@ -1,4 +1,4 @@
-# Concierge — Execution Log
+# Roam — Execution Log
 
 > **The third doc in the trinity.** [README.md](README.md) says what we're building, [DESIGN.md](DESIGN.md) says how it looks — this file says **what has actually been built, when, and what's next**. Rule: **every change to code or docs updates this file in the same commit.** If it's not logged here, it didn't happen.
 

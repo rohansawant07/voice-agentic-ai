@@ -1,4 +1,4 @@
-# Concierge — Voice Agentic AI for a Travel Agency
+# Roam — Voice Agentic AI for a Travel Agency
 
 For the implemented local workflow and its current limits, see [Current architecture](ARCHITECTURE.md).
 

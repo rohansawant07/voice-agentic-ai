@@ -1,4 +1,4 @@
-# Concierge — Design Document
+# Roam — Design Document
 
 > Companion to [README.md](README.md) (the architecture brain). This file is the **design brain**: what we're building for whom, how every screen looks and behaves, and the order the design work gets done. If a UI decision isn't here, it isn't decided.
 
@@ -38,7 +38,7 @@ Clarifying-question rule: if origin city, dates, or party size are missing *and*
 
 ---
 
-## 3. What Concierge Specializes In
+## 3. What Roam Specializes In
 
 **Deep (v1):**
 - US domestic + territory **flights** — search, compare, fare rules, holds
@@ -102,7 +102,7 @@ Read-only shareable page once a plan is settled: hero, day cards, bookings, tota
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│ ◉ Concierge      San Juan getaway          ⏱ live  #a41   ⋯ menu │
+│ ◉ Roam      San Juan getaway          ⏱ live  #a41   ⋯ menu │
 ├───────────────────────────┬────────────────────────────────────────┤
 │ CONVERSATION (40%)        │ CANVAS (60%)    [ Results ][ Agents ]  │
 │                           │                                        │
