@@ -1,5 +1,7 @@
 # Roam — Design Document
 
+> Current UI (October 26, 2026): the implementation now uses a light navy/blue travel workspace, a conversation composer with voice controls, an inspiration-led trip board, responsive result grids, and explicit Conversation / Trip board tabs on mobile. Source notes can expand alongside itinerary timelines. Desktop Space push-to-talk and Escape to stop speech remain available outside interactive controls. The earlier orb, swipe navigation, and dark-theme concepts below are historical design proposals, not current behavior.
+
 > Companion to [README.md](README.md) (the architecture brain). This file is the **design brain**: what we're building for whom, how every screen looks and behaves, and the order the design work gets done. If a UI decision isn't here, it isn't decided.
 
 **Inspiration DNA** (researched, deliberate): Mindtrip (split pane, conversation drives a live canvas) · Layla (conversational warmth) · Wonderplan (itinerary + budget cards) · Airbnb (card anatomy) · Kayak / Google Flights (comparison density) · [orb-ui](https://orb-ui.com/) (voice orb component, 4 states).

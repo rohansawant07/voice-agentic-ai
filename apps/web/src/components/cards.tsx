@@ -49,8 +49,10 @@ export function FlightCard({
         {time(flight.departLocal)} – {time(flight.arriveLocal)} · {h}h {m}m
       </div>
       <div className="muted">
-        {flight.stops === 0 ? "direct" : `${flight.stops} stop${flight.stops > 1 ? "s" : ""}`} ·{" "}
-        {flight.fareClass}
+        {flight.stops === 0
+          ? "direct"
+          : `${flight.stops} stop${flight.stops > 1 ? "s" : ""}`}{" "}
+        · {flight.fareClass}
       </div>
       <div className="big-price price">{usd(flight.fare.amount)}</div>
       {flight.stops === 0 && <span className="badge">★ direct</span>}
@@ -81,16 +83,25 @@ export function HotelCard({
         <img
           src={hotel.photoUrl}
           alt={hotel.name}
-          style={{ borderRadius: 8, width: "100%", height: 110, objectFit: "cover" }}
+          style={{
+            borderRadius: 8,
+            width: "100%",
+            height: 110,
+            objectFit: "cover",
+          }}
         />
       )}
       <div className="title">{hotel.name}</div>
       <div className="muted">
-        ★{hotel.starRating} · {hotel.reviewScore.toFixed(1)} · {hotel.neighborhood}
+        ★{hotel.starRating} · {hotel.reviewScore.toFixed(1)} ·{" "}
+        {hotel.neighborhood}
       </div>
       <div className="big-price price">
         {usd(hotel.pricePerNight.amount)}
-        <span className="muted" style={{ fontSize: 13 }}> /night</span>
+        <span className="muted" style={{ fontSize: 13 }}>
+          {" "}
+          /night
+        </span>
       </div>
       <div className="muted price">{usd(hotel.totalForStay.amount)} total</div>
       <div className="chip-row">
@@ -131,15 +142,22 @@ export function CarRentalCard({
       </div>
       <div className="big-price price">
         {usd(rental.pricePerDay.amount)}
-        <span className="muted" style={{ fontSize: 13 }}> /day</span>
+        <span className="muted" style={{ fontSize: 13 }}>
+          {" "}
+          /day
+        </span>
       </div>
       <div className="muted price">{usd(rental.totalForTrip.amount)} total</div>
       <div className="chip-row">
         {rental.unlimitedMiles && (
-          <span className="chip" style={{ pointerEvents: "none" }}>unlimited miles</span>
+          <span className="chip" style={{ pointerEvents: "none" }}>
+            unlimited miles
+          </span>
         )}
         {rental.freeCancellation && (
-          <span className="chip" style={{ pointerEvents: "none" }}>free cancel</span>
+          <span className="chip" style={{ pointerEvents: "none" }}>
+            free cancel
+          </span>
         )}
       </div>
       {selected && <span className="badge">✓ selected</span>}
@@ -158,14 +176,18 @@ export function ItineraryDayCard({ day }: { day: ItineraryDay }) {
         </div>
       )}
       {day.stops.map((s, i) => (
-        <div key={i}>
-          <span className="badge">{s.timeOfDay}</span> <strong>{s.title}</strong>
+        <div key={i} className="itinerary-stop">
+          <span className="stop-dot" aria-hidden="true" />
+          <span className="badge">{s.timeOfDay}</span>
+          <strong>{s.title}</strong>
           <div className="muted">{s.description}</div>
         </div>
       ))}
       {day.mealPick && <div className="muted">🍽 {day.mealPick}</div>}
       {day.estimatedDailySpend && (
-        <div className="muted price">≈ {usd(day.estimatedDailySpend.amount)} / day</div>
+        <div className="muted price">
+          ≈ {usd(day.estimatedDailySpend.amount)} / day
+        </div>
       )}
     </div>
   );
@@ -195,7 +217,11 @@ export function BudgetMeter({ budget }: { budget: BudgetAgentOutput }) {
               budget.overUnder === "over" ? "var(--danger)" : "var(--success)",
           }}
         >
-          {budget.overUnder === "over" ? "over budget" : budget.overUnder === "at" ? "at budget" : "under budget"}
+          {budget.overUnder === "over"
+            ? "over budget"
+            : budget.overUnder === "at"
+              ? "at budget"
+              : "under budget"}
         </span>
       </div>
       <div className="chip-row">
@@ -205,7 +231,9 @@ export function BudgetMeter({ budget }: { budget: BudgetAgentOutput }) {
           </span>
         ))}
       </div>
-      {budget.topTradeOff && <div className="muted">💡 {budget.topTradeOff}</div>}
+      {budget.topTradeOff && (
+        <div className="muted">💡 {budget.topTradeOff}</div>
+      )}
     </div>
   );
 }
@@ -232,7 +260,9 @@ export function BookingCard({ support }: { support: SupportAgentOutput }) {
         </div>
       )}
       <div>{support.resolution}</div>
-      {support.ticketId && <div className="muted">ticket {support.ticketId}</div>}
+      {support.ticketId && (
+        <div className="muted">ticket {support.ticketId}</div>
+      )}
     </div>
   );
 }

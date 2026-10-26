@@ -160,3 +160,7 @@ Checks: `pnpm lint && pnpm typecheck && pnpm build` (also CI on every push).
 2. If it contradicts README/DESIGN → fix them in the same commit (their own rule).
 3. Add a changelog line here + update the Status Board.
 4. One commit, pushed to `main`. CI must be green.
+
+## October 26, 2026 — Roam interface redesign
+
+Replaced the sparse split view with an inspiration-led trip board, refreshed typography and navy/blue palette, a persistent conversation composer, clear voice controls, explicit mobile pane navigation, responsive result grids, and itinerary timelines with expandable source notes. Inspiration actions populate an editable draft. Preserved direct Airbnb link labeling. Verified desktop and 390px mobile views, draft selection, message submission, and a live Harpers Ferry itinerary response.

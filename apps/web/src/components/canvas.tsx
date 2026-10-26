@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "./icon";
 import type {
   BudgetAgentOutput,
   CarRentalAgentOutput,
@@ -54,8 +55,10 @@ function FailedNote({ agent }: { agent: AgentActivity }) {
 export function ResultsCanvas({
   agents,
   onSelectionChange,
+  onInspiration,
 }: {
   agents: Map<string, AgentActivity>;
+  onInspiration: (prompt: string) => void;
   onSelectionChange: (kind: "flight" | "hotel" | "car", id: string) => void;
 }) {
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
@@ -71,9 +74,85 @@ export function ResultsCanvas({
 
   if (!flight && !hotel && !car && !itinerary && !budget && !support) {
     return (
-      <div className="scroll">
-        <div className="muted" style={{ margin: "auto", color: "var(--text-muted)" }}>
-          Ask for a trip and results land here — flights, stays, itinerary, budget.
+      <div className="scroll inspiration-board">
+        <div className="destination-hero">
+          <div className="photo-label">
+            <Icon name="compass" size={15} /> Go a little further
+          </div>
+          <div className="destination-copy">
+            <span>Fresh air. A fresh perspective.</span>
+            <h3>
+              Find your
+              <br />
+              somewhere.
+            </h3>
+            <p>The best plans leave room for a little wonder.</p>
+            <button
+              onClick={() =>
+                onInspiration(
+                  "Help me plan a scenic mountain getaway in the US for two. Ask me about my dates and budget first.",
+                )
+              }
+            >
+              Plan a mountain escape <Icon name="arrow" size={17} />
+            </button>
+          </div>
+          <a
+            className="photo-credit"
+            href="https://unsplash.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Photography from Unsplash"
+          >
+            Photo · Unsplash
+          </a>
+        </div>
+        <div className="board-intro">
+          <h3>A little spark for your next trip</h3>
+          <p>Pick a direction. We’ll help with the details.</p>
+        </div>
+        <div className="inspiration-grid">
+          <button
+            className="inspiration-card coastal"
+            onClick={() =>
+              onInspiration(
+                "I'd love a relaxing beach weekend in San Juan. Help me plan stays, food and a flexible itinerary.",
+              )
+            }
+          >
+            <span className="mini-landscape">
+              <Icon name="sun" size={30} />
+            </span>
+            <span className="inspiration-content">
+              <strong>Follow the sunshine</strong>
+              <small>Salt air & slower days</small>
+            </span>
+            <Icon name="arrow" size={17} />
+          </button>
+          <button
+            className="inspiration-card city"
+            onClick={() =>
+              onInspiration(
+                "Plan a food-focused weekend in Savannah with walkable neighborhoods and interesting local stops.",
+              )
+            }
+          >
+            <span className="mini-landscape">
+              <Icon name="map" size={28} />
+            </span>
+            <span className="inspiration-content">
+              <strong>Wander a new city</strong>
+              <small>Good food & unexpected turns</small>
+            </span>
+            <Icon name="arrow" size={17} />
+          </button>
+        </div>
+        <div className="board-footnote">
+          <Icon name="sparkle" size={18} />
+          <p>
+            Your stays, daily plans and budget will come together here as we
+            talk.
+          </p>
         </div>
       </div>
     );
@@ -90,7 +169,7 @@ export function ResultsCanvas({
     <div className="scroll" style={{ gap: 20 }}>
       {flight && (
         <section className="section">
-          <SectionHeader label="FLIGHTS" icon="✈️" agent={flight} />
+          <SectionHeader label="Flights" icon="✈️" agent={flight} />
           {flight.state === "failed" && <FailedNote agent={flight} />}
           {flightData?.options && (
             <div className="card-row">
@@ -111,7 +190,7 @@ export function ResultsCanvas({
       )}
       {hotel && (
         <section className="section">
-          <SectionHeader label="STAYS" icon="🏨" agent={hotel} />
+          <SectionHeader label="Places to stay" icon="🏨" agent={hotel} />
           {hotel.state === "failed" && <FailedNote agent={hotel} />}
           {hotelData?.notes && <div className="muted">{hotelData.notes}</div>}
           {hotelData?.vacationRentals?.length ? (
@@ -120,9 +199,19 @@ export function ResultsCanvas({
                 <div className="card" key={rental.id} style={{ maxWidth: 280 }}>
                   <span className="badge">Airbnb · verify availability</span>
                   <div className="title">{rental.name}</div>
-                  {rental.priceText && <div className="price">{rental.priceText}</div>}
-                  {rental.priceDetail && <div className="muted">{rental.priceDetail}</div>}
-                  <a href={rental.url} target="_blank" rel="noopener noreferrer">View on Airbnb ↗</a>
+                  {rental.priceText && (
+                    <div className="price">{rental.priceText}</div>
+                  )}
+                  {rental.priceDetail && (
+                    <div className="muted">{rental.priceDetail}</div>
+                  )}
+                  <a
+                    href={rental.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on Airbnb ↗
+                  </a>
                 </div>
               ))}
             </div>
@@ -132,10 +221,14 @@ export function ResultsCanvas({
               {hotelData.searchLinks.map((link) => (
                 <div className="card" key={link.url} style={{ maxWidth: 300 }}>
                   <div className="title">Airbnb · {link.destination}</div>
-                  <div className="muted">{hotelData.rentalSearchStatus === "live_results"
-                    ? "Check final dates, location, prices and fees on Airbnb."
-                    : "Search link only — live listings and prices have not been verified."}</div>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer">Search stays on Airbnb ↗</a>
+                  <div className="muted">
+                    {hotelData.rentalSearchStatus === "live_results"
+                      ? "Check final dates, location, prices and fees on Airbnb."
+                      : "Search link only — live listings and prices have not been verified."}
+                  </div>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">
+                    Search stays on Airbnb ↗
+                  </a>
                 </div>
               ))}
             </div>
@@ -159,7 +252,7 @@ export function ResultsCanvas({
       )}
       {car && (
         <section className="section">
-          <SectionHeader label="RENTAL CARS" icon="🚗" agent={car} />
+          <SectionHeader label="Getting around" icon="🚗" agent={car} />
           {car.state === "failed" && <FailedNote agent={car} />}
           {carData?.options && (
             <div className="card-row">
@@ -180,12 +273,27 @@ export function ResultsCanvas({
       )}
       {itinerary && (
         <section className="section">
-          <SectionHeader label="ITINERARY" icon="🗺️" agent={itinerary} />
+          <SectionHeader label="Your itinerary" icon="🗺️" agent={itinerary} />
           {itinerary.state === "failed" && <FailedNote agent={itinerary} />}
-          {itinData?.notes && <div className="muted">{itinData.notes}</div>}
-          {itinData?.sources?.map((source) => (
-            /^https:\/\//.test(source.url) && <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>
-          ))}
+          {(itinData?.notes || itinData?.sources?.length) && (
+            <details className="planning-notes">
+              <summary>Sources & planning notes</summary>
+              {itinData.notes && <p>{itinData.notes}</p>}
+              {itinData.sources?.map(
+                (source) =>
+                  /^https:\/\//.test(source.url) && (
+                    <a
+                      key={source.url}
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {source.title} ↗
+                    </a>
+                  ),
+              )}
+            </details>
+          )}
           {itinData?.days && (
             <div className="card-row">
               {itinData.days.map((d) => (
@@ -199,7 +307,11 @@ export function ResultsCanvas({
           {itinData?.destinations && (
             <div className="card-row">
               {itinData.destinations.map((d) => (
-                <div key={d.destination} className="card" style={{ maxWidth: 230 }}>
+                <div
+                  key={d.destination}
+                  className="card"
+                  style={{ maxWidth: 230 }}
+                >
                   <div className="title">{d.destination}</div>
                   {d.avgTempF != null && (
                     <div className="muted">avg {Math.round(d.avgTempF)}°F</div>
@@ -218,14 +330,14 @@ export function ResultsCanvas({
       )}
       {budget && (
         <section className="section">
-          <SectionHeader label="BUDGET" icon="💵" agent={budget} />
+          <SectionHeader label="Trip budget" icon="💵" agent={budget} />
           {budget.state === "failed" && <FailedNote agent={budget} />}
           {budgetData && <BudgetMeter budget={budgetData} />}
         </section>
       )}
       {support && (
         <section className="section">
-          <SectionHeader label="BOOKINGS" icon="🎫" agent={support} />
+          <SectionHeader label="Bookings" icon="🎫" agent={support} />
           {support.state === "failed" && <FailedNote agent={support} />}
           {supportData && <BookingCard support={supportData} />}
         </section>
@@ -244,27 +356,36 @@ const AGENT_ICONS: Record<string, string> = {
 };
 
 /** Agents tab — the fan-out graph + tool ticker (DESIGN §5.2). */
-export function AgentsGraph({ agents }: { agents: Map<string, AgentActivity> }) {
+export function AgentsGraph({
+  agents,
+}: {
+  agents: Map<string, AgentActivity>;
+}) {
   const list = [...agents.values()];
   const delegations = list.length;
   return (
     <div className="scroll">
       <div className="agents-graph">
         <div className="orchestrator-node">
-          ORCHESTRATOR
+          Roam is connecting the dots
           <div className="muted" style={{ fontSize: 12, fontWeight: 400 }}>
             {delegations} delegation{delegations === 1 ? "" : "s"}
           </div>
         </div>
-        <div className="fan-edges">{delegations > 0 ? "┌─────┼─────┐" : "│"}</div>
+        <div className="fan-edges">
+          {delegations > 0 ? "┌─────┼─────┐" : "│"}
+        </div>
         <div className="agent-row">
           {list.length === 0 && (
-            <div className="muted">No delegations yet — agents fan out here live.</div>
+            <div className="muted">
+              As you plan, you can follow the research for your trip here.
+            </div>
           )}
           {list.map((a) => (
             <div key={a.agentId} className={`agent-node ${a.state}`}>
               <div className="name">
-                {AGENT_ICONS[a.agentId] ?? "🤖"} {a.agentId.replace("-agent", "")}{" "}
+                {AGENT_ICONS[a.agentId] ?? "🤖"}{" "}
+                {a.agentId.replace("-agent", "")}{" "}
                 {a.state === "done" ? "✔" : a.state === "failed" ? "✕" : "●"}
                 {a.durationMs != null && (
                   <span className="muted" style={{ fontWeight: 400 }}>

@@ -3,39 +3,85 @@
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "../lib/session";
 import { AgentsGraph, ResultsCanvas } from "../components/canvas";
+import { Icon } from "../components/icon";
 
 const SUGGESTIONS = [
-  "Plan a long weekend in San Juan under $1500 for two, from JFK",
-  "Where's warm in February? We like beaches and food",
-  "Build me a 3-day Savannah itinerary",
+  {
+    icon: "map" as const,
+    title: "A weekend in the mountains",
+    detail: "Shenandoah, slow mornings & scenic trails",
+    prompt:
+      "Plan a 3-day weekend in Shenandoah Valley for two, with scenic trails and Airbnb search links.",
+  },
+  {
+    icon: "sun" as const,
+    title: "Somewhere a little warmer",
+    detail: "San Juan, good food & ocean air",
+    prompt: "Plan a long weekend in San Juan under $1500 for two, from JFK.",
+  },
+  {
+    icon: "compass" as const,
+    title: "Take the scenic route",
+    detail: "Three days exploring Savannah",
+    prompt:
+      "Build me a 3-day Savannah itinerary with local food and leisurely walks.",
+  },
 ];
 
 export default function SessionPage() {
   const s = useSession();
   const [tab, setTab] = useState<"results" | "agents">("results");
+  const [mobilePane, setMobilePane] = useState<"conversation" | "board">(
+    "conversation",
+  );
   const [draft, setDraft] = useState("");
+  const [voiceError, setVoiceError] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const busy =
+    s.orb === "thinking" || s.runningCount > 0 || s.orb === "listening";
+  const hasMessages = s.messages.length > 0;
 
-  // auto-scroll transcript; auto-flip to results when first data lands
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    if (s.messages.length > 0)
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [s.messages]);
 
-  // keyboard: Space = push-to-talk, Esc = stop speaking (DESIGN §5.3)
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
-      if (e.repeat) return; // held Space auto-repeats keydown
-      if (e.code === "Space" && s.voiceAvailable && s.orb !== "listening") {
-        e.preventDefault();
-        void s.startListening();
-      }
-      if (e.code === "Escape") s.stopSpeaking();
+    const isInteractive = (target: EventTarget | null) =>
+      target instanceof HTMLElement &&
+      Boolean(
+        target.closest(
+          "input, textarea, select, button, a, [contenteditable='true']",
+        ),
+      );
+    const down = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && s.orb === "speaking") s.stopSpeaking();
+      if (
+        event.code !== "Space" ||
+        event.repeat ||
+        isInteractive(event.target) ||
+        !s.voiceAvailable ||
+        busy
+      )
+        return;
+      event.preventDefault();
+      setVoiceError("");
+      void s
+        .startListening()
+        .catch(() =>
+          setVoiceError(
+            "Microphone access is unavailable. Check your browser permissions, or type your message below.",
+          ),
+        );
     };
-    const up = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
-      if (e.code === "Space" && s.orb === "listening") {
-        e.preventDefault();
+    const up = (event: KeyboardEvent) => {
+      if (
+        event.code === "Space" &&
+        !isInteractive(event.target) &&
+        s.orb === "listening"
+      ) {
+        event.preventDefault();
         s.stopListening();
       }
     };
@@ -45,122 +91,277 @@ export default function SessionPage() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [s]);
+  }, [s, busy]);
 
-  const orbLabel =
-    s.orb === "listening"
-      ? "listening…"
-      : s.orb === "speaking"
-        ? "speaking…"
-        : s.runningCount > 0
-          ? `${s.runningCount} agent${s.runningCount > 1 ? "s" : ""} working…`
-          : s.orb === "thinking"
-            ? "thinking…"
-            : s.voiceAvailable
-              ? "tap or hold Space"
-              : "voice off — type below";
+  const beginVoice = async () => {
+    setVoiceError("");
+    try {
+      await s.startListening();
+    } catch {
+      setVoiceError(
+        "Microphone access is unavailable. Check your browser permissions, or type your message below.",
+      );
+    }
+  };
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    s.sendText(draft);
+  const send = (text: string) => {
+    if (!text.trim() || busy || !s.sessionId) return;
+    s.sendText(text.trim());
     setDraft("");
   };
+  const choose = (text: string) => {
+    setDraft(text);
+    setMobilePane("conversation");
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+  const voiceLabel =
+    s.orb === "listening"
+      ? "Listening. Tap to finish"
+      : s.orb === "speaking"
+        ? "Speaking. Tap to stop"
+        : busy
+          ? "Putting your trip together…"
+          : s.voiceAvailable
+            ? "Prefer to talk? I'm listening."
+            : "Type a message to start planning.";
 
   return (
     <div className="shell">
       <header className="topbar">
-        <span className="brand">
-          <span style={{ color: "var(--accent)" }}>◉</span> Roam
+        <a className="brand" href="/" aria-label="Roam home">
+          <span className="brand-mark">
+            <Icon name="compass" size={25} />
+          </span>
+          roam<span className="brand-dot">.</span>
+        </a>
+        <span className="brand-description">
+          A good trip starts with a conversation.
         </span>
-        <span className="session-label">
-          {s.sessionId ? `#${s.sessionId.slice(0, 6)}` : ""}
-          {s.runningCount > 0 ? " · ⏱ live" : ""}
+        <span className="header-tag">
+          <Icon name="pin" size={14} /> US & territories
         </span>
       </header>
-
-      <main className="split">
+      <div className="mobile-nav" aria-label="Workspace view">
+        <button
+          aria-pressed={mobilePane === "conversation"}
+          onClick={() => setMobilePane("conversation")}
+        >
+          Conversation
+        </button>
+        <button
+          aria-pressed={mobilePane === "board"}
+          onClick={() => setMobilePane("board")}
+        >
+          Trip board {s.agents.size > 0 && <span>{s.agents.size}</span>}
+        </button>
+      </div>
+      <main className={`split show-${mobilePane}`}>
         <section className="pane-conversation" aria-label="Conversation">
-          <div className="scroll" ref={scrollRef}>
-            {s.messages.length === 0 && (
-              <>
-                <div className="bubble assistant">
-                  <span className="glyph">◉</span>
-                  Hi, I&apos;m your travel concierge for the US and its
-                  territories. Where are we dreaming of?
+          <div className="conversation-heading">
+            <span className="assistant-mark">
+              <Icon name="sparkle" size={17} />
+            </span>
+            <div>
+              <strong>Your travel companion</strong>
+              <span>A little inspiration. A plan that fits.</span>
+            </div>
+            <span
+              className={`connection-dot ${busy ? "working" : ""}`}
+              aria-label={busy ? "Planning" : "Ready"}
+            />
+          </div>
+          <div
+            className={`scroll conversation-scroll ${hasMessages ? "has-messages" : ""}`}
+            ref={scrollRef}
+            role="log"
+            aria-label="Travel conversation"
+            aria-live="polite"
+          >
+            {!hasMessages && (
+              <div className="welcome">
+                <div className="welcome-symbol">
+                  <Icon name="compass" size={32} />
                 </div>
-                <div className="chip-row">
-                  {SUGGESTIONS.map((t) => (
-                    <button key={t} className="chip" onClick={() => s.sendText(t)}>
-                      {t}
+                <h1>
+                  Less searching.
+                  <br />
+                  More getting lost.
+                </h1>
+                <p>
+                  Tell me what a great getaway looks like.
+                  <br className="desktop-break" /> We’ll figure out the way
+                  there, together.
+                </p>
+                <div className="suggestion-label">A few places to start</div>
+                <div className="suggestion-list">
+                  {SUGGESTIONS.map((item) => (
+                    <button
+                      key={item.title}
+                      className="suggestion"
+                      onClick={() => choose(item.prompt)}
+                    >
+                      <span className="suggestion-icon">
+                        <Icon name={item.icon} />
+                      </span>
+                      <span>
+                        <strong>{item.title}</strong>
+                        <small>{item.detail}</small>
+                      </span>
+                      <Icon name="arrow" size={17} />
                     </button>
                   ))}
                 </div>
-              </>
+              </div>
             )}
             {s.messages.map((m, i) => (
-              <div
-                key={i}
-                className={`bubble ${m.role}${m.partial ? " partial" : ""}`}
-              >
-                {m.role === "assistant" && <span className="glyph">◉</span>}
-                {m.text}
+              <div key={i} className={`message ${m.role}`}>
+                <span className="message-author">
+                  {m.role === "assistant" ? "Roam" : "You"}
+                </span>
+                <div
+                  className={`bubble ${m.role}${m.partial ? " partial" : ""}`}
+                >
+                  {m.text}
+                </div>
               </div>
             ))}
+            {s.orb === "thinking" && (
+              <div className="thinking" role="status">
+                <span />
+                <span />
+                <span />
+                Finding your kind of getaway
+              </div>
+            )}
+          </div>
+          <div className="composer-area">
+            <div className="voice-row">
+              <button
+                className={`voice-button ${s.orb}`}
+                disabled={!s.voiceAvailable || s.orb === "thinking"}
+                aria-label={
+                  s.orb === "listening"
+                    ? "Finish recording"
+                    : s.orb === "speaking"
+                      ? "Stop speaking"
+                      : "Start voice input"
+                }
+                aria-pressed={s.orb === "listening"}
+                onClick={() =>
+                  s.orb === "listening"
+                    ? s.stopListening()
+                    : s.orb === "speaking"
+                      ? s.stopSpeaking()
+                      : void beginVoice()
+                }
+              >
+                <Icon
+                  name={
+                    s.orb === "listening" || s.orb === "speaking"
+                      ? "wave"
+                      : "mic"
+                  }
+                  size={18}
+                />
+              </button>
+              <span aria-live="polite">{voiceLabel}</span>
+            </div>
+            {voiceError && (
+              <p className="voice-error" role="alert">
+                {voiceError}
+              </p>
+            )}
+            <form
+              className="composer"
+              onSubmit={(e) => {
+                e.preventDefault();
+                send(draft);
+              }}
+            >
+              <textarea
+                ref={inputRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    send(draft);
+                  }
+                }}
+                placeholder="Where would you like to go?"
+                aria-label="Message Roam"
+                rows={2}
+              />
+              <div className="composer-bottom">
+                <span>Type a thought. Make it a trip.</span>
+                <button
+                  className="send-button"
+                  type="submit"
+                  disabled={!draft.trim() || busy || !s.sessionId}
+                  aria-label="Send message"
+                >
+                  <Icon name="send" size={19} />
+                </button>
+              </div>
+            </form>
+            <p className="composer-note">
+              Made for exploring. Always verify prices before booking.
+            </p>
           </div>
         </section>
-
-        <section className="pane-canvas" aria-label="Canvas">
-          <nav className="canvas-tabs">
+        <section className="pane-canvas" aria-label="Trip board">
+          <div className="board-heading">
+            <div>
+              <span className="board-kicker">Your next chapter</span>
+              <h2>The trip board</h2>
+            </div>
+            <span className="board-icon">
+              <Icon name="map" size={23} />
+            </span>
+          </div>
+          <nav className="canvas-tabs" aria-label="Trip board views">
             <button
+              aria-pressed={tab === "results"}
               className={tab === "results" ? "active" : ""}
               onClick={() => setTab("results")}
             >
-              Results
+              Overview
             </button>
             <button
+              aria-pressed={tab === "agents"}
               className={tab === "agents" ? "active" : ""}
               onClick={() => setTab("agents")}
             >
-              Agents{s.runningCount > 0 ? ` · ${s.runningCount} live` : ""}
+              Planning activity{" "}
+              {s.runningCount > 0 && (
+                <span className="activity-count">{s.runningCount}</span>
+              )}
             </button>
+            <span className="board-status">
+              {s.runningCount > 0
+                ? "Taking shape…"
+                : s.agents.size > 0
+                  ? "Your discoveries"
+                  : "Room for possibility"}
+            </span>
           </nav>
           {tab === "results" ? (
             <ResultsCanvas
               agents={s.agents}
-              onSelectionChange={(kind, id) =>
-                // selection is confirmed to the orchestrator on the next turn
-                console.log("selected", kind, id)
-              }
+              onInspiration={choose}
+              onSelectionChange={() => {
+                /* Local comparison selection; booking is not submitted. */
+              }}
             />
           ) : (
             <AgentsGraph agents={s.agents} />
           )}
         </section>
       </main>
-
-      <footer className="bottombar">
-        <form onSubmit={submit}>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="type a message…"
-            aria-label="Message"
-          />
-        </form>
-        <div className="orb-wrap">
-          <button
-            className={`orb ${s.voiceAvailable ? s.orb : "disabled"}`}
-            aria-label={s.voiceAvailable ? "toggle voice input" : "voice disabled"}
-            disabled={!s.voiceAvailable}
-            onClick={() =>
-              s.orb === "listening" ? s.stopListening() : void s.startListening()
-            }
-          />
-          <span className="orb-status" aria-live="polite">
-            {orbLabel}
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }
