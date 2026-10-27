@@ -1,0 +1,26 @@
+name: Containers
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/setup-containers.mjs
+      - run: docker compose --env-file .secrets/compose.env up -d --build --wait
+      - run: node scripts/smoke-containers.mjs
+      - run: docker compose --env-file .secrets/compose.env --profile testing run --build --rm tests
+      - name: Diagnostics on failure
+        if: failure()
+        run: docker compose --env-file .secrets/compose.env logs --tail 80
+      - name: Stop ephemeral CI stack
+        if: always()
+        run: docker compose --env-file .secrets/compose.env down -v

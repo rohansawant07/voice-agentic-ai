@@ -20,5 +20,9 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.20.1",
     "typescript": "^5.6.0"
-  }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ]
 }

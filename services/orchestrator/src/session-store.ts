@@ -7,6 +7,13 @@ export class SessionBusyError extends Error {
   }
 }
 
+export class CapacityError extends Error {
+  constructor() {
+    super("server at capacity");
+    this.name = "CapacityError";
+  }
+}
+
 type Runner = (sessionId: string, history: ModelMessage[]) => Promise<string>;
 
 /** Process-local history. A turn commits both messages only after success. */
@@ -16,7 +23,9 @@ export class SessionStore {
 
   constructor(
     private readonly runner: Runner,
-    private readonly onStart: (sessionId: string) => void = () => {},
+    private readonly onStart: (
+      sessionId: string,
+    ) => void | Promise<void> = () => {},
   ) {}
 
   async runTurn(sessionId: string, message: string): Promise<string> {
@@ -25,7 +34,7 @@ export class SessionStore {
     this.active.add(sessionId);
     try {
       const committed = this.histories.get(sessionId) ?? [];
-      if (committed.length === 0) this.onStart(sessionId);
+      if (committed.length === 0) await this.onStart(sessionId);
       const pending: ModelMessage[] = [
         ...structuredClone(committed),
         { role: "user", content: message },

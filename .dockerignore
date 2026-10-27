@@ -1,0 +1,16 @@
+.git
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.secrets
+.aws
+.codex
+.claude
+.agents
+docs/benchmarks
+coverage
+**/*.log

@@ -34,6 +34,7 @@ async function synthesizeOpenAI(text: string): Promise<TtsStream> {
   if (!key) throw new Error("OPENAI_API_KEY missing");
   const res = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
+      signal: AbortSignal.timeout(30000),
     headers: {
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
@@ -58,6 +59,7 @@ async function synthesizeElevenLabs(text: string): Promise<TtsStream> {
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
     {
       method: "POST",
+      signal: AbortSignal.timeout(30000),
       headers: { "xi-api-key": key, "Content-Type": "application/json" },
       body: JSON.stringify({
         text,

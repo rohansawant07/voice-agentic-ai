@@ -68,6 +68,7 @@ export async function runOrchestrator(
 ): Promise<string> {
   const started = Date.now();
   const { text } = await generateText({
+    abortSignal: AbortSignal.timeout(120000),
     model: anthropic(ORCHESTRATOR_MODEL),
     system: SYSTEM,
     tools: delegateTools(sessionId),
@@ -82,13 +83,13 @@ export async function runOrchestrator(
     ],
   });
 
-  bus.emit({
+  await bus.emit({
     type: "assistant_message",
     sessionId,
     ts: Date.now(),
     text,
   });
-  bus.emit({
+  await bus.emit({
     type: "run_finished",
     sessionId,
     ts: Date.now(),

@@ -32,7 +32,7 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
     wrapped[name] = {
       ...t,
       execute: async (args: unknown, opts: unknown) => {
-        bus.emit({
+        await bus.emit({
           type: "tool_called",
           sessionId,
           ts: Date.now(),
@@ -79,7 +79,7 @@ export async function runSpecialist(
   sessionId: string,
 ): Promise<DelegationResult> {
   const started = Date.now();
-  bus.emit({
+  await bus.emit({
     type: "delegation_started",
     sessionId,
     ts: started,
@@ -91,6 +91,7 @@ export async function runSpecialist(
   let result: DelegationResult;
   try {
     const { output } = await generateText({
+    abortSignal: AbortSignal.timeout(60000),
       model: anthropic(def.model ?? SPECIALIST_MODEL),
       system: def.systemPrompt,
       tools: instrument(toolsFor(def.mcpServers), sessionId, def.id, provenance),
@@ -119,7 +120,7 @@ export async function runSpecialist(
     };
   }
 
-  bus.emit({
+  await bus.emit({
     type: "delegation_finished",
     sessionId,
     ts: Date.now(),

@@ -1,5 +1,7 @@
 # Current architecture
 
+Container deployment now adds a same-origin authenticated nginx gateway (:3080), PostgreSQL for conversation/event persistence and cross-instance locks, and a read-only demo agency. See [deployment architecture and limits](deploy/README.md). The original process-local mode described below remains available when DATABASE_URL is absent.
+
 Verified against the implementation on 2026-10-26. This describes the local
 application, not the planned AWS deployment.
 
@@ -72,15 +74,15 @@ The 12 regression tests do not call live model or speech providers. Separate opt
 
 - Deepgram is used for transcription; Deepgram TTS and Voice Agent API are not wired.
 - Speech providers are selected by configuration, not automatic failover.
-- History, session locks, activity buffers, and agency data are process-local.
+- In direct development mode, history/locks/events are process-local. PostgreSQL mode shares these across instances. Agency demo arrays remain local and Compose disables their mutations.
 - Session identifiers and origin checks are not user authentication.
 - Cancellation targets TTS output; it does not abort the model/tool/STT pipeline.
 - Card selection is currently visual-only and does not update agent context.
 - Measured local text medians: 2.33s clarification, 17.21s regional itinerary,
   38.10s multi-specialist trip (three runs each; not a production SLA).
   See [benchmark methodology and raw data](docs/PERFORMANCE.md).
-- Redis, Postgres, distributed locks, bounded retention, full tracing/evals,
-  containers, Helm, and EKS remain future work.
+- Redis, full tracing/evals, Helm and EKS remain future work. Docker/Compose,
+  PostgreSQL state, cross-instance locks and bounded retention are implemented for the pilot.
 
 ## October 26 additions
 
@@ -94,7 +96,7 @@ partner credentials or booking access have been provisioned.
 
 ## Persistence, caching and sharing
 
-No SQL/SQLite or Redis is wired. Conversation history has no TTL or global bound;
+PostgreSQL is wired in Compose; SQLite and Redis are not. Without DATABASE_URL, the original memory store is used. Conversation history has no TTL or global bound;
 activity replay keeps 500 events per session but does not expire sessions. Agency
 records are shared process-local arrays. MCP tool definitions are cached at startup;
 weather, travel and model outputs have no application response cache. Provider

@@ -1,3 +1,5 @@
+import { database } from "./database.js";
+import { PostgresBus } from "./postgres-bus.js";
 import type { SessionEvent } from "@concierge/core";
 
 type Listener = (event: SessionEvent) => void;
@@ -25,4 +27,4 @@ class SessionBus {
   }
 }
 
-export const bus = new SessionBus();
+export const bus = database ? new PostgresBus(database) : new SessionBus();

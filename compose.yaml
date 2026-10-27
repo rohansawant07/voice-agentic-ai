@@ -1,0 +1,130 @@
+name: roam
+x-service: &service
+  restart: unless-stopped
+  init: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  logging:
+    driver: json-file
+    options: { max-size: 10m, max-file: "3" }
+  networks: [private]
+  mem_limit: 256m
+  cpus: 0.5
+x-mcp-health: &mcp-health
+  test: [CMD-SHELL, 'node -e "fetch(\"http://127.0.0.1:$$PORT/readyz\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"']
+  interval: 10s
+  timeout: 5s
+  retries: 10
+services:
+  postgres:
+    <<: *service
+    image: postgres:17-bookworm
+    cap_drop: []
+    mem_limit: 512m
+    environment:
+      POSTGRES_USER: roam
+      POSTGRES_DB: roam
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run node scripts/setup-containers.mjs first}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U roam -d roam']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  travel:
+    <<: *service
+    build: { context: ., target: service, args: { SERVICE: mcp-travel } }
+    image: roam-travel:local
+    environment: { PORT: "8101", AIRBNB_SEARCH_MODE: links }
+    healthcheck: *mcp-health
+  weather:
+    <<: *service
+    build: { context: ., target: service, args: { SERVICE: mcp-weather } }
+    image: roam-weather:local
+    environment: { PORT: "8102", WEATHER_PROVIDER: "${WEATHER_PROVIDER:-live}" }
+    healthcheck: *mcp-health
+  agency:
+    <<: *service
+    build: { context: ., target: service, args: { SERVICE: mcp-agency } }
+    image: roam-agency:local
+    environment: { PORT: "8103", AGENCY_READ_ONLY: "true" }
+    healthcheck: *mcp-health
+  orchestrator:
+    <<: *service
+    build: { context: ., target: service, args: { SERVICE: orchestrator } }
+    image: roam-orchestrator:local
+    mem_limit: 768m
+    cpus: 1
+    stop_grace_period: 120s
+    environment:
+      PORT: "8080"
+      AUTH_MODE: proxy
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN:?Run setup-containers first}
+      DATABASE_URL: postgresql://roam:${POSTGRES_PASSWORD}@postgres:5432/roam
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3080}
+      MCP_TRAVEL_URL: http://travel:8101/mcp
+      MCP_WEATHER_URL: http://weather:8102/mcp
+      MCP_AGENCY_URL: http://agency:8103/mcp
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ORCHESTRATOR_MODEL: ${ORCHESTRATOR_MODEL:-claude-opus-4-8}
+      SPECIALIST_MODEL: ${SPECIALIST_MODEL:-claude-haiku-4-5}
+      VOICE_STT: ${VOICE_STT:-none}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+      VOICE_TTS: ${VOICE_TTS:-none}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+    depends_on:
+      postgres: { condition: service_healthy }
+      travel: { condition: service_healthy }
+      weather: { condition: service_healthy }
+      agency: { condition: service_healthy }
+    healthcheck: *mcp-health
+  web:
+    <<: *service
+    build: { context: ., target: web }
+    image: roam-web:local
+    mem_limit: 512m
+    cpus: 1
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  tests:
+    <<: *service
+    profiles: [testing]
+    restart: "no"
+    build: { context: ., target: build }
+    environment:
+      TEST_DATABASE_URL: postgresql://roam:${POSTGRES_PASSWORD}@postgres:5432/roam
+    depends_on:
+      postgres: { condition: service_healthy }
+    command: [pnpm, --filter, "@concierge/orchestrator", test]
+    mem_limit: 512m
+  gateway:
+    <<: *service
+    image: nginx:1.28-bookworm
+    cap_drop: []
+    mem_limit: 128m
+    ports: ["127.0.0.1:3080:8080"]
+    environment:
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+      NGINX_ENVSUBST_FILTER: GATEWAY_TOKEN
+    volumes:
+      - ./deploy/gateway/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    secrets: [htpasswd]
+    depends_on:
+      web: { condition: service_healthy }
+      orchestrator: { condition: service_healthy }
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://127.0.0.1:8080/healthz >/dev/null']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+networks:
+  private:
+volumes:
+  pgdata:
+secrets:
+  htpasswd:
+    file: .secrets/htpasswd

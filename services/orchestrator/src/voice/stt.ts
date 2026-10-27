@@ -44,6 +44,7 @@ async function transcribeDeepgram(
     "https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true",
     {
       method: "POST",
+      signal: AbortSignal.timeout(30000),
       headers: { Authorization: `Token ${key}`, "Content-Type": mime },
       body: new Uint8Array(audio),
     },
@@ -72,6 +73,7 @@ async function transcribeWhisper(
   form.append("model", "whisper-1");
   const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
+      signal: AbortSignal.timeout(30000),
     headers: { Authorization: `Bearer ${key}` },
     body: form,
   });

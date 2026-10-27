@@ -1,5 +1,7 @@
 # Roam — Measured performance
 
+These measurements predate the Docker/PostgreSQL pilot and remain a historical baseline at source revision `83ae89f`. Container readiness, authentication, persistent-state and live-request smoke checks were verified separately; no new production latency/load claim is made.
+
 Measured October 26, 2026 on a local macOS ARM64 machine, using Node v23.11.0 and the running Next.js development server. The benchmark used one request at a time, already-running services, and a fresh session for each model request. Source revision before this documentation pass: `83ae89f`.
 
 ## Text requests

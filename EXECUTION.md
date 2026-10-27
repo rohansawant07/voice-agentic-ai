@@ -2,7 +2,7 @@
 
 Current facts live in [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [performance measurements](docs/PERFORMANCE.md). This file retains historical implementation notes; earlier proposed costs, latency targets and deployment plans are not current measurements.
 
-**Repo:** https://github.com/rohansawant07/voice-agentic-ai · **Stack:** TypeScript/pnpm, AI SDK v7 + Claude, MCP, Fastify, Next.js. SQL/Redis, deployment and tracing remain unimplemented.
+**Repo:** https://github.com/rohansawant07/voice-agentic-ai · **Stack:** TypeScript/pnpm, AI SDK v7 + Claude, MCP, Fastify, Next.js. Docker/Compose and PostgreSQL pilot state are implemented; Redis, public cloud deployment and tracing remain unimplemented.
 
 ---
 
@@ -56,6 +56,15 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-26 — Protected Docker pilot and AWS preparation
+
+- Added multi-stage service/standalone-web images and seven-service Compose stack with health checks, resource/log limits, loopback-only gateway and ignored runtime credentials.
+- Added PostgreSQL conversation/event state, 24-hour retention, 24-message history bounds, four-turn global admission and cross-instance session locks/replay. Container agency mutations are disabled.
+- Added gateway identity/session isolation, request limits, voice limits and provider deadlines. Basic auth is a private-pilot measure, not a full account system.
+- Verified real container startup, anonymous 401/authenticated 200, database integration behavior and a live authenticated model request. No AWS resource was created.
+- Prepared an us-east-1 host-only CloudFormation scaffold and documented the near-zero-budget constraint. Awaiting account access/credit verification before any billable launch.
+
 
 ### 2026-10-26 — State audit, measurements and documentation refresh
 

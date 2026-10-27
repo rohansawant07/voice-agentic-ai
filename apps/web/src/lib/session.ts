@@ -5,7 +5,7 @@ import type { SessionEvent } from "@concierge/core";
 
 export const ORCH_URL =
   process.env.NEXT_PUBLIC_ORCH_URL ?? "http://localhost:8080";
-const ORCH_WS = ORCH_URL.replace(/^http/, "ws");
+const socketBase = () => (ORCH_URL || window.location.origin).replace(/^http/, "ws");
 
 export type OrbState = "idle" | "listening" | "thinking" | "speaking";
 
@@ -67,7 +67,7 @@ export function useSession(): SessionState {
   // ── /ws activity feed ────────────────────────────────────────
   useEffect(() => {
     if (!sessionId) return;
-    const ws = new WebSocket(`${ORCH_WS}/ws?sessionId=${sessionId}`);
+    const ws = new WebSocket(`${socketBase()}/ws?sessionId=${sessionId}`);
     ws.onmessage = (m) => {
       const ev = JSON.parse(m.data as string) as SessionEvent;
       switch (ev.type) {
@@ -129,7 +129,7 @@ export function useSession(): SessionState {
   // ── /voice socket ────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId) return;
-    const ws = new WebSocket(`${ORCH_WS}/voice?sessionId=${sessionId}`);
+    const ws = new WebSocket(`${socketBase()}/voice?sessionId=${sessionId}`);
     ws.binaryType = "arraybuffer";
     voiceWs.current = ws;
     ws.onmessage = (m) => {
@@ -199,12 +199,15 @@ export function useSession(): SessionState {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sessionId, message: text }),
       })
-        .catch(() => {
+        .then((response) => {
+          if (!response.ok) throw new Error(response.status === 429 ? "Roam is busy. Please wait a moment and try again." : "Your message could not be completed. Please try again.");
+        })
+        .catch((error: unknown) => {
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
-              text: "I couldn't reach the concierge service — is the orchestrator running on :8080?",
+              text: error instanceof Error && error.message.startsWith("Roam is busy") ? error.message : "I couldn't complete that request. Please try again in a moment.",
             },
           ]);
         })

@@ -63,6 +63,7 @@ function createServer(): McpServer {
       annotations: { destructiveHint: true },
     },
     async ({ confirmationCode, customerId, confirmed }) => {
+      if (process.env.AGENCY_READ_ONLY === "true") return toolResult({error:"demo_read_only",message:"Booking mutations are disabled in this deployment."});
       if (!confirmed) {
         return toolResult({
           error: "confirmation_required",
@@ -106,6 +107,7 @@ function createServer(): McpServer {
       annotations: { destructiveHint: true },
     },
     async ({ confirmationCode, customerId, newStartDate, newEndDate, confirmed }) => {
+      if (process.env.AGENCY_READ_ONLY === "true") return toolResult({error:"demo_read_only",message:"Booking mutations are disabled in this deployment."});
       if (!confirmed) {
         return toolResult({
           error: "confirmation_required",
@@ -142,6 +144,7 @@ function createServer(): McpServer {
       },
     },
     async ({ customerId, subject, body }) => {
+      if (process.env.AGENCY_READ_ONLY === "true") return toolResult({error:"demo_read_only"});
       const ticketId = `TKT-${String(1000 + tickets.length)}`;
       const ticket = {
         ticketId,

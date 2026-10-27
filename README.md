@@ -4,6 +4,10 @@ A voice-enabled travel planning prototype for the US and its territories. Talk o
 
 **Status: working local prototype, not a hosted booking service.** Verified October 26, 2026. The repository is public, but no public application URL is deployed. Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability.
 
+## Container preview
+
+The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. No AWS resources are created. The public application is still **not deployed**.
+
 ## Run locally
 
 Prerequisites: Node.js **22 or newer**, pnpm **11.22.0**, and an Anthropic API key with access to the configured models.
@@ -28,8 +32,8 @@ Individual package commands do **not** load root `.env` automatically. If runnin
 
 - **Yes, by cloning the public repository** and running the setup above with their own keys.
 - **Not by opening your localhost link.** On their device, `localhost` means their own machine.
-- A browser-only test needs a hosted frontend and reachable HTTP/WebSocket backend, or a protected temporary tunnel to both. HTTPS is needed for microphone use off localhost. No tunnel or deployment is currently configured.
-- Before sharing your running backend, add access control and request limits. There is currently no login, session ownership check or per-user quota. CORS is not authentication; clients without an Origin header can call the backend. Shared demo agency mutations affect the same in-memory data.
+- A browser-only test needs a hosted frontend and reachable HTTP/WebSocket backend, or a protected temporary tunnel to both. HTTPS is needed for microphone use off localhost. A local protected Docker deployment is configured; no public tunnel or AWS deployment is active.
+- Before sharing your running backend, add access control and request limits. Direct development mode has no authentication. The container gateway now adds Basic authentication, session ownership scoping and request limits, but no per-user billing quota. CORS is not authentication; clients without an Origin header can call the backend. Shared demo agency mutations affect the same in-memory data.
 
 See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is triggered by pushing to GitHub.
 
@@ -46,7 +50,7 @@ See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is tri
 | Airbnb | Dated destination search links by default; opt-in independent connector with bounded concurrency/time and honest fallback |
 | Weather | Live Open-Meteo forecast/geocoding; static climate table; optional mock weather |
 | Agency | Seeded customers/bookings, simulated modifications/cancellations, tickets and audit records |
-| Validation | Shared Zod schemas, HTTP input validation, 12 deterministic regression tests, CI |
+| Validation | Shared Zod schemas, HTTP input validation, deterministic regression and PostgreSQL integration tests, CI |
 
 Card selection is visual-only: it does not book anything or update the next model turn. No real reservation, payment, refund or ticket submission to a travel provider occurs. The opt-in Airbnb connector is not an official Airbnb integration; the live access check was restricted.
 
@@ -67,9 +71,13 @@ flowchart LR
 
 Specialists run inside the orchestrator process; they are not six deployed workers. Independent delegations can run concurrently. The orchestrator and specialists use Anthropic through AI SDK v7. Defaults are `claude-opus-4-8` and `claude-haiku-4-5`, respectively; both are configurable. See [ARCHITECTURE.md](ARCHITECTURE.md) for the actual lifecycle and boundaries.
 
-## Database and cache: current reality
+## Database and cache
 
-**No SQL database, SQLite fallback, Redis, migrations or persistent storage are implemented.** Adding a database URL does not enable one.
+The default `scripts/dev.sh` mode remains in-memory unless `DATABASE_URL` is set. The [Docker pilot](deploy/README.md) now configures PostgreSQL with persistent volumes, scoped identities, shared turn locks, bounded history and a shared activity log. No Redis is required.
+
+### Direct local-development mode
+
+Without `DATABASE_URL`, conversations and agency demo records are process-local. With it, migration `services/orchestrator/migrations/001-state.sql` is applied at startup and conversation/event state uses PostgreSQL. Agency demo records are not migrated; their mutations are disabled in Compose. There is no SQLite fallback or Redis.
 
 | State / cache | Where it lives | Retention and limits |
 | --- | --- | --- |
@@ -81,7 +89,7 @@ Specialists run inside the orchestrator process; they are not six deployed worke
 | Search/weather/model responses | No application result cache | Repeated requests repeat tool/provider work |
 | Provider prompt cache | No explicit cache configuration or hit metrics | Stable prompt ordering exists; savings/hits are not verified |
 
-Browser state is also in memory: refresh creates a new session and clears the visible trip. These constraints mean multiple orchestrator replicas cannot safely share conversations yet. See [operations](docs/OPERATIONS.md) for the suggested next steps.
+Browser state is also in memory: refresh creates a new session and clears the visible trip. These constraints apply to direct in-memory mode. PostgreSQL mode coordinates history, locks and events across instances; the single-host pilot is not high availability. See [operations](docs/OPERATIONS.md) for the suggested next steps.
 
 ## Measured performance
 
@@ -110,14 +118,14 @@ Existing activity events record total model-turn and specialist duration. There 
 
 [.env.example](.env.example) lists the implemented settings. Keep actual secrets in ignored `.env` files and server-side only. `NEXT_PUBLIC_ORCH_URL` is deliberately public and must be set **before building** a deployed frontend. `WEB_ORIGIN` must match its exact origin. Internal MCP URLs should not be publicly exposed.
 
-`DATABASE_URL`, `REDIS_URL`, `LANGFUSE_*`, `JUDGE_MODEL`, `TRAVEL_PROVIDER` and Amadeus credentials were earlier placeholders and are not consumed by the app. Docker Compose, Helm, EKS, tracing and golden-dataset evals are not present.
+`DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `JUDGE_MODEL`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. Docker Compose and a host-only AWS template are present; Helm, EKS, live AWS deployment, tracing and golden-dataset evals are not.
 
 ## Development
 
 ```bash
 pnpm lint
 pnpm typecheck       # builds workspace, then checks types
-pnpm test           # 12 deterministic tests; no provider keys required
+pnpm test           # deterministic tests; PostgreSQL integration requires TEST_DATABASE_URL
 pnpm build
 ```
 
