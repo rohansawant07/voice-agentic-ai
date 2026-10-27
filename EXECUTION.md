@@ -240,3 +240,5 @@ Replaced the sparse split view with an inspiration-led trip board, refreshed typ
 ### 2026-10-27 — Shared web search
 
 Added bounded Anthropic web research to the orchestrator and all six specialists, preserved source links/timestamps in specialist events and the activity UI, and added configuration plus deterministic budget/error tests. Live research returned official NPS sources using the configured key.
+
+Validation: lint, full build/typechecks and 21 tests passed (one PostgreSQL test skipped without TEST_DATABASE_URL). Rebuilt local Compose; all seven services healthy and authenticated smoke passed. A live HTTP request delegated to itinerary-agent, invoked search_web, returned HTTP 200 with official NPS hours, and persisted ten source links in its completion event.
