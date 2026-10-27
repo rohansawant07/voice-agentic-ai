@@ -18,7 +18,7 @@ These rows track when earlier milestones first landed. For the current interface
 | 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | ✅ done — live demo ran (clarify → 4-agent fan-out → $1,220/$1,500) | `2409022` |
 | 5 | M2 — voice pipeline (STT/TTS) | 🟡 STT live-verified (Deepgram); TTS code done, awaiting OpenAI/ElevenLabs key | `b59d390` `7ca22ce` |
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
-| 7 | M3 — evals (golden dataset, judges, tracing) | ⬜ not started | |
+| 7 | M3 — evals (golden dataset, judges, tracing) | 🟡 itinerary grounding eval built and run (4 golden cases + 2 judge calibrations, Sonnet judge, ~$0.27/run, offline only); 0/4 cases grounded in all three runs — findings in `docs/evals/`. Other specialists, tracing and online evals not started | see 2026-10-27 changelog |
 | 8 | M4 — Docker, compose, Helm on k3d | 🟡 Docker/Compose complete; Helm/k3d not implemented | `67aea1b` |
 | 9 | M5 — AWS | 🟡 single-host kit built and verified locally (CloudFormation, Caddy HTTPS, SSM secrets, snapshots); awaiting account sign-in and first `deploy.sh up`. EKS/ECR/ALB not pursued at pilot budget | see 2026-10-27 changelog |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
@@ -29,7 +29,7 @@ These rows track when earlier milestones first landed. For the current interface
 - Card picks now drive the trip summary's estimated total and persist per session, but they still don't inform the orchestrator on the next turn or update the budget specialist's meter.
 - Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
 - Weather mis-geocoding of "San Juan" (it searched US only, missing Puerto Rico) is fixed by state/territory-aware geocoding.
-- Itinerary wording can still add mild unsourced descriptors to real listings (for example "indoor-friendly" mini-golf). Closures and places are enforced in code; wording needs an LLM-judge eval (M3).
+- Itinerary wording still adds unsourced descriptors, retitles or merges listings and invents generic stops. `scripts/eval-itinerary.mjs` measures this: 0/4 cases grounded in three runs on October 27 (see `docs/evals/README.md`). The same runs found envelope failures: `failed` over weather, `ok` without days, and a wrong day count.
 
 ---
 
@@ -57,6 +57,21 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-27 — Itinerary grounding eval (M3)
+
+- Added `scripts/eval-itinerary.mjs` and `services/orchestrator/eval/itinerary.ts`. The script starts private MCP servers on ports 8111–8113, runs the real itinerary specialist (Haiku, with MCP tools and `search_web`) on four golden cases and captures every guide, activity and web result. Cases: Lake George, NY Nov 26–28 for six; Savannah, GA in April; Harpers Ferry, WV; San Juan, PR.
+- Each case is checked two ways:
+  - In code: expected day count, no `closedDuringTrip` listing scheduled, exact Wikivoyage titles unless web evidence exists.
+  - By a `claude-sonnet-5` judge: unlisted titles and descriptive claims the listing fields don't support.
+- Two fixed calibration fixtures use real Lake George listings. The judge must flag "indoor-friendly" mini-golf and "cozy indoor stop", and must pass grounded text. Both passed in every run.
+- `runSpecialist` gained an optional observer for raw tool results and token usage. Production behavior is unchanged.
+- The eval is typechecked in CI (`tsconfig.eval.json`) but never run there, because it makes paid calls. Measured cost: $0.24–0.29 per full run, about 3–4 minutes. `search_web` research is excluded from the total and estimated separately. Total spent building the eval: about $1.06.
+- Results (`docs/evals/`, two runs at `61514fe` and one on current main): **0/4 cases grounded in every run**, 0.39–0.76 judge findings per stop.
+  - Haiku retitles and merges listings and adds generic stops.
+  - It embellishes descriptions ("family-friendly", "golden sand", Civil War history on title-only NPS entries).
+  - Envelope failures recurred across runs: `failed` over weather, a schema-mismatch throw, `ok` with no `days`, and 4 days for a 3-day trip.
+  - Suggested next step: enforce exact titles and day count in code, reject `ok` without days, then re-run the eval to compare.
 
 ### 2026-10-27 — README refresh
 

@@ -150,7 +150,7 @@ Existing activity events record total model-turn and specialist duration. There 
 
 [.env.example](.env.example) lists the implemented settings. Keep actual secrets in ignored `.env` files and server-side only. `NEXT_PUBLIC_ORCH_URL` is deliberately public and must be set **before building** a deployed frontend. `WEB_ORIGIN` must match its exact origin. Internal MCP URLs should not be publicly exposed.
 
-`DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `JUDGE_MODEL`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. Docker Compose and a single-host AWS stack (CloudFormation, Caddy HTTPS, SSM secrets, daily snapshots) are present; Helm, EKS, an active AWS deployment, tracing and golden-dataset evals are not.
+`DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. `JUDGE_MODEL` is read only by the offline itinerary eval ([docs/evals](docs/evals/README.md)). Docker Compose and a single-host AWS stack (CloudFormation, Caddy HTTPS, SSM secrets, daily snapshots) are present; Helm, EKS, an active AWS deployment and tracing are not. A paid, offline itinerary grounding eval exists (`scripts/eval-itinerary.mjs`); other specialists have no evals yet.
 
 ## Development
 

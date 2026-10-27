@@ -1,0 +1,86 @@
+# Itinerary grounding eval (M3)
+
+Checks that the itinerary specialist builds days only from the guide listings it was given, and describes each listing only with that listing's own facts (AGENTS.md: visible provenance, no invented facts).
+
+## What a run does
+
+For each golden case in [`services/orchestrator/eval/itinerary.ts`](../../services/orchestrator/eval/itinerary.ts):
+
+1. Runs the real itinerary specialist (`runSpecialist` with the registry prompt, `claude-haiku-4-5`) against live MCP servers: Wikivoyage or curated NPS guides, mock activity inventory and Open-Meteo weather.
+2. Captures every `get_destination_guide`, `search_activities` and `search_web` result it received, plus weather results for context.
+3. Deterministic checks in code:
+   - every stop is scheduled on the expected number of days;
+   - no stop is a listing from `closedDuringTrip`;
+   - for Wikivoyage guides, every stop title exactly matches a listing title (case and punctuation ignored). This is relaxed when `search_web` returned evidence, because the prompt allows web-backed extra stops; the judge still checks those stops.
+4. A judge (`claude-sonnet-5`) reads the trip request, the tool results and the days. It flags stop titles not in the listings (`unlisted_title`), and descriptive claims the listing fields don't support (`unsupported_claim`). Examples: "indoor", "year-round", "good for groups", prices, hours.
+
+A case passes only if the specialist returned `ok`, the code checks pass and the judge reports no findings. Two judge calibration fixtures run first, using real Lake George listings with hand-written days:
+
+- **`judge-flags-known-embellishments`**: must flag "indoor-friendly" mini-golf and "cozy indoor stop", and must not flag a correct paraphrase.
+- **`judge-accepts-grounded-text`**: must report nothing.
+
+If either fails, the case verdicts are not trustworthy and the script exits 1.
+
+| Case | Guide source | Why it's here |
+|---|---|---|
+| `lake-george-thanksgiving` | Wikivoyage | Original failure. Off-season closures, six travelers; earlier runs added "indoor-friendly" mini-golf and "cozy indoor stop" |
+| `savannah-april` | Wikivoyage | In-season city with many food listings |
+| `harpers-ferry-weekend` | Curated NPS | Curated guide with titles only and no descriptions |
+| `san-juan-december` | Mock inventory + Wikivoyage | Territory; the mock catalog includes costs and Wikivoyage listings do not |
+
+## Running it
+
+It makes paid model calls, so it is **not** part of `pnpm test` or CI. CI only typechecks the eval (`tsconfig.eval.json`).
+
+```bash
+pnpm install && pnpm --filter @concierge/core --filter @concierge/mcp-kit build
+node scripts/eval-itinerary.mjs                      # all cases, reads ./.env
+node scripts/eval-itinerary.mjs --case savannah-april --env /path/to/.env --output /tmp/out.json
+```
+
+The script starts its own MCP servers on ports 8111–8113, so a running dev stack is unaffected. It prints PASS/FAIL per case with each finding. It writes the full raw record (tool calls, specialist output, judge verdict, token usage and cost) to `docs/evals/itinerary-<date>.json`, and exits 1 if any case fails. `JUDGE_MODEL` and `SPECIALIST_MODEL` override the models.
+
+## Cost
+
+Measured on October 27, 2026, at uncached list prices: Haiku 4.5 $1/$5 and Sonnet 5 $2/$10 per million input/output tokens.
+
+| Run | Code | Specialist (Haiku) | Judge (Sonnet) | Calibration | Total | Wall time |
+|---|---|---|---|---|---|---|
+| [61514fe run 1](itinerary-2026-10-27-61514fe-run1.json) | before web search; no calibration yet | $0.088 | $0.154 | n/a | $0.24 | 2.7 min |
+| [61514fe run 2](itinerary-2026-10-27-61514fe-run2.json) | before web search | $0.098 | $0.181 | $0.015 | $0.29 | 3.6 min |
+| [current](itinerary-2026-10-27.json) | `1bd5079` (web search) + this eval | $0.087 | $0.167 | $0.016 | **$0.27** | 3.5 min |
+
+Budget **about $0.25–0.35 per full run**. Other notes:
+
+- About 60% of the spend is the judge, which reads every listing.
+- `--case <id>` runs one case for about $0.05–0.13. `--skip-calibration` skips about $0.015.
+- **Not counted in `totalCostUSD`:**
+  - `search_web` calls are separate Haiku research requests plus Anthropic's web-search fee. The record counts them and estimates about $0.03 each. The specialist made none in the current run.
+  - A specialist call that throws (for example a schema mismatch) records $0, though its tokens were billed.
+- Developing this eval cost about $1.06 in total: three committed runs plus one discarded run made before the judge saw the trip request.
+
+Each run is one sample per case, taken from live, changing sources (Wikivoyage edits, forecasts, the web) and a sampled model. Treat a pass as "no problem seen this run", not a guarantee.
+
+## Results (October 27, 2026)
+
+Both calibration fixtures passed in every run. **No case passed in any run (0/4 each time).** Judge findings per stop: 0.39, 0.76 and 0.69.
+
+| Case | 61514fe run 1 | 61514fe run 2 | Current (`1bd5079`) |
+|---|---|---|---|
+| Lake George | 3 days. "Lake George Steamboat Company Cruise"; "more upscale" for "more expensive" | **Specialist `failed`**, citing unavailable weather, against the prompt | 3 days, with 3 of 9 stops invented or merged ("Arrival & Scenic Drive", "Pirate's Cove Adventure Golf or Gooney Golf"); "family-friendly", "exhilarating" |
+| Savannah | "iconic", "romantic", "historically rich" | Merged "River Street & Plant Riverside District"; "Adults $10" for a bare "$10" | **Specialist `failed`** (output did not match schema). A discarded run returned `ok` with a 3-day summary and **no days** |
+| Harpers Ferry | History added to title-only NPS entries ("1859 raid", "rewarding at sunset") | Named rivers; "guided or self-guided"; invented "outdoor exploration" stop | Invented "Hiking and scenic trails" stop; "reconstructed building", "1862 Battle" |
+| San Juan | Five retitled stops ("La Bombonera dinner", "Casa Blanca museum") | Eight retitled stops; "Open daily" added to hours | **4 days for a Dec 4–6 trip**; 10 generic stops ("Dinner with ambiance"); "pastel-colored buildings", "golden sand" |
+
+What this shows, for whoever tunes the prompt next:
+
+1. **Retitling and invented stops.** Haiku appends words to listing titles, merges two listings into one stop, or adds generic stops ("Dinner at a local restaurant"). The code check catches all of these; enforcing exact titles in code (as is done for closures) would remove the class.
+2. **Embellishment.** Descriptions add world knowledge and tone, worst on curated NPS entries and mock inventory, which have titles but no descriptions. The judge catches it.
+3. **Envelope reliability.**
+   - One specialist returned `failed` over weather, against the prompt.
+   - One threw on a schema mismatch.
+   - One returned `ok` with no `days`. The existing guard only catches `data == null`, so the trip board would show a summary with no plan.
+   - One produced the wrong number of days.
+4. **No web research.** The itinerary specialist never called `search_web` in these cases, so its new web-backed-stop allowance went unused.
+
+The judge is strict by design: "Adults $10" and "Open daily" count as unsupported. Read the findings, not only the pass count, and compare `judgeFindingsPerStop` across runs.

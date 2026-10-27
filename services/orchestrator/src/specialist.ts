@@ -25,9 +25,15 @@ function maskArgs(args: unknown): Record<string, unknown> {
   );
 }
 
+/** Offline eval hooks: raw tool results and token usage, never sent to the bus. */
+export interface SpecialistObserver {
+  toolResult?(tool: string, args: unknown, result: unknown): void;
+  usage?(usage: { inputTokens?: number; outputTokens?: number }): void;
+}
+
 /** Wrap MCP tools so every invocation lands on the session event bus. */
 function instrument(tools: ToolSet, sessionId: string, agentId: string,
-  provenance: { unpricedGuide: boolean }): ToolSet {
+  provenance: { unpricedGuide: boolean }, observer?: SpecialistObserver): ToolSet {
   const wrapped: ToolSet = {};
   for (const [name, t] of Object.entries(tools)) {
     wrapped[name] = {
@@ -43,6 +49,7 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await (t as any).execute(args, opts);
+        observer?.toolResult?.(name, args, result);
         const envelope = z.object({ content: z.array(z.object({ type: z.string(), text: z.string().optional() })) }).safeParse(result);
         for (const item of envelope.success ? envelope.data.content : []) {
           if (item.type !== "text" || !item.text) continue;
@@ -78,6 +85,7 @@ export async function runSpecialist(
   def: AgentDefinition,
   req: DelegationRequest,
   sessionId: string,
+  observer?: SpecialistObserver,
 ): Promise<DelegationResult> {
   const started = Date.now();
   await bus.emit({
@@ -92,15 +100,16 @@ export async function runSpecialist(
   const sources: WebSource[] = [];
   let result: DelegationResult;
   try {
-    const { output } = await generateText({
+    const { output, totalUsage } = await generateText({
     abortSignal: AbortSignal.timeout(60000),
       model: anthropic(def.model ?? SPECIALIST_MODEL),
       system: def.systemPrompt + WEB_RULES,
-      tools: instrument({ ...toolsFor(def.mcpServers), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance),
+      tools: instrument({ ...toolsFor(def.mcpServers), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance, observer),
       stopWhen: isStepCount(def.maxSteps),
       output: Output.object({ schema: resultSchema(def) }),
       prompt: `Task: ${req.task}\n\nKnown context:\n${JSON.stringify(req.context ?? {}, null, 2)}\n\nToday's date: ${new Date().toISOString().slice(0, 10)}`,
     });
+    observer?.usage?.(totalUsage);
     result = output as DelegationResult;
     // Curated and community guides contain no verified prices: never display invented totals.
     if (def.id === "itinerary-agent" && provenance.unpricedGuide && result.data) {

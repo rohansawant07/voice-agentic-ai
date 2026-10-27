@@ -104,7 +104,7 @@ The suite contains 14 tests, including gateway authentication and PostgreSQL int
 - Measured local text medians: 2.33s clarification, 17.21s regional itinerary,
   38.10s multi-specialist trip (three runs each; not a production SLA).
   See [benchmark methodology and raw data](docs/PERFORMANCE.md).
-- Redis, full tracing/evals, Helm and EKS remain future work. Docker/Compose,
+- Redis, tracing, evals beyond the offline itinerary grounding eval, Helm and EKS remain future work. Docker/Compose,
   PostgreSQL state, cross-instance locks and bounded retention are implemented for the pilot.
 
 ## October 26 additions
