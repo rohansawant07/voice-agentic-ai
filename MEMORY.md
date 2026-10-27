@@ -10,6 +10,7 @@ Updated October 27, 2026 (trip board redesign, AWS kit). This file is durable re
 - Local login is in ignored `.secrets/tester-login.txt`; provider credentials remain in ignored `.env`. Never copy credentials into documentation or Git.
 - October 26 checks: all seven containers healthy; anonymous HTTP 401, authenticated UI 200, API validation 400; database persistence and authenticated WebSocket replay verified. User subsequently confirmed the site works. Embedded-browser Basic-auth prompts may fail; use Chrome or Safari.
 - Docker implementation commit: `67aea1b`. Fourteen tests including authentication and PostgreSQL integration; database test requires TEST_DATABASE_URL. See execution history for validation details.
+- Itinerary guides: curated NPS for Harpers Ferry/Shenandoah, live Wikivoyage listings elsewhere (DESTINATION_GUIDES). Closed-season listings are filtered in code; wording embellishment still needs an eval judge.
 - Deepgram handles transcription. Optional spoken replies require a separate configured TTS provider. Airbnb uses direct search links, not verified listings. Travel/agency inventory is demo data; agency mutations are disabled in Compose.
 - No Redis or application response cache. No production latency/capacity claim; existing measurements are small-sample local benchmarks in docs/PERFORMANCE.md.
 

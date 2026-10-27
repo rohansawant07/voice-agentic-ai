@@ -511,6 +511,11 @@ export function ResultsCanvas({
             plural(trip.itinerary?.days?.length, "day") ??
             plural(trip.itinerary?.destinations?.length, "idea")
           }
+          provenance={
+            trip.itinerary?.sources?.some((s) => s.url.includes("wikivoyage.org"))
+              ? "From community Wikivoyage listings; confirm hours"
+              : undefined
+          }
         >
           {trip.itinerary && <Itinerary data={trip.itinerary} />}
         </Section>

@@ -1,3 +1,5 @@
+import { forTripMonth, wikivoyageGuide } from "./wikivoyage.js";
+
 /** Curated planning facts, independent of the mock booking catalog. */
 export const GUIDES = [
   {
@@ -33,11 +35,23 @@ export function guideFor(destination: string) {
   return GUIDES.find((guide) => guide.aliases.some((alias) => query.includes(alias)));
 }
 
-export function destinationGuide(destination: string) {
+const DESTINATION_GUIDES = process.env.DESTINATION_GUIDES ?? "wikivoyage";
+
+/** Curated official guides first, then Wikivoyage listings, then an honest gap. */
+export async function destinationGuide(
+  destination: string,
+  fetchImpl: typeof fetch = fetch,
+  startDate?: string,
+) {
   const guide = guideFor(destination);
-  if (!guide) return {
+  if (guide) return { ...guide, source: "curated-official-guide", pricesVerified: false };
+  if (DESTINATION_GUIDES === "wikivoyage") {
+    const community = await wikivoyageGuide(destination, fetchImpl).catch(() => null);
+    const month = /^\d{4}-(\d{2})-\d{2}$/.exec(startDate ?? "")?.[1];
+    if (community) return forTripMonth(community, month ? Number(month) : undefined);
+  }
+  return {
     destination, activities: [], source: "unavailable",
-    note: "No verified guide for this destination yet. This is a data coverage gap, not an agency restriction. Lodging search can still be used; do not invent activities.",
+    note: "No guide found for this destination. This is a data coverage gap, not an agency restriction. Lodging search can still be used; do not invent activities.",
   };
-  return { ...guide, source: "curated-official-guide", pricesVerified: false };
 }

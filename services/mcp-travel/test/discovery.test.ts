@@ -57,14 +57,15 @@ test("live listings retain original price labels and reject invalid IDs", async 
   assert.equal(result.availabilityVerified, false);
 });
 
-test("both requested regions have official planning facts without hotel inventory", () => {
+test("both requested regions have official planning facts without hotel inventory", async () => {
+  const noResults = (async () => Response.json({ query: { search: [] } })) as unknown as typeof fetch;
   for (const destination of ["Harpers Ferry, WV", "Harper's Ferry, West Virginia", "Shenandoah Valley, VA", "Shenandoah National Park"]) {
-    const guide = destinationGuide(destination);
+    const guide = await destinationGuide(destination, noResults);
     assert.equal(guide.source, "curated-official-guide");
     assert.ok(guide.activities.length >= 3);
     assert.ok(guide.activities.every((activity) => !("cost" in activity)));
   }
-  assert.equal(destinationGuide("Unknown Village").source, "unavailable");
+  assert.equal((await destinationGuide("Unknown Village", noResults)).source, "unavailable");
 });
 
 

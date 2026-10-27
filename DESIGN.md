@@ -29,6 +29,7 @@ The backend transcribes after recording ends. It does not stream partial recogni
 
 ## Trip results and provenance
 
+- Itineraries built from community Wikivoyage listings say so in the section header ("From community Wikivoyage listings; confirm hours"). The guide page is listed under Sources.
 - Itineraries use keyboard-navigable day tabs (arrow keys). Each day shows weather and estimated spend, then a time-of-day timeline and the meal pick.
 - Sources and planning notes are expandable alongside the itinerary.
 - Airbnb links are explicitly labeled as search links with unverified listings/prices. Opt-in provider results retain their original price wording.

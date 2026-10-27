@@ -47,7 +47,7 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
           if (item.type !== "text" || !item.text) continue;
           try {
             const payload = JSON.parse(item.text) as { source?: string; pricesVerified?: boolean };
-            if (payload.source === "curated-official-guide" && payload.pricesVerified === false) provenance.unpricedGuide = true;
+            if ((payload.source === "curated-official-guide" || payload.source === "wikivoyage") && payload.pricesVerified === false) provenance.unpricedGuide = true;
           } catch { /* Not every tool returns JSON text. */ }
         }
         return result;
@@ -100,7 +100,7 @@ export async function runSpecialist(
       prompt: `Task: ${req.task}\n\nKnown context:\n${JSON.stringify(req.context ?? {}, null, 2)}\n\nToday's date: ${new Date().toISOString().slice(0, 10)}`,
     });
     result = output as DelegationResult;
-    // Curated guides contain no verified prices: never display invented totals.
+    // Curated and community guides contain no verified prices: never display invented totals.
     if (def.id === "itinerary-agent" && provenance.unpricedGuide && result.data) {
       const data = result.data as { days?: { estimatedDailySpend?: unknown; stops: { estimatedCost?: unknown }[] }[]; notes?: string };
       for (const day of data.days ?? []) {

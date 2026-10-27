@@ -46,7 +46,8 @@ See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is tri
 | UI | Responsive conversation / trip board; trip summary with picks, estimated total vs. budget and copyable plan; comparison rows with computed tags; live skeletons and step labels; day-tab itinerary; planning-activity timeline; follow-up suggestions; refresh-safe sessions with socket reconnect |
 | Specialists | Six registered specialists: flight, hotel, itinerary, car rental, budget, support |
 | Travel | Seeded flights/hotels/cars/activities; dietary filters; car rentals offered only when relevant/requested |
-| Regional plans | Curated NPS planning facts for Harpers Ferry and Shenandoah, independent of hotel inventory |
+| Regional plans | Curated NPS planning facts for Harpers Ferry and Shenandoah; any other US destination uses live Wikivoyage listings (sourced, dated, community-edited), with places listed as closed on the trip dates removed in code |
+| Weather | Open-Meteo forecasts within 16 days; beyond that, observed averages for the month over the last three years. Place names resolve by state and territory ("Lake George, NY", "San Juan, Puerto Rico") |
 | Airbnb | Dated destination search links by default; opt-in independent connector with bounded concurrency/time and honest fallback |
 | Weather | Live Open-Meteo forecast/geocoding; static climate table; optional mock weather |
 | Agency | Seeded customers/bookings, simulated modifications/cancellations, tickets and audit records |

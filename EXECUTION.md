@@ -28,7 +28,8 @@ These rows track when earlier milestones first landed. For the current interface
 **Known gaps (tracked for M3+):**
 - Card picks now drive the trip summary's estimated total and persist per session, but they still don't inform the orchestrator on the next turn or update the budget specialist's meter.
 - Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
-- Weather specialist mis-geocoded "San Juan" in one live run and gracefully failed — seed case for the golden dataset.
+- Weather mis-geocoding of "San Juan" (it searched US only, missing Puerto Rico) is fixed by state/territory-aware geocoding.
+- Itinerary wording can still add mild unsourced descriptors to real listings (for example "indoor-friendly" mini-golf). Closures and places are enforced in code; wording needs an LLM-judge eval (M3).
 
 ---
 
@@ -56,6 +57,24 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-27 — Itineraries for any US destination
+
+- A real request (Lake George, NY, Thanksgiving, six people) failed with "data coverage gaps". Destination guides covered only Harpers Ferry and Shenandoah.
+- `get_destination_guide` and `search_activities` now fall back to live Wikivoyage listings (sights, activities, food) for any US place. Each guide includes a source URL, license and last-edit dates.
+  - Pages are rejected when they are disambiguation pages, outside the US, or about a same-named town in another state.
+  - Results are cached for six hours; requests time out after six seconds and fail honestly.
+- Listings stating a season ("closed Nov-Apr", "May-Oct", "Open April-October") are removed in code when closed on the trip dates and reported in `closedDuringTrip`. Listings with no stated season are flagged `seasonUnconfirmed`.
+- Weather:
+  - Geocoding now parses states, abbreviations and territories (San Juan resolves in Puerto Rico; Lake George, NY not MN).
+  - Climate beyond the forecast window uses observed Open-Meteo archive averages for the last three years.
+  - The full weather-code table is filled in.
+- Specialist and orchestrator prompts were updated: describe listings only with their own facts, pass trip dates, never call a destination unsupported before the itinerary specialist tries. Cost totals stay stripped for community guides.
+- The trip board labels community-sourced itineraries.
+- Seven new offline tests (place parsing, title matching, listing parsing, US/state/disambiguation rejection, season logic). The live Lake George rerun produced a three-day plan:
+  - Every stop is a real listing; the three closed places were excluded and named.
+  - Typical November weather appears in the notes.
+  - Mild descriptive embellishments remain (see known gaps).
 
 ### 2026-10-27 — Trip board redesign and AWS deploy kit
 

@@ -1,15 +1,18 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { serveMcp, toolResult } from "@concierge/mcp-kit";
+import { parsePlace, pickByRegion, serveMcp, toolResult } from "@concierge/mcp-kit";
 
 const PORT = Number(process.env.PORT ?? 8102);
 const MOCK = process.env.WEATHER_PROVIDER === "mock"; // deterministic mode for evals/CI
 
 const WMO: Record<number, string> = {
   0: "clear", 1: "mostly clear", 2: "partly cloudy", 3: "overcast",
-  45: "fog", 51: "light drizzle", 61: "light rain", 63: "rain", 65: "heavy rain",
-  71: "light snow", 73: "snow", 75: "heavy snow", 80: "rain showers",
-  81: "rain showers", 82: "heavy showers", 95: "thunderstorms",
+  45: "fog", 48: "freezing fog", 51: "light drizzle", 53: "drizzle", 55: "heavy drizzle",
+  56: "freezing drizzle", 57: "freezing drizzle", 61: "light rain", 63: "rain",
+  65: "heavy rain", 66: "freezing rain", 67: "freezing rain", 71: "light snow",
+  73: "snow", 75: "heavy snow", 77: "snow grains", 80: "rain showers",
+  81: "rain showers", 82: "heavy showers", 85: "snow showers", 86: "heavy snow showers",
+  95: "thunderstorms", 96: "thunderstorms with hail", 99: "thunderstorms with hail",
 };
 
 async function geocode(place: string) {
@@ -19,17 +22,64 @@ async function geocode(place: string) {
     name: "Harpers Ferry", admin1: "West Virginia",
     latitude: 39.3216956806, longitude: -77.7432835354,
   };
+  // "Lake George, NY" must not resolve to Lake George, MN; San Juan lives under PR.
+  const parsed = /shenandoah valley|shenandoah national park/i.test(place)
+    ? { name: "Luray", region: "Virginia", country: "US" }
+    : parsePlace(place);
   const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
-  const query = /harper.?s ferry/i.test(place) ? "Harpers Ferry"
-    : /shenandoah valley|shenandoah national park/i.test(place) ? "Luray" : place;
-  url.searchParams.set("name", query);
-  url.searchParams.set("count", "1");
-  url.searchParams.set("countryCode", "US");
+  url.searchParams.set("name", parsed.name);
+  url.searchParams.set("count", "10");
+  url.searchParams.set("countryCode", parsed.country);
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   const json = (await res.json()) as {
     results?: { name: string; latitude: number; longitude: number; admin1?: string }[];
   };
-  return json.results?.[0];
+  // A territory name already pins the country; a state must match admin1.
+  const hit = pickByRegion(json.results, parsed.country === "US" ? parsed.region : undefined);
+  return hit && parsed.country !== "US" ? { ...hit, admin1: parsed.region } : hit;
+}
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+  "August", "September", "October", "November", "December"];
+
+/** Average daily high/low for a month over the last three completed years. */
+async function historicalClimate(place: string, month: number) {
+  const loc = await geocode(place);
+  if (!loc) return undefined;
+  const now = new Date();
+  const lastYear = now.getUTCMonth() + 1 > month ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
+  const years = [lastYear - 2, lastYear - 1, lastYear];
+  const highs: number[] = [];
+  const lows: number[] = [];
+  await Promise.all(years.map(async (year) => {
+    const mm = String(month).padStart(2, "0");
+    const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const url = new URL("https://archive-api.open-meteo.com/v1/archive");
+    url.searchParams.set("latitude", String(loc.latitude));
+    url.searchParams.set("longitude", String(loc.longitude));
+    url.searchParams.set("start_date", `${year}-${mm}-01`);
+    url.searchParams.set("end_date", `${year}-${mm}-${last}`);
+    url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min");
+    url.searchParams.set("temperature_unit", "fahrenheit");
+    url.searchParams.set("timezone", "auto");
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return;
+    const json = (await res.json()) as {
+      daily?: { temperature_2m_max: (number | null)[]; temperature_2m_min: (number | null)[] };
+    };
+    for (const v of json.daily?.temperature_2m_max ?? []) if (v != null) highs.push(v);
+    for (const v of json.daily?.temperature_2m_min ?? []) if (v != null) lows.push(v);
+  }));
+  if (!highs.length || !lows.length) return undefined;
+  const avg = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
+  return {
+    place: `${loc.name}${loc.admin1 ? ", " + loc.admin1 : ""}`,
+    month,
+    avgHighF: avg(highs),
+    avgLowF: avg(lows),
+    source: "open-meteo-archive",
+    note: `Average of observed daily highs and lows for ${MONTHS[month - 1]} ${years[0]}–${years[2]}. Typical conditions, not a forecast.`,
+  };
 }
 
 /** Typical-climate table for demo destinations — used by get_climate_summary
@@ -118,7 +168,7 @@ function createServer(): McpServer {
     "get_climate_summary",
     {
       description:
-        "Typical climate for a US destination in a given month (avg high/low °F). Use for trips beyond the 16-day forecast window or 'somewhere warm in February' questions.",
+        "Typical climate for any US place in a given month (avg high/low °F), from a curated table or the last three years of observed weather. Use for trips beyond the 16-day forecast window or 'somewhere warm in February' questions. Include the state, e.g. \"Lake George, NY\".",
       inputSchema: {
         place: z.string(),
         month: z.number().int().min(1).max(12),
@@ -126,7 +176,11 @@ function createServer(): McpServer {
     },
     async ({ place, month }) => {
       const c = climateFor(place);
-      if (!c) return toolResult({ error: "no_climate_data", place });
+      if (!c) {
+        if (MOCK) return toolResult({ error: "no_climate_data", place });
+        const observed = await historicalClimate(place, month).catch(() => undefined);
+        return toolResult(observed ?? { error: "no_climate_data", place });
+      }
       return toolResult({
         place,
         month,

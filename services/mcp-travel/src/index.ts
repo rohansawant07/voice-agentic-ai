@@ -63,9 +63,12 @@ function createServer(): McpServer {
   }, async (input) => toolResult(await searchAirbnb(input)));
 
   server.registerTool("get_destination_guide", {
-    description: "Verified planning facts independent of booking inventory. Includes Harpers Ferry, WV and Shenandoah Valley/National Park, VA. Call for itinerary requests before concluding a destination is unsupported. Guides do not verify current fees, weather, restaurants or availability.",
-    inputSchema: { destination: z.string() },
-  }, async ({ destination }) => toolResult(destinationGuide(destination)));
+    description: "Planning facts for any US destination, independent of booking inventory. Curated NPS guides for Harpers Ferry, WV and Shenandoah, VA; other places return Wikivoyage community listings (sights, activities, restaurants) with a source URL. Include the state, e.g. \"Lake George, NY\". Call for itinerary requests before concluding a destination is unsupported. Guides do not verify current fees, hours, weather or availability.",
+    inputSchema: {
+      destination: z.string(),
+      startDate: z.string().optional().describe("Trip start, YYYY-MM-DD. Removes places listed as closed then."),
+    },
+  }, async ({ destination, startDate }) => toolResult(await destinationGuide(destination, fetch, startDate)));
 
   server.registerTool(
     "search_flights",
@@ -219,6 +222,7 @@ function createServer(): McpServer {
         "Things to do in a US destination, optionally filtered by kind (beach, outdoors, culture, food, family). Pass dietary restrictions to keep only food experiences that accommodate them (non-food activities are unaffected).",
       inputSchema: {
         destination: z.string(),
+        startDate: z.string().optional().describe("Trip start, YYYY-MM-DD"),
         kind: z.string().optional(),
         dietary: z
           .array(z.enum(DIETARY_TAGS))
@@ -226,11 +230,17 @@ function createServer(): McpServer {
           .describe('e.g. ["vegetarian", "gluten-free"] — every tag must be accommodated'),
       },
     },
-    async ({ destination, kind, dietary }) => {
+    async ({ destination, startDate, kind, dietary }) => {
       const dest = destinationByQuery(destination);
       if (!dest) {
-        const guide = destinationGuide(destination);
-        return toolResult({ ...guide, activities: guide.activities.filter((a) => !kind || a.kind === (kind === "outdoor" ? "outdoors" : kind)) });
+        const guide = await destinationGuide(destination, fetch, startDate);
+        const wanted = kind === "outdoor" ? "outdoors" : kind;
+        // Community listings are sights/activities/food; only "food" narrows them.
+        const keep = (a: { kind: string }) =>
+          !wanted || (guide.source === "wikivoyage"
+            ? (wanted === "food") === (a.kind === "food")
+            : a.kind === wanted);
+        return toolResult({ ...guide, activities: guide.activities.filter(keep) });
       }
       const activities = dest.activities
         .filter((a) => !kind || a.kind === kind)
