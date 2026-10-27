@@ -58,6 +58,14 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-27 — AWS host updated to the Haiku 5.5 build
+
+- Ran `deploy/aws/deploy.sh update`. The host fetched `main` at `9b3b31e` and rebuilt with `bootstrap.sh`; npm registry requests were slow but completed. Caddy, the gateway and PostgreSQL kept running, so saved data was untouched.
+- Verified on the host:
+  - all eight containers healthy;
+  - orchestrator environment `SPECIALIST_MODEL=claude-haiku-5-5`, `WEB_SEARCH_MODEL=claude-haiku-4-5`, `ORCHESTRATOR_MODEL=claude-opus-4-8`, web search enabled.
+- Public checks at https://98-95-105-10.sslip.io: `/healthz` 200, HTTP→HTTPS 308, anonymous 401, signed-in UI 200, empty message 400. A live Harpers Ferry planning turn returned 200 in 18.7 s, using the exact NPS listing titles.
+
 ### 2026-10-27 — Haiku 5.5 is the default specialist model
 
 - `SPECIALIST_MODEL` now defaults to `claude-haiku-5-5` ($0.10/$0.50 per million tokens, versus $1/$5) in code, `.env.example` and Compose, following the 4/4 itinerary eval at about 1/7 the specialist cost. The orchestrator stays on `claude-opus-4-8`.
