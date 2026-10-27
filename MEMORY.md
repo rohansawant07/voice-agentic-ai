@@ -16,7 +16,7 @@ Updated October 27, 2026 (trip board redesign, AWS kit). This file is durable re
 
 ## AWS constraints and next step
 
-- Region: us-east-1. Budget: close to zero. No owned domain. User asked on October 27 to deploy; no AWS CLI or credentials existed on the laptop, so no resources were created yet.
+- **Deployed October 27, 2026:** https://98-95-105-10.sslip.io. Region us-east-1, stack `roam`, instance `i-0217dc4871acb1db9`, Elastic IP 98.95.105.10, account 559215333273 (no Free Plan credits; about $6/month is real spend). AWS CLI installed via Homebrew; signed in with `aws login` (root user, short-lived credentials). A $10 `roam-monthly` budget alert emails the user.
 - Ready kit: `deploy/aws/deploy.sh up` (requires AWS CLI v2 signed in). It confirms cost (about $6/month until Dec 31, 2026 on the t4g.small free trial, then about $18: Elastic IP, 20 GiB gp3, snapshots; standard CPU credits), uploads `.env` keys to SSM `/roam/*`, deploys `roam.cloudformation.yaml`, and serves `https://<ip-dashed>.sslip.io` via Caddy. The login is saved to `.secrets/aws-tester-login.txt`.
 - Verified locally only (overlay under project `roam-awstest`). Still unverified in a real account: Let's Encrypt issuance for sslip.io, first-boot build time, snapshot restore.
 - `update` rebuilds from GitHub, so push first. The data volume is retained on `down`. Never rotate `/roam/postgres-password` alone.

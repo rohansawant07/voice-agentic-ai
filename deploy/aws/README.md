@@ -1,6 +1,6 @@
 # Roam on AWS — single-host pilot
 
-Region: **us-east-1**. The kit is ready and was verified locally (see Verification). **No AWS resources exist until you run `deploy.sh up` in a signed-in account.** It creates billable resources and asks for confirmation first.
+Region: **us-east-1**. **Deployed October 27, 2026** at https://98-95-105-10.sslip.io (stack `roam`, instance `i-0217dc4871acb1db9`). Running `deploy.sh up` again updates that stack. It creates billable resources and asks for confirmation first.
 
 ## What it creates
 
@@ -84,7 +84,15 @@ deploy/aws/deploy.sh down      # delete the stack; lists retained volumes to cle
   - Anonymous and wrong-password requests got 401; authenticated UI got 200; an invalid chat body got 400; the health check (no auth) got 200.
   - A live planning turn over HTTPS returned 200 in 15.8s, with the authenticated WebSocket streaming delegation, tool and result events.
   - Gateway logs recorded the real client address rather than Caddy's.
-- **Not yet verified:** the CloudFormation stack in a real account, Let's Encrypt issuance for the sslip.io name, first-boot build time on t4g.small with standard credits, the arm64 AMI parameter resolving in the account, and snapshot restore. These happen on the first `deploy.sh up`.
+- **Verified in the real account (October 27, 2026):**
+  - The first `up` failed: DLM rejected the comma in the snapshot policy description, and cfn-lint does not check that. AWS rolled back with no leftover instance, volume or IP. Fixed and redeployed.
+  - The arm64 AMI resolved and the t4g.small launched with standard credits, IMDSv2 and a 20 GiB encrypted gp3 volume (DeleteOnTermination false). The DLM policy is enabled, and the security group allows only 80 and 443.
+  - First boot took about 19 minutes from launch to healthy HTTPS.
+  - Let's Encrypt issued a certificate for the sslip.io name (expires January 25, 2027).
+  - The live site returned 200 health, 401 anonymous and wrong-password, 200 authenticated, 400 invalid body, and a 308 HTTP→HTTPS redirect. A live Harpers Ferry planning turn returned 200 in 22.5s with WebSocket events.
+  - The `roam-monthly` $10 budget alert exists.
+- The host cloned `main` at `1b38139` (about 15:45 EDT), before the itinerary-guard commits `ec9388a` and `5b03c5b`. Run `deploy.sh update` to rebuild it at the current `main`.
+- **Still unverified:** snapshot restore, and an `update` run.
 
 ## Limits and next steps
 

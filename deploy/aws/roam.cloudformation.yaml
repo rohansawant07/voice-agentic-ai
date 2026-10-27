@@ -133,7 +133,7 @@ Resources:
   DailySnapshots:
     Type: AWS::DLM::LifecyclePolicy
     Properties:
-      Description: Roam daily volume snapshots, 7 kept
+      Description: Roam daily volume snapshots - 7 kept
       State: ENABLED
       ExecutionRoleArn: !GetAtt SnapshotRole.Arn
       PolicyDetails:

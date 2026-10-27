@@ -6,9 +6,11 @@ A voice-enabled travel planning prototype for the US and its territories. Talk o
 - The trip board was redesigned.
 - All six specialists and the orchestrator have Anthropic web search, with visible source links.
 - Itinerary research uses sourced Wikivoyage listings where available; coverage and output quality are not guaranteed.
-- An AWS deploy kit is ready ([deploy/aws](deploy/aws/README.md)), but no public application URL is live yet.
+- It's **live on AWS** at https://98-95-105-10.sslip.io (password-protected; one t4g.small server, about $6/month). See [deploy/aws](deploy/aws/README.md).
 
 Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability. See [Where the data comes from](#where-the-data-comes-from).
+
+**New here? Read [Roam, explained in plain English](EXPLAINED.md)**: what it is, every tool it uses, and everything done from the first version to deployment, without jargon.
 
 ## Container preview
 
@@ -38,7 +40,7 @@ Individual package commands do **not** load root `.env` automatically. If runnin
 
 - **Yes, by cloning the public repository** and running the setup above with their own keys.
 - **Not by opening your localhost link.** On their device, `localhost` means their own machine.
-- A browser-only test needs a hosted frontend and reachable HTTP/WebSocket backend, or a protected temporary tunnel to both. HTTPS is needed for microphone use off localhost. A local protected Docker deployment is configured. The AWS kit provides HTTPS and Basic auth, but no AWS deployment is active yet.
+- A browser-only test needs a hosted frontend and reachable HTTP/WebSocket backend, or a protected temporary tunnel to both. HTTPS is needed for microphone use off localhost. A local protected Docker deployment is configured, and the AWS deployment at https://98-95-105-10.sslip.io serves HTTPS (needed for the microphone) behind Basic auth. Share its login only with people you trust; it's one shared identity.
 - Before sharing your running backend, add access control and request limits. Direct development mode has no authentication. The container gateway now adds Basic authentication, session ownership scoping and request limits, but no per-user billing quota. CORS is not authentication; clients without an Origin header can call the backend. Shared demo agency mutations affect the same in-memory data.
 
 See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is triggered by pushing to GitHub.
@@ -188,6 +190,7 @@ Project-local UI skills are documented in [SOURCES.md](.agents/skills/SOURCES.md
 
 ## Project documents
 
+- [Roam, explained in plain English](EXPLAINED.md): a non-technical walkthrough of the whole project and its deployment.
 - [Project handoff](MEMORY.md): durable project context, constraints and next steps.
 - [Architecture](ARCHITECTURE.md): implemented topology and data flow.
 - [Interface design](DESIGN.md): current UI and behavior.

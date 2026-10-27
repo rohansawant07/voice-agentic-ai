@@ -20,7 +20,7 @@ These rows track when earlier milestones first landed. For the current interface
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
 | 7 | M3 — evals (golden dataset, judges, tracing) | 🟡 itinerary grounding eval built and run (4 golden cases + 2 judge calibrations, Sonnet judge, ~$0.27/run, offline only); 1/4 cases grounded in the latest of five runs. The code guard removed title and date failures, and generated descriptions for title-only listings brought findings to 0.30 per stop. Wording on described Wikivoyage listings remains. Findings in `docs/evals/`. Other specialists, tracing and online evals not started | see 2026-10-27 changelog |
 | 8 | M4 — Docker, compose, Helm on k3d | 🟡 Docker/Compose complete; Helm/k3d not implemented | `67aea1b` |
-| 9 | M5 — AWS | 🟡 single-host kit built and verified locally (CloudFormation, Caddy HTTPS, SSM secrets, snapshots); awaiting account sign-in and first `deploy.sh up`. EKS/ECR/ALB not pursued at pilot budget | see 2026-10-27 changelog |
+| 9 | M5 — AWS | ✅ live single-host pilot at https://98-95-105-10.sslip.io (t4g.small, Caddy HTTPS, SSM secrets, daily snapshots). EKS/ECR/ALB not pursued at pilot budget | see 2026-10-27 changelog |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
 
 **Local prototype status:** running; remote browser sharing still requires deployment and access controls. `ANTHROPIC_API_KEY` + `DEEPGRAM_API_KEY` are in local `.env` (gitignored); text loop, UI, and voice input all ran live. Spoken *replies* need an `OPENAI_API_KEY` (+ `VOICE_TTS=openai`) — optional.
@@ -58,6 +58,15 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-27 — Deployed to AWS; plain-English explainer
+
+- Installed AWS CLI 2.38.6 and signed in with `aws login` (account 559215333273; it reports no Free Plan data, so charges are real). Ran `deploy/aws/deploy.sh up` with a $10 budget alert to the user's email.
+- First attempt rolled back. DLM rejects commas in a lifecycle policy `Description`, which cfn-lint doesn't check. Nothing billable was left. Changed the description to `Roam daily volume snapshots - 7 kept`, deleted the empty stack and redeployed successfully.
+- Live at https://98-95-105-10.sslip.io (instance `i-0217dc4871acb1db9`, Elastic IP 98.95.105.10):
+  - Confirmed t4g.small/arm64, standard credits, IMDSv2, a 20 GiB encrypted retained volume, an enabled DLM policy and ports 80/443 only.
+  - First boot took about 19 minutes. The Let's Encrypt certificate is valid to January 25, 2027.
+  - Live checks: 200/401/401/200/400/308. A Harpers Ferry planning turn returned 200 in 22.5s with WebSocket events.
+- Added `EXPLAINED.md`, a non-technical walkthrough of the whole project, its tools and the deployment, linked from the README.
 ### 2026-10-27 — Generated descriptions for title-only itinerary stops
 
 - The itinerary guard writes stop descriptions from the listing's own fields for entries without guide text: NPS entries, Roam's demo activity list, and Wikivoyage listings with only an address or website. The description gives kind, source, any address, hours, listed price or dietary options, and a provenance caveat. Model wording is kept only where the listing has its own description. The specialist now collects full listing fields, not just titles.

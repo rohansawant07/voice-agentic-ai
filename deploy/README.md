@@ -80,7 +80,7 @@ A named Docker volume survives container replacement, not disk failure. Before u
 
 ## AWS
 
-See [AWS deployment](aws/README.md). Region: us-east-1. `deploy/aws/deploy.sh up` creates one t4g.small HTTPS host (about $6/month while the T4g free trial runs, through December 31, 2026; about $18/month after) after an explicit confirmation; nothing has been created yet. The AWS overlay (`aws/compose.aws.yaml`) adds Caddy in front of this same gateway. The gateway honors `X-Forwarded-For` only from private Docker ranges, so rate limits apply per real client. Docker operations on this laptop do not create AWS charges; live model or speech requests can still use provider credits.
+See [AWS deployment](aws/README.md). Region: us-east-1. `deploy/aws/deploy.sh up` creates one t4g.small HTTPS host (about $6/month while the T4g free trial runs, through December 31, 2026; about $18/month after) after an explicit confirmation. It is deployed: https://98-95-105-10.sslip.io (October 27, 2026). The AWS overlay (`aws/compose.aws.yaml`) adds Caddy in front of this same gateway. The gateway honors `X-Forwarded-For` only from private Docker ranges, so rate limits apply per real client. Docker operations on this laptop do not create AWS charges; live model or speech requests can still use provider credits.
 
 ## Shared web research (October 27, 2026)
 
