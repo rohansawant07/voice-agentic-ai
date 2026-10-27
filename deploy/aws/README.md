@@ -85,3 +85,11 @@ deploy/aws/deploy.sh down      # delete the stack; lists retained volumes to cle
 ## Limits and next steps
 
 One host and one PostgreSQL instance give one failure domain; this is a pilot, not high availability. Builds run on the host, so an update briefly uses most of the CPU. For production: build images in CI and push them to ECR, use a managed database with tested restores, add per-user identity and quotas, and add monitoring and alarms. If Let's Encrypt rate-limits sslip.io names, point a domain you own at the Elastic IP. Then change `/opt/roam/host` and `WEB_ORIGIN` on the host and run `update`.
+
+## Web search in the AWS stack
+
+All agents use Anthropic's native `web_search_20250305` through `search_web`, using the same server-side Anthropic key stored in SSM. Compose enables it by default with Haiku 4.5; it adds Anthropic usage, not Deepgram usage. Research returns source links and retrieval times and does not provide verified booking inventory. See the [root guide](../../README.md#shared-web-research-october-27-2026) for limits and the [eval results](../../docs/evals/README.md) for known itinerary-quality failures.
+
+`WEB_SEARCH_ENABLED` and `WEB_SEARCH_MODEL` are configurable through Compose environment values, but the current AWS bootstrap does not copy these optional settings from your laptop or SSM. It regenerates the host `.env` with provider credentials, so defaults apply after bootstrap/update. To persist different search settings, extend the bootstrap configuration before deploying; editing the generated host `.env` alone does not survive updates. No additional search service or inbound port is required.
+
+This documentation refresh did not deploy AWS or validate account credits. Cost figures above are planning estimates, not a newly checked quote; confirm account eligibility and current pricing before a billable launch.

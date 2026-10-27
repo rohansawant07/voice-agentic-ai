@@ -21,6 +21,12 @@ The existing non-container development app can continue on port 3000. This avoid
 
 The login/password and Compose environment files are mode 0600 inside a mode-0700 directory. The password-hash file is readable by the nginx worker inside its container; it contains no plaintext password. The setup script refuses to overwrite existing credentials. To rotate them, stop the stack and follow a deliberate database-password and gateway-password rotation; do not just delete `.secrets` while retaining the database volume.
 
+## Troubleshooting local access
+
+Use `http://localhost:3080/` for Compose; `http://localhost:3000/` is the separate development server. Local Compose does not serve HTTPS. A 401 response means the gateway is reachable and requires login; it is not a connection failure. Check container health with the command below and run `node scripts/smoke-containers.mjs`. If that passes but the embedded browser fails, open the same HTTP URL in Chrome or Safari. Do not remove authentication to resolve a browser prompt problem.
+
+Latest local verification on October 27: all seven services healthy; anonymous 401, authenticated UI 200 and API validation 400. These are recorded checks, not continuous monitoring.
+
 ## Day-to-day commands
 
 Use the same environment files for each command:
@@ -78,7 +84,7 @@ See [AWS deployment](aws/README.md). Region: us-east-1. `deploy/aws/deploy.sh up
 
 ## Shared web research (October 27, 2026)
 
-All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic web-search research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
+All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic native `web_search_20250305` research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
 
 Set `WEB_SEARCH_ENABLED=false` to disable it or `WEB_SEARCH_MODEL` to choose a compatible Anthropic model. Compose forwards both settings. The Anthropic organization must permit web search. A live check with the configured account returned the official NPS Harpers Ferry operating-hours page.
 

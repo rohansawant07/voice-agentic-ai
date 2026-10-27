@@ -1,6 +1,6 @@
 # Itinerary grounding eval (M3)
 
-Checks that the itinerary specialist builds days only from the guide listings it was given, and describes each listing only with that listing's own facts (AGENTS.md: visible provenance, no invented facts).
+Checks that the itinerary specialist grounds its days in the guide listings or web-search evidence it received, and describes each stop only with supported facts (AGENTS.md: visible provenance, no invented facts).
 
 ## What a run does
 
@@ -84,3 +84,7 @@ What this shows, for whoever tunes the prompt next:
 4. **No web research.** The itinerary specialist never called `search_web` in these cases, so its new web-backed-stop allowance went unused.
 
 The judge is strict by design: "Adults $10" and "Open daily" count as unsupported. Read the findings, not only the pass count, and compare `judgeFindingsPerStop` across runs.
+
+## Web-search verification versus itinerary quality
+
+The separate October 27 authenticated application smoke test explicitly requested web research and successfully invoked itinerary-agent → `search_web`, returned official NPS operating hours, and persisted ten source links. That proves the tool path works; it does not supersede the 0/4 itinerary results above. Search uses Anthropic's native `web_search_20250305` with the existing Anthropic key, not Deepgram. No new paid evaluation was run for this README refresh; the committed result files remain historical evidence.

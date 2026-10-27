@@ -257,3 +257,7 @@ Replaced the sparse split view with an inspiration-led trip board, refreshed typ
 Added bounded Anthropic web research to the orchestrator and all six specialists, preserved source links/timestamps in specialist events and the activity UI, and added configuration plus deterministic budget/error tests. Live research returned official NPS sources using the configured key.
 
 Validation: lint, full build/typechecks and 21 tests passed (one PostgreSQL test skipped without TEST_DATABASE_URL). Rebuilt local Compose; all seven services healthy and authenticated smoke passed. A live HTTP request delegated to itinerary-agent, invoked search_web, returned HTTP 200 with official NPS hours, and persisted ten source links in its completion event.
+
+### 2026-10-27 — README consistency audit
+
+Updated root, container, AWS and evaluation READMEs: native Anthropic search/tool coverage, Wikivoyage cache bounds, localhost HTTP/login troubleshooting, AWS bootstrap configuration limits and the existing 0/4 itinerary evaluation result. No application code or infrastructure changed; no paid eval rerun.

@@ -4,14 +4,15 @@ A voice-enabled travel planning prototype for the US and its territories. Talk o
 
 **Status: working local prototype, not a hosted booking service.** Updated October 27, 2026:
 - The trip board was redesigned.
-- Itineraries now work for any US destination through sourced Wikivoyage listings.
+- All six specialists and the orchestrator have Anthropic web search, with visible source links.
+- Itinerary research uses sourced Wikivoyage listings where available; coverage and output quality are not guaranteed.
 - An AWS deploy kit is ready ([deploy/aws](deploy/aws/README.md)), but no public application URL is live yet.
 
 Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability. See [Where the data comes from](#where-the-data-comes-from).
 
 ## Container preview
 
-The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. To host it with HTTPS on AWS (one EC2 host, about $21/month), run `deploy/aws/deploy.sh up` from a signed-in AWS CLI; see [AWS deployment](deploy/aws/README.md).
+The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. Use HTTP on port 3080 in Chrome or Safari if an embedded browser cannot show the login prompt. To host it with HTTPS on AWS (one EC2 host, about $21/month), run `deploy/aws/deploy.sh up` from a signed-in AWS CLI; see [AWS deployment](deploy/aws/README.md).
 
 ## Run locally
 
@@ -65,6 +66,7 @@ Voice only converts speech. Deepgram turns recorded audio into text, which then 
 
 | Data | Source | Live internet? |
 | --- | --- | --- |
+| Public web research | Anthropic native `web_search_20250305`, through the shared `search_web` tool | Yes; retrieved pages may still be stale |
 | Reasoning (orchestrator and specialists) | Anthropic Claude | Yes |
 | Speech to text / optional text to speech | Deepgram / OpenAI or ElevenLabs | Yes |
 | Forecasts, geocoding, typical climate | Open-Meteo forecast, geocoding and historical archive APIs | Yes |
@@ -76,9 +78,10 @@ Voice only converts speech. Deepgram turns recorded audio into text, which then 
 
 | Specialist | Tools it can call |
 | --- | --- |
-| Flights, Stays, Rental cars, Budget | Travel tools (demo inventory; Stays also builds Airbnb links) |
-| Itinerary | Travel tools (guides and Wikivoyage) and weather tools |
-| Bookings | Agency tools (demo bookings; mutations disabled in Compose) |
+| Flights, Stays, Rental cars, Budget | Travel tools (demo inventory; Stays also builds Airbnb links) + `search_web` |
+| Itinerary | Travel tools (guides and Wikivoyage), weather tools and `search_web` |
+| Bookings | Agency tools (demo bookings; mutations disabled in Compose) + public-policy `search_web` |
+| Orchestrator | Specialist delegation + `search_web` |
 
 Wikivoyage listings are rejected when they belong to a non-US place, a same-named town in another state, or a disambiguation page. Listings that state they are closed on the trip dates are removed in code before the model sees them. Prices from community guides are never totaled. Real fares and room rates would need a paid travel data provider; `TRAVEL_PROVIDER` and Amadeus settings are placeholders only.
 
@@ -118,7 +121,8 @@ Without `DATABASE_URL`, conversations and agency demo records are process-local.
 | Activity replay | Orchestrator event bus | Up to 500 events per session; no session expiry or global bound |
 | Customers/bookings/tickets/audit | Agency arrays | Shared demo store; mutations lost on agency restart |
 | MCP tool definitions | Orchestrator `Map` | Discovered once at startup; no automatic refresh |
-| Search/weather/model responses | No application result cache | Repeated requests repeat tool/provider work |
+| Wikivoyage guide responses | Travel-service process-local cache | 6-hour TTL, at most 200 entries; lost on restart |
+| Web search/weather/model responses | No application result cache | Repeated requests repeat tool/provider work |
 | Provider prompt cache | No explicit cache configuration or hit metrics | Stable prompt ordering exists; savings/hits are not verified |
 
 The browser keeps the session ID, settled messages and picks in localStorage, so a refresh resumes the trip. The activity socket reconnects and replays the session's events without duplicating them. **New trip** clears them. These constraints apply to direct in-memory mode. PostgreSQL mode coordinates history, locks and events across instances; the single-host pilot is not high availability. See [operations](docs/OPERATIONS.md) for the suggested next steps.
@@ -152,12 +156,16 @@ Existing activity events record total model-turn and specialist duration. There 
 
 `DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. `JUDGE_MODEL` is read only by the offline itinerary eval ([docs/evals](docs/evals/README.md)). Docker Compose and a single-host AWS stack (CloudFormation, Caddy HTTPS, SSM secrets, daily snapshots) are present; Helm, EKS, an active AWS deployment and tracing are not. A paid, offline itinerary grounding eval exists (`scripts/eval-itinerary.mjs`); other specialists have no evals yet.
 
+## Known research-quality limits
+
+The latest committed itinerary evaluation passed **0 of 4 cases** despite passing judge calibration. Findings include invented or retitled stops, unsupported descriptions, incorrect day counts and structured-output failures. Web search is available, but the specialist did not choose it in those four cases. The successful NPS search smoke test confirms connectivity, not itinerary correctness. See [evaluation evidence](docs/evals/README.md). Historical latency measurements above predate web search and are not current search-enabled benchmarks.
+
 ## Development
 
 ```bash
 pnpm lint
 pnpm typecheck       # builds workspace, then checks types
-pnpm test           # 25 deterministic offline tests; the PostgreSQL one needs TEST_DATABASE_URL
+pnpm test           # offline tests; PostgreSQL integration needs TEST_DATABASE_URL
 pnpm build
 ```
 
@@ -189,7 +197,7 @@ Project-local UI skills are documented in [SOURCES.md](.agents/skills/SOURCES.md
 
 ## Shared web research (October 27, 2026)
 
-All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic web-search research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
+All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic native `web_search_20250305` research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
 
 Set `WEB_SEARCH_ENABLED=false` to disable it or `WEB_SEARCH_MODEL` to choose a compatible Anthropic model. Compose forwards both settings. The Anthropic organization must permit web search. A live check with the configured account returned the official NPS Harpers Ferry operating-hours page.
 

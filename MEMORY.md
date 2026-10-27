@@ -29,3 +29,7 @@ First AWS deploy and sslip.io certificate check, proper multi-user identity/quot
 ## Web research update
 
 All seven agents now have Anthropic-backed search_web using the existing key. See README.md for budgets/configuration and citation display. Live NPS search verified; deterministic failure/budget tests added. This adds provider usage and does not replace mock inventory with live booking APIs.
+
+## README audit
+
+October 27: refreshed all four project-owned READMEs, including eval evidence and AWS search configuration limitations. Anthropic web search is live-tested; local login checks passed, but the embedded browser may fail to display Basic auth. Latest committed itinerary eval remains 0/4 passing; tool connectivity is not proof of grounded itinerary output. Imported skill README files remain upstream references and are not rewritten.
