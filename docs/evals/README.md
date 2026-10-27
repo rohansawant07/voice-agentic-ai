@@ -48,7 +48,8 @@ Measured on October 27, 2026, at uncached list prices: Haiku 4.5 $1/$5 and Sonne
 |---|---|---|---|---|---|---|
 | [61514fe run 1](itinerary-2026-10-27-61514fe-run1.json) | before web search; no calibration yet | $0.088 | $0.154 | n/a | $0.24 | 2.7 min |
 | [61514fe run 2](itinerary-2026-10-27-61514fe-run2.json) | before web search | $0.098 | $0.181 | $0.015 | $0.29 | 3.6 min |
-| [current](itinerary-2026-10-27.json) | `1bd5079` (web search) + this eval | $0.087 | $0.167 | $0.016 | **$0.27** | 3.5 min |
+| [before guard](itinerary-2026-10-27.json) | `1bd5079` (web search) + this eval | $0.087 | $0.167 | $0.016 | $0.27 | 3.5 min |
+| [with guard](itinerary-2026-10-27-guarded.json) | `1b38139` + itinerary guard | $0.143 | $0.154 | $0.015 | **$0.31** | 3.3 min |
 
 Budget **about $0.25–0.35 per full run**. Other notes:
 
@@ -57,22 +58,56 @@ Budget **about $0.25–0.35 per full run**. Other notes:
 - **Not counted in `totalCostUSD`:**
   - `search_web` calls are separate Haiku research requests plus Anthropic's web-search fee. The record counts them and estimates about $0.03 each. The specialist made none in the current run.
   - A specialist call that throws (for example a schema mismatch) records $0, though its tokens were billed.
-- Developing this eval cost about $1.06 in total: three committed runs plus one discarded run made before the judge saw the trip request.
+- Developing this eval and the guard cost about $1.37 in total: four committed runs plus one discarded run made before the judge saw the trip request.
 
 Each run is one sample per case, taken from live, changing sources (Wikivoyage edits, forecasts, the web) and a sampled model. Treat a pass as "no problem seen this run", not a guarantee.
 
 ## Results (October 27, 2026)
 
-Both calibration fixtures passed in every run. **No case passed in any run (0/4 each time).** Judge findings per stop: 0.39, 0.76 and 0.69.
+Both calibration fixtures passed in every run. **No case passed in any run (0/4 each time).**
 
-| Case | 61514fe run 1 | 61514fe run 2 | Current (`1bd5079`) |
+### Itinerary guard
+
+`services/orchestrator/src/itinerary-guard.ts` runs on every `ok` itinerary result. It:
+
+- Renames a retitled stop to its listing title. A stop maps to a listing when its title matches exactly, or contains exactly one listing title ("La Bombonera dinner" becomes "La Bombonera").
+- Removes merged, invented and closed stops, unless `search_web` evidence exists; closed places are always removed.
+- Drops a `mealPick` that names no listing, and drops days left without sourced stops.
+- Keeps days inside the trip dates (context `startDate`/`endDate`, else the forecast arguments) and removes duplicate or extra days.
+- Records every removal in `notes`.
+- Rejects an `ok` result that has neither days nor destinations as `failed` (`missing_itinerary_days`).
+
+Five offline tests cover it in `test/itinerary-guard.test.ts`.
+
+| Measure | Before guard (`1bd5079`) | With guard (`1b38139`) |
+|---|---|---|
+| Cases passed | 0/4 | 0/4 |
+| Stop titles not in listings | 14 | **0** |
+| Wrong day count | 1 (4 days for Dec 4–6) | 1 (Lake George: a day of invented stops was removed, leaving 2 of 3) |
+| Specialist returned no plan | 1 (Savannah schema failure) | 0 |
+| Judge findings per stop | 0.69 (18 / 26) | **0.52** (16 / 31) |
+
+Every remaining failure is description embellishment the code can't remove:
+
+- "a fun group activity" for Gooney Golf.
+- "$10 per adult" for a bare "$10".
+- Civil War history and river names added to title-only NPS entries.
+- "upscale" for a restaurant described only as romantic.
+
+The guard does not fix specialist calls that throw (the earlier Savannah schema mismatch) or a plan with too few sourced days. These are one sample each; the Savannah improvement may be variance.
+
+### Runs before the guard
+
+Judge findings per stop: 0.39, 0.76 and 0.69.
+
+| Case | 61514fe run 1 | 61514fe run 2 | `1bd5079` |
 |---|---|---|---|
 | Lake George | 3 days. "Lake George Steamboat Company Cruise"; "more upscale" for "more expensive" | **Specialist `failed`**, citing unavailable weather, against the prompt | 3 days, with 3 of 9 stops invented or merged ("Arrival & Scenic Drive", "Pirate's Cove Adventure Golf or Gooney Golf"); "family-friendly", "exhilarating" |
 | Savannah | "iconic", "romantic", "historically rich" | Merged "River Street & Plant Riverside District"; "Adults $10" for a bare "$10" | **Specialist `failed`** (output did not match schema). A discarded run returned `ok` with a 3-day summary and **no days** |
 | Harpers Ferry | History added to title-only NPS entries ("1859 raid", "rewarding at sunset") | Named rivers; "guided or self-guided"; invented "outdoor exploration" stop | Invented "Hiking and scenic trails" stop; "reconstructed building", "1862 Battle" |
 | San Juan | Five retitled stops ("La Bombonera dinner", "Casa Blanca museum") | Eight retitled stops; "Open daily" added to hours | **4 days for a Dec 4–6 trip**; 10 generic stops ("Dinner with ambiance"); "pastel-colored buildings", "golden sand" |
 
-What this shows, for whoever tunes the prompt next:
+What these runs showed (items 1 and 3 led to the guard):
 
 1. **Retitling and invented stops.** Haiku appends words to listing titles, merges two listings into one stop, or adds generic stops ("Dinner at a local restaurant"). The code check catches all of these; enforcing exact titles in code (as is done for closures) would remove the class.
 2. **Embellishment.** Descriptions add world knowledge and tone, worst on curated NPS entries and mock inventory, which have titles but no descriptions. The judge catches it.

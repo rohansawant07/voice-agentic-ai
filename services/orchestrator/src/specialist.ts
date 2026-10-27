@@ -5,7 +5,9 @@ import type {
   AgentDefinition,
   DelegationRequest,
   DelegationResult,
+  ItineraryAgentOutput,
 } from "@concierge/core";
+import { guardItinerary, hasItineraryContent, tripRange, type ItineraryEvidence } from "./itinerary-guard.js";
 import { webTools, WEB_RULES, type WebSource } from "./web-search.js";
 import { bus } from "./bus.js";
 import { toolsFor } from "./mcp.js";
@@ -33,7 +35,7 @@ export interface SpecialistObserver {
 
 /** Wrap MCP tools so every invocation lands on the session event bus. */
 function instrument(tools: ToolSet, sessionId: string, agentId: string,
-  provenance: { unpricedGuide: boolean }, observer?: SpecialistObserver): ToolSet {
+  provenance: { unpricedGuide: boolean } & ItineraryEvidence, observer?: SpecialistObserver): ToolSet {
   const wrapped: ToolSet = {};
   for (const [name, t] of Object.entries(tools)) {
     wrapped[name] = {
@@ -50,12 +52,18 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const result = await (t as any).execute(args, opts);
         observer?.toolResult?.(name, args, result);
+        if (name === "search_web" && (result as { status?: string } | null)?.status === "ok") provenance.webEvidence = true;
+        if (name === "get_forecast" && !provenance.start) Object.assign(provenance, tripRange(args as Record<string, unknown>));
         const envelope = z.object({ content: z.array(z.object({ type: z.string(), text: z.string().optional() })) }).safeParse(result);
         for (const item of envelope.success ? envelope.data.content : []) {
           if (item.type !== "text" || !item.text) continue;
           try {
-            const payload = JSON.parse(item.text) as { source?: string; pricesVerified?: boolean };
+            const payload = JSON.parse(item.text) as { source?: string; pricesVerified?: boolean; activities?: { title?: unknown }[]; closedDuringTrip?: unknown[] };
             if ((payload.source === "curated-official-guide" || payload.source === "wikivoyage") && payload.pricesVerified === false) provenance.unpricedGuide = true;
+            if (name === "get_destination_guide" || name === "search_activities") {
+              for (const a of payload.activities ?? []) if (typeof a.title === "string") provenance.listings.push(a.title);
+              for (const c of payload.closedDuringTrip ?? []) if (typeof c === "string") provenance.closed.push(c);
+            }
           } catch { /* Not every tool returns JSON text. */ }
         }
         return result;
@@ -96,7 +104,7 @@ export async function runSpecialist(
     task: req.task,
   });
 
-  const provenance = { unpricedGuide: false };
+  const provenance: { unpricedGuide: boolean } & ItineraryEvidence = { unpricedGuide: false, listings: [], closed: [], webEvidence: false, ...tripRange(req.context) };
   const sources: WebSource[] = [];
   let result: DelegationResult;
   try {
@@ -119,6 +127,12 @@ export async function runSpecialist(
         for (const stop of day.stops) delete stop.estimatedCost;
       }
       data.notes = `${data.notes ?? ""} Activity fees and daily spending have not been verified; no cost totals are shown.`.trim();
+    }
+    // Titles, closures and trip dates are enforced in code, not left to model wording.
+    if (def.id === "itinerary-agent" && result.status === "ok" && result.data) {
+      result.data = guardItinerary(result.data as ItineraryAgentOutput, provenance);
+      if (!hasItineraryContent(result.data as ItineraryAgentOutput))
+        result = { status: "failed", summary: "The itinerary specialist did not return any sourced day plans.", reason: "missing_itinerary_days", suggestion: "Retry the itinerary request." };
     }
     if (result.status === "ok" && result.data == null) {
       result = { status: "failed", summary: "The specialist did not return usable results.", reason: "missing_structured_data" };

@@ -53,7 +53,7 @@ function delegateTools(sessionId: string): ToolSet {
           .record(z.string(), z.unknown())
           .optional()
           .describe(
-            "Structured facts already known: dates, origin, partySize, budgetUSD, dietary, customerId, confirmed…",
+            "Structured facts already known: startDate/endDate (YYYY-MM-DD), origin, partySize, budgetUSD, dietary, customerId, confirmed…",
           ),
       }),
       execute: async ({ task, context }) =>
