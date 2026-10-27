@@ -69,7 +69,7 @@ deploy/aws/deploy.sh down      # delete the stack; lists retained volumes to cle
 - API keys live in SSM SecureString (AWS-managed key) and in a 0600 `.env` on the encrypted volume. They are never baked into images.
 - Instance metadata requires IMDSv2 with hop limit 1, so containers cannot read the instance role credentials.
 - There is a single shared `tester` identity. Give each tester their own credential, or move to a real identity provider, before wider sharing.
-- Agency mutations stay disabled. Travel inventory is demo data, and Airbnb results are search links only.
+- Agency mutations stay disabled. Travel inventory is demo data, and Airbnb results are search links only. Destination listings (Wikivoyage) and weather (Open-Meteo) are fetched over outbound HTTPS, which the security group allows.
 
 ## Verification so far (October 27, 2026)
 

@@ -2,7 +2,12 @@
 
 A voice-enabled travel planning prototype for the US and its territories. Talk or type to a travel companion; flights, stays, itineraries and budgets appear on a trip board while specialist activity is visible alongside them.
 
-**Status: working local prototype, not a hosted booking service.** Trip board redesigned and verified October 27, 2026. The repository is public. An AWS deploy kit is ready ([deploy/aws](deploy/aws/README.md)), but no public application URL is live yet. Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability.
+**Status: working local prototype, not a hosted booking service.** Updated October 27, 2026:
+- The trip board was redesigned.
+- Itineraries now work for any US destination through sourced Wikivoyage listings.
+- An AWS deploy kit is ready ([deploy/aws](deploy/aws/README.md)), but no public application URL is live yet.
+
+Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability. See [Where the data comes from](#where-the-data-comes-from).
 
 ## Container preview
 
@@ -47,13 +52,35 @@ See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is tri
 | Specialists | Six registered specialists: flight, hotel, itinerary, car rental, budget, support |
 | Travel | Seeded flights/hotels/cars/activities; dietary filters; car rentals offered only when relevant/requested |
 | Regional plans | Curated NPS planning facts for Harpers Ferry and Shenandoah; any other US destination uses live Wikivoyage listings (sourced, dated, community-edited), with places listed as closed on the trip dates removed in code |
-| Weather | Open-Meteo forecasts within 16 days; beyond that, observed averages for the month over the last three years. Place names resolve by state and territory ("Lake George, NY", "San Juan, Puerto Rico") |
+| Weather | Open-Meteo forecasts within 16 days; beyond that, a curated table for demo destinations or observed averages for the month over the last three years. Place names resolve by state and territory ("Lake George, NY", "San Juan, Puerto Rico"); optional mock weather |
 | Airbnb | Dated destination search links by default; opt-in independent connector with bounded concurrency/time and honest fallback |
-| Weather | Live Open-Meteo forecast/geocoding; static climate table; optional mock weather |
 | Agency | Seeded customers/bookings, simulated modifications/cancellations, tickets and audit records |
 | Validation | Shared Zod schemas, HTTP input validation, deterministic regression and PostgreSQL integration tests, CI |
 
-Card selection is visual-only: it does not book anything or update the next model turn. No real reservation, payment, refund or ticket submission to a travel provider occurs. The opt-in Airbnb connector is not an official Airbnb integration; the live access check was restricted.
+Picking a flight, stay or car updates the trip summary's estimated total and is remembered for the session. It does not book or hold anything, and it does not change the next model turn. No real reservation, payment, refund or ticket submission to a travel provider occurs. The opt-in Airbnb connector is not an official Airbnb integration; the live access check was restricted.
+
+## Where the data comes from
+
+Voice only converts speech. Deepgram turns recorded audio into text, which then follows exactly the same path as a typed message. Optional OpenAI or ElevenLabs synthesis reads the reply aloud. Planning is done by Claude: one orchestrator delegates to six specialists, and each specialist can call **only its own tools**. **No agent has open web search.** That is deliberate, so every fact on the board traces to a known source.
+
+| Data | Source | Live internet? |
+| --- | --- | --- |
+| Reasoning (orchestrator and specialists) | Anthropic Claude | Yes |
+| Speech to text / optional text to speech | Deepgram / OpenAI or ElevenLabs | Yes |
+| Forecasts, geocoding, typical climate | Open-Meteo forecast, geocoding and historical archive APIs | Yes |
+| Things to do for most US places | Wikivoyage listings (community-edited, cited, cached 6 h) | Yes |
+| Harpers Ferry and Shenandoah planning facts | Curated National Park Service guides in code | No |
+| Flights, hotels, rental cars, activities for demo destinations | Seeded demo inventory in code | No |
+| Customers, bookings, refunds, tickets | Seeded demo agency data | No |
+| Airbnb stays | A dated airbnb.com search link (live lookup is opt-in and off by default) | Link only |
+
+| Specialist | Tools it can call |
+| --- | --- |
+| Flights, Stays, Rental cars, Budget | Travel tools (demo inventory; Stays also builds Airbnb links) |
+| Itinerary | Travel tools (guides and Wikivoyage) and weather tools |
+| Bookings | Agency tools (demo bookings; mutations disabled in Compose) |
+
+Wikivoyage listings are rejected when they belong to a non-US place, a same-named town in another state, or a disambiguation page. Listings that state they are closed on the trip dates are removed in code before the model sees them. Prices from community guides are never totaled. Real fares and room rates would need a paid travel data provider; `TRAVEL_PROVIDER` and Amadeus settings are placeholders only.
 
 ## Architecture
 
@@ -66,7 +93,9 @@ flowchart LR
   O --> AI["Claude orchestrator + six specialist calls"]
   O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
   AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
-  AI --> W["Weather MCP :8102: Open-Meteo"]
+  T --> WV["Wikivoyage API"]
+  AI --> W["Weather MCP :8102"]
+  W --> OM["Open-Meteo forecast, geocoding, archive"]
   AI --> A["Agency MCP :8103: read-only demo in Compose"]
 ```
 
@@ -90,7 +119,7 @@ Without `DATABASE_URL`, conversations and agency demo records are process-local.
 | Search/weather/model responses | No application result cache | Repeated requests repeat tool/provider work |
 | Provider prompt cache | No explicit cache configuration or hit metrics | Stable prompt ordering exists; savings/hits are not verified |
 
-Browser state is also in memory: refresh creates a new session and clears the visible trip. These constraints apply to direct in-memory mode. PostgreSQL mode coordinates history, locks and events across instances; the single-host pilot is not high availability. See [operations](docs/OPERATIONS.md) for the suggested next steps.
+The browser keeps the session ID, settled messages and picks in localStorage, so a refresh resumes the trip. The activity socket reconnects and replays the session's events without duplicating them. **New trip** clears them. These constraints apply to direct in-memory mode. PostgreSQL mode coordinates history, locks and events across instances; the single-host pilot is not high availability. See [operations](docs/OPERATIONS.md) for the suggested next steps.
 
 ## Measured performance
 
@@ -126,7 +155,7 @@ Existing activity events record total model-turn and specialist duration. There 
 ```bash
 pnpm lint
 pnpm typecheck       # builds workspace, then checks types
-pnpm test           # deterministic tests; PostgreSQL integration requires TEST_DATABASE_URL
+pnpm test           # 25 deterministic offline tests; the PostgreSQL one needs TEST_DATABASE_URL
 pnpm build
 ```
 
@@ -136,12 +165,13 @@ CI runs these checks on pushes to `main` and pull requests. It does not deploy o
 | --- | --- |
 | `apps/web` | Next.js app and browser session hook |
 | `services/orchestrator` | Chat, voice, model delegation, session store and event bus |
-| `services/mcp-travel` | Mock travel inventory, official-source guides, Airbnb link/connector logic |
-| `services/mcp-weather` | Open-Meteo and static climate data |
+| `services/mcp-travel` | Mock travel inventory, curated NPS guides, Wikivoyage listings, Airbnb link/connector logic |
+| `services/mcp-weather` | Open-Meteo forecasts, region-aware geocoding, curated and observed climate |
 | `services/mcp-agency` | Simulated customer and booking operations |
 | `packages/core` | Registry, schemas, event contracts |
-| `packages/mcp-kit` | Shared stateless HTTP MCP server |
+| `packages/mcp-kit` | Shared stateless HTTP MCP server and US place parsing |
 | `scripts` | Local launcher and latency benchmark |
+| `deploy` | Docker gateway config and the AWS single-host kit (`deploy/aws/deploy.sh`) |
 | `.agents/skills` | Imported design, accessibility and React guidance |
 
 Project-local UI skills are documented in [SOURCES.md](.agents/skills/SOURCES.md), with pinned revisions and attribution. Their upstream README is kept intact. See [AGENTS.md](AGENTS.md) for routing.

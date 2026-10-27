@@ -54,7 +54,7 @@ docker compose --env-file .env --env-file .secrets/compose.env --profile testing
 
 With `DATABASE_URL`, the orchestrator stores successful user/assistant pairs in PostgreSQL. Each session retains its most recent 24 messages and expires after 24 hours of inactivity. Cleanup runs every minute. PostgreSQL advisory locks prevent overlapping turns for the same session across instances. Four model turns are admitted globally per database; extra turns return HTTP 429 (voice returns an error).
 
-Activity events also live in PostgreSQL, with up to 500 events per session and 24-hour retention. WebSocket connections poll every 500 ms. This is a shared, durable pilot event log, not a high-volume streaming platform. Cross-instance replay and lock behavior are integration-tested. Browser refresh still creates a new session; a saved-trip/account UI is not implemented.
+Activity events also live in PostgreSQL, with up to 500 events per session and 24-hour retention. WebSocket connections poll every 500 ms. This is a shared, durable pilot event log, not a high-volume streaming platform. Cross-instance replay and lock behavior are integration-tested. A browser refresh resumes the same session from localStorage, and the board is rebuilt from this replay. There is still no account or saved-trip list across browsers.
 
 Gateway identities namespace session IDs. Two distinct gateway users cannot read or continue each other's guessed session IDs. The initial setup creates one `tester` identity; sharing that login shares its identity boundary. Use a separate credential per tester, or replace Basic auth with an identity provider for a larger deployment.
 
@@ -64,7 +64,7 @@ Startup applies the idempotent initial schema under a migration lock. Versioned 
 
 The gateway applies HTTP chat/connection rate limits. Chat bodies are limited; voice frames/utterances are bounded, overlapping transcription is rejected, and voice input is throttled per connection. Provider request/model deadlines are configured. These controls are not billing caps and do not replace provider spend controls.
 
-Agency bookings/customers are still seeded demo data. Container configuration disables cancellation, modification and ticket creation instead of pretending those arrays are shared production records. Airbnb is direct-link mode. No real booking/payment system exists.
+Agency bookings/customers are still seeded demo data. Container configuration disables cancellation, modification and ticket creation instead of pretending those arrays are shared production records. Airbnb is direct-link mode. The travel and weather containers make outbound HTTPS calls to Wikivoyage and Open-Meteo for destination listings and weather; no API keys are involved. No real booking/payment system exists.
 
 A single Docker host and one database are not highly available. The shared state removes specific in-memory scaling blockers, but replicas, rolling deploys, restored backups and sustained load still need validation. A 500 ms poll per connected browser is an explicit pilot tradeoff. Redis is not required or configured.
 

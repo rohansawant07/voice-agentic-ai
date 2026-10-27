@@ -58,6 +58,12 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-27 — README refresh
+
+- Root README: new "Where the data comes from" section with live/demo sources per data type, per-specialist tool access, and a clear statement that no agent has open web search. Merged duplicate Weather rows, corrected the stale card-selection and refresh notes, and added Wikivoyage and Open-Meteo to the diagram and path table.
+- Deploy READMEs now note browser refresh resume and the outbound Wikivoyage/Open-Meteo calls.
+- Committed `.claude/launch.json` (the Claude app preview config for http://localhost:3000).
+
 ### 2026-10-27 — Itineraries for any US destination
 
 - A real request (Lake George, NY, Thanksgiving, six people) failed with "data coverage gaps". Destination guides covered only Harpers Ferry and Shenandoah.
