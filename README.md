@@ -2,7 +2,7 @@
 
 A voice-enabled travel planning prototype for the US and its territories. Talk or type to a travel companion; flights, stays, itineraries and budgets appear on a trip board while specialist activity is visible alongside them.
 
-**Status: working local prototype, not a hosted booking service.** Verified October 26, 2026. The repository is public, but no public application URL is deployed. Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability.
+**Status: working local prototype, not a hosted booking service.** Documentation audited October 27, 2026; runtime verified October 26. The repository is public, but no public application URL is deployed. Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability.
 
 ## Container preview
 
@@ -58,15 +58,15 @@ Card selection is visual-only: it does not book anything or update the next mode
 
 ```mermaid
 flowchart LR
-  UI["Next.js UI :3000"] -->|POST /api/chat| O["Fastify orchestrator :8080"]
-  UI <-->|/voice WebSocket| V["Recorded STT / optional TTS"]
-  V --> O
-  O <-->|/ws activity| UI
-  O <--> S["Process-local history + turn guard"]
-  O --> A["Six specialist model calls"]
-  A --> T["Travel MCP :8101 — mock + guides + Airbnb links"]
-  A --> W["Weather MCP :8102 — Open-Meteo"]
-  A --> B["Agency MCP :8103 — in-memory demo data"]
+  U["Browser: localhost:3080"] --> G["nginx gateway: Basic auth + request limits"]
+  G -->|Pages and assets| WEB["Next.js :3000"]
+  G <-->|"/api/chat, /ws, /voice"| O["Fastify orchestrator :8080"]
+  O <--> DB["PostgreSQL: history, events, shared turn locks"]
+  O --> AI["Claude orchestrator + six specialist calls"]
+  O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
+  AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
+  AI --> W["Weather MCP :8102: Open-Meteo"]
+  AI --> A["Agency MCP :8103: read-only demo in Compose"]
 ```
 
 Specialists run inside the orchestrator process; they are not six deployed workers. Independent delegations can run concurrently. The orchestrator and specialists use Anthropic through AI SDK v7. Defaults are `claude-opus-4-8` and `claude-haiku-4-5`, respectively; both are configurable. See [ARCHITECTURE.md](ARCHITECTURE.md) for the actual lifecycle and boundaries.
@@ -147,6 +147,7 @@ Project-local UI skills are documented in [SOURCES.md](.agents/skills/SOURCES.md
 
 ## Project documents
 
+- [Project handoff](MEMORY.md): durable project context, constraints and next steps.
 - [Architecture](ARCHITECTURE.md): implemented topology and data flow.
 - [Interface design](DESIGN.md): current UI and behavior.
 - [Operations](docs/OPERATIONS.md): sharing, state/cache design and deployment gaps.

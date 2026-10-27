@@ -13,11 +13,11 @@ There is now a tested Docker/Compose stack and container CI workflow. There is n
 For someone to use a browser link without installing anything, the deployment must supply:
 
 1. An HTTPS frontend and an HTTPS/WebSocket-capable backend. The browser uses HTTP `/api/chat`, activity WebSocket `/ws`, and voice WebSocket `/voice`.
-2. `NEXT_PUBLIC_ORCH_URL=https://<backend-host>` at frontend build time. This is also converted to `wss://` for sockets. Tunneling port 3000 alone leaves the browser pointing at the tester's `localhost:8080` unless this setting changes.
+2. For separate frontend/backend origins, set `NEXT_PUBLIC_ORCH_URL=https://<backend-host>` at frontend build time. Compose instead builds an empty value for same-origin routing through the gateway. This is also converted to `wss://` for sockets. Tunneling port 3000 alone leaves the browser pointing at the tester's `localhost:8080` unless this setting changes.
 3. `WEB_ORIGIN=https://<frontend-host>` on the orchestrator. This is an exact origin match for browser CORS and WebSocket upgrades.
 4. Server-side provider secrets, and private connectivity from the orchestrator to the three MCP services. Keep 8101–8103 private. Bind addresses are loopback by default; set `HOST` appropriately per process when hosting.
 5. Access control covering chat **and both WebSocket endpoints**, plus request/concurrency limits and a provider spending cap. Compose implements Basic auth, session ownership scoping, request limits and a four-turn database-wide concurrency limit. Per-user spending quotas and a full identity provider remain unimplemented. A protected preview must enforce them at the gateway or in the app.
-6. One orchestrator instance until shared state is implemented. Separate users can run different session IDs, but no load/capacity claim has been established.
+6. Use one orchestrator in direct memory mode. PostgreSQL mode implements shared history, locks and events, but replica deployment and load/capacity remain unverified.
 
 HTTPS is necessary for microphone access away from localhost. A tester must grant microphone access deliberately; typed input remains available. Current voice capabilities can be queried at `/healthz`, but its flags reflect provider selection, not a live credential check.
 
@@ -34,7 +34,7 @@ A LAN address alone is not a complete voice-sharing setup: loopback backend bind
 
 With `DATABASE_URL`, PostgreSQL mode uses a connection pool, initial schema migration, conversation retention and shared events/locks. Without it, the direct-development behavior in this table applies. `REDIS_URL` is not read and there is no SQLite fallback. The mock store is application data, not a database cache.
 
-No TTL, history truncation, token-based context trimming, global session cap or distributed lock is present. Memory can grow with new sessions/history. Restarting the orchestrator clears conversation/activity history; restarting the agency resets mock mutations. Tool mutations are not rolled back if a later model step fails.
+In memory-only mode, no TTL, history truncation, token-based context trimming, global session cap or distributed lock is present. Memory can grow with new sessions/history. Restarting the orchestrator clears conversation/activity history; restarting the agency resets mock mutations. Tool mutations are not rolled back if a later model step fails.
 
 ## Cache audit
 

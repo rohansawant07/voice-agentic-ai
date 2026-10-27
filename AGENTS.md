@@ -5,3 +5,5 @@ For UI implementation, read `.agents/skills/frontend-design/SKILL.md` and preser
 Source revisions and attribution are recorded in `.agents/skills/SOURCES.md`.
 
 Keep travel data provenance visible: Airbnb search links are not verified listings, prices, or availability. Never commit local environment secrets. Validate code changes with the relevant workspace checks.
+
+For project continuity, read `MEMORY.md` for the latest handoff and deployment constraints; verify current runtime and Git state rather than assuming they remain unchanged.

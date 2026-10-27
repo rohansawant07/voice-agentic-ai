@@ -2,8 +2,29 @@
 
 Container deployment now adds a same-origin authenticated nginx gateway (:3080), PostgreSQL for conversation/event persistence and cross-instance locks, and a read-only demo agency. See [deployment architecture and limits](deploy/README.md). The original process-local mode described below remains available when DATABASE_URL is absent.
 
-Verified against the implementation on 2026-10-26. This describes the local
+Documentation audited on 2026-10-27; runtime verified on 2026-10-26. This describes the local
 application, not the planned AWS deployment.
+
+## Current Docker pilot
+
+```mermaid
+flowchart LR
+  U["Browser: localhost:3080"] --> G["nginx gateway: Basic auth + request limits"]
+  G -->|Pages and assets| WEB["Next.js :3000"]
+  G <-->|"/api/chat, /ws, /voice"| O["Fastify orchestrator :8080"]
+  O <--> DB["PostgreSQL: history, events, shared turn locks"]
+  O --> AI["Claude orchestrator + six specialist calls"]
+  O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
+  AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
+  AI --> W["Weather MCP :8102: Open-Meteo"]
+  AI --> A["Agency MCP :8103: read-only demo in Compose"]
+```
+
+Only the gateway is published, bound to host loopback. All other ports are internal to Compose. PostgreSQL retains the last 24 conversation messages for 24 hours of inactivity and up to 500 events per session for 24 hours. Shared locks prevent overlapping session turns; four model turns are admitted globally. Events are polled every 500 ms. This is a single-host pilot, without proven high availability or load capacity.
+
+## Direct development flow
+
+The diagram below describes `scripts/dev.sh` without `DATABASE_URL`. In Compose, PostgreSQL replaces the history store and activity bus; authenticated gateway identity scopes session IDs.
 
 ```mermaid
 flowchart TD
@@ -52,7 +73,7 @@ flowchart TD
 5. Specialists discover and call only their configured MCP servers' tools. Results
    are validated against shared schemas and returned to the orchestrator.
 6. The orchestrator produces a final reply; successful turns commit user and
-   assistant messages to local memory. Failed turns leave committed history intact.
+   assistant messages to the configured store (memory or PostgreSQL). Failed turns leave committed history intact.
    Tool side effects are not rolled back.
 7. Activity events populate the transcript, results canvas, and agent feed. On
    the voice path, optional synthesis sends audio chunks to the browser, which
@@ -68,7 +89,7 @@ upstream health.
 
 GitHub Actions installs dependencies, lints, builds/typechecks, runs deterministic
 regression tests, and builds the workspace. It does not deploy the application.
-The 12 regression tests do not call live model or speech providers. Separate opt-in benchmark scripts make live requests; see [performance measurements](docs/PERFORMANCE.md).
+The suite contains 14 tests, including gateway authentication and PostgreSQL integration coverage. The database test is skipped unless `TEST_DATABASE_URL` is configured. Tests do not call live model or speech providers. Container CI also builds the stack and checks authenticated access. Separate opt-in benchmark scripts make live requests; see [performance measurements](docs/PERFORMANCE.md).
 
 ## Current boundaries
 
@@ -89,14 +110,14 @@ The 12 regression tests do not call live model or speech providers. Separate opt
 Vacation-rental discovery defaults to direct Airbnb search links and does not
 call Airbnb. Opt-in live mode uses an independent MCP child process, with time
 and concurrency limits and search-link fallback.
-The existing three-service topology is unchanged. The results UI renders Airbnb
+The three MCP services remain unchanged in number; the complete Docker stack has seven services. The results UI renders Airbnb
 links/listing cards and official itinerary sources. Curated regional guides are
 separate from the mock hotel catalog. The live Airbnb check was restricted; no
 partner credentials or booking access have been provisioned.
 
 ## Persistence, caching and sharing
 
-PostgreSQL is wired in Compose; SQLite and Redis are not. Without DATABASE_URL, the original memory store is used. Conversation history has no TTL or global bound;
+PostgreSQL is wired in Compose; SQLite and Redis are not. Without DATABASE_URL, the original memory store is used. In memory-only mode, conversation history has no TTL or global bound;
 activity replay keeps 500 events per session but does not expire sessions. Agency
 records are shared process-local arrays. MCP tool definitions are cached at startup;
 weather, travel and model outputs have no application response cache. Provider

@@ -15,6 +15,8 @@ docker compose --env-file .env --env-file .secrets/compose.env up -d --build --w
 
 Open **http://localhost:3080**. The browser asks for a username/password. Read `.secrets/tester-login.txt` locally; do not commit it, paste it into an issue, or include it in a URL. Anonymous requests return 401. Basic authentication is appropriate only on loopback or behind HTTPS, never plain public HTTP. The default gateway binds **127.0.0.1 only**; it is not externally shared.
 
+If an embedded browser shows “site cannot be reached” while containers are healthy, try Chrome or Safari: the embedded browser may fail to display the Basic-auth prompt. The user confirmed the preview works in a regular browser. Run `node scripts/smoke-containers.mjs` to verify anonymous 401, authenticated UI 200 and API validation without calling a model.
+
 The existing non-container development app can continue on port 3000. This avoids disrupting it. Docker Desktop should show the `roam` project and seven healthy containers: gateway, web, orchestrator, travel, weather, agency and postgres.
 
 The login/password and Compose environment files are mode 0600 inside a mode-0700 directory. The password-hash file is readable by the nginx worker inside its container; it contains no plaintext password. The setup script refuses to overwrite existing credentials. To rotate them, stop the stack and follow a deliberate database-password and gateway-password rotation; do not just delete `.secrets` while retaining the database volume.

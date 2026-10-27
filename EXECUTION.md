@@ -19,7 +19,7 @@ These rows track when earlier milestones first landed. For the current interface
 | 5 | M2 — voice pipeline (STT/TTS) | 🟡 STT live-verified (Deepgram); TTS code done, awaiting OpenAI/ElevenLabs key | `b59d390` `7ca22ce` |
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
 | 7 | M3 — evals (golden dataset, judges, tracing) | ⬜ not started | |
-| 8 | M4 — Docker, compose, Helm on k3d | ⬜ not started | |
+| 8 | M4 — Docker, compose, Helm on k3d | 🟡 Docker/Compose complete; Helm/k3d not implemented | `67aea1b` |
 | 9 | M5 — AWS (EKS, ECR, OIDC deploy, secrets, ALB) | ⬜ not started | |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
 
@@ -56,6 +56,12 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-27 — Documentation and handoff audit
+
+- Updated the root and architecture diagrams to show the seven-service authenticated Docker pilot and PostgreSQL state; separated the direct in-memory development mode.
+- Corrected stale test/state/milestone descriptions and recorded the embedded-browser Basic-auth troubleshooting outcome. The user confirmed the site works.
+- Added `MEMORY.md` as durable project handoff context. AWS remains preparation only, in us-east-1, with a near-zero budget and no paid resources authorized.
 
 ### 2026-10-26 — Protected Docker pilot and AWS preparation
 
