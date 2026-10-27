@@ -6,7 +6,7 @@ Checks that the itinerary specialist grounds its days in the guide listings or w
 
 For each golden case in [`services/orchestrator/eval/itinerary.ts`](../../services/orchestrator/eval/itinerary.ts):
 
-1. Runs the real itinerary specialist (`runSpecialist` with the registry prompt, `claude-haiku-4-5`) against live MCP servers: Wikivoyage or curated NPS guides, mock activity inventory and Open-Meteo weather.
+1. Runs the real itinerary specialist (`runSpecialist` with the registry prompt and the default `claude-haiku-5-5`; runs before October 27's switch used `claude-haiku-4-5`) against live MCP servers: Wikivoyage or curated NPS guides, mock activity inventory and Open-Meteo weather.
 2. Captures every `get_destination_guide`, `search_activities` and `search_web` result it received, plus weather results for context.
 3. Deterministic checks in code:
    - every stop is scheduled on the expected number of days;
@@ -42,7 +42,7 @@ The script starts its own MCP servers on ports 8111–8113, so a running dev sta
 
 ## Cost
 
-Measured on October 27, 2026, at uncached list prices: Haiku 4.5 $1/$5 and Sonnet 5 $2/$10 per million input/output tokens.
+Measured on October 27, 2026, at uncached list prices: Haiku 5.5 $0.10/$0.50, Haiku 4.5 $1/$5 and Sonnet 5 $2/$10 per million input/output tokens.
 
 | Run | Code | Specialist (Haiku) | Judge (Sonnet) | Calibration | Total | Wall time |
 |---|---|---|---|---|---|---|
@@ -96,7 +96,8 @@ Notes:
 
 - The only remaining findings are Savannah's, on Haiku 4.5 (4 findings).
 - Haiku 5.5 writes more output tokens, because its adaptive thinking is on by default. It is still about 7× cheaper than Haiku 4.5 per itinerary.
-- **These are single samples, and the eval covers only the itinerary specialist.** The flight, stays, car, budget and support specialists have no eval. Their prompt changes and a Haiku 5.5 switch are untested on live traffic.
+- **These are single samples, and the eval covers only the itinerary specialist.** The flight, stays, car, budget and support specialists have no eval. Their prompt changes and the Haiku 5.5 default are untested on live traffic.
+- On this evidence, `claude-haiku-5-5` became the default specialist model on October 27, 2026. A full run now costs about $0.10.
 
 ### Generated descriptions for title-only listings
 

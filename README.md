@@ -111,7 +111,7 @@ flowchart LR
   AI --> A["Agency MCP :8103: read-only demo in Compose"]
 ```
 
-Specialists run inside the orchestrator process; they are not six deployed workers. Independent delegations can run concurrently. The orchestrator and specialists use Anthropic through AI SDK v7. Defaults are `claude-opus-4-8` and `claude-haiku-4-5`, respectively; both are configurable. See [ARCHITECTURE.md](ARCHITECTURE.md) for the actual lifecycle and boundaries.
+Specialists run inside the orchestrator process; they are not six deployed workers. Independent delegations can run concurrently. The orchestrator and specialists use Anthropic through AI SDK v7. Defaults are `claude-opus-4-8` and `claude-haiku-5-5`, respectively; both are configurable (`ORCHESTRATOR_MODEL`, `SPECIALIST_MODEL`). Web research runs on `WEB_SEARCH_MODEL`, default `claude-haiku-4-5`. See [ARCHITECTURE.md](ARCHITECTURE.md) for the actual lifecycle and boundaries.
 
 ## Database and cache
 

@@ -29,7 +29,7 @@ These rows track when earlier milestones first landed. For the current interface
 - Card picks now drive the trip summary's estimated total and persist per session, but they still don't inform the orchestrator on the next turn or update the budget specialist's meter.
 - Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
 - Weather mis-geocoding of "San Juan" (it searched US only, missing Puerto Rico) is fixed by state/territory-aware geocoding.
-- Haiku 4.5 still occasionally embellishes Wikivoyage listings that have their own text (0.13 judge findings per stop; Haiku 5.5 had none in one run; see `docs/evals/README.md`). Only the itinerary specialist has an eval. Titles, closures, trip dates, empty plans and title-only descriptions are now enforced in code. Specialist calls can still throw on schema mismatch. Because Haiku keeps proposing merged or generic stops that the guard removes, plans can end with fewer days or stops than requested.
+- Specialists default to Haiku 5.5, which had no itinerary findings in one eval run (Haiku 4.5 had 0.13 per stop; see `docs/evals/README.md`). Only the itinerary specialist has an eval; the other five are unevaluated on Haiku 5.5. Titles, closures, trip dates, empty plans and title-only descriptions are now enforced in code. Specialist calls can still throw on schema mismatch. Because Haiku keeps proposing merged or generic stops that the guard removes, plans can end with fewer days or stops than requested.
 
 ---
 
@@ -57,6 +57,13 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-27 — Haiku 5.5 is the default specialist model
+
+- `SPECIALIST_MODEL` now defaults to `claude-haiku-5-5` ($0.10/$0.50 per million tokens, versus $1/$5) in code, `.env.example` and Compose, following the 4/4 itinerary eval at about 1/7 the specialist cost. The orchestrator stays on `claude-opus-4-8`.
+- Web research stays on `claude-haiku-4-5` through `WEB_SEARCH_MODEL`. It no longer falls back to `SPECIALIST_MODEL`, because Haiku 5.5 is untested with web search.
+- Only the itinerary specialist has an eval. The flight, stays, car, budget and support specialists run on Haiku 5.5 without one, and nothing has been re-benchmarked for latency.
+- The live AWS host picks this up only after `deploy/aws/deploy.sh update`.
 
 ### 2026-10-27 — Scoped specialist tools and focused prompts
 

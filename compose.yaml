@@ -69,7 +69,7 @@ services:
       WEB_SEARCH_MODEL: ${WEB_SEARCH_MODEL:-claude-haiku-4-5}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ORCHESTRATOR_MODEL: ${ORCHESTRATOR_MODEL:-claude-opus-4-8}
-      SPECIALIST_MODEL: ${SPECIALIST_MODEL:-claude-haiku-4-5}
+      SPECIALIST_MODEL: ${SPECIALIST_MODEL:-claude-haiku-5-5}
       VOICE_STT: ${VOICE_STT:-none}
       DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
       VOICE_TTS: ${VOICE_TTS:-none}

@@ -57,7 +57,7 @@ Twenty sequential samples per endpoint after one excluded warm-up request. Measu
 
 ## Method and reproduction
 
-Source defaults are `claude-opus-4-8` for the orchestrator and `claude-haiku-4-5` for specialists; the root environment had no model overrides. The runtime API does not report model identity. Travel inventory was mock, Airbnb mode was links, and weather used its live default. Full prompts and per-event timings are saved with the raw data. No API keys or private user messages are recorded.
+At the time of these measurements, source defaults were `claude-opus-4-8` for the orchestrator and `claude-haiku-4-5` for specialists (specialists moved to `claude-haiku-5-5` on October 27, 2026; not re-benchmarked); the root environment had no model overrides. The runtime API does not report model identity. Travel inventory was mock, Airbnb mode was links, and weather used its live default. Full prompts and per-event timings are saved with the raw data. No API keys or private user messages are recorded.
 
 ```bash
 node scripts/benchmark.mjs --output docs/benchmarks/latest.json

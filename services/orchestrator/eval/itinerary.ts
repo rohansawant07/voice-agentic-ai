@@ -17,7 +17,7 @@ import { agentById, type ItineraryAgentOutput } from "@concierge/core";
 import { connectMcp } from "../src/mcp.js";
 import { runSpecialist } from "../src/specialist.js";
 
-const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL ?? "claude-haiku-4-5";
+const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL ?? "claude-haiku-5-5";
 const JUDGE_MODEL = process.env.JUDGE_MODEL ?? "claude-sonnet-5";
 /** USD per million tokens [input, output]; uncached first-party rates. */
 const PRICES: Record<string, [number, number]> = {

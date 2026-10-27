@@ -100,7 +100,7 @@ One host and one PostgreSQL instance give one failure domain; this is a pilot, n
 
 ## Web search in the AWS stack
 
-All agents use Anthropic's native `web_search_20250305` through `search_web`, using the same server-side Anthropic key stored in SSM. Compose enables it by default with Haiku 4.5; it adds Anthropic usage, not Deepgram usage. Research returns source links and retrieval times and does not provide verified booking inventory. See the [root guide](../../README.md#shared-web-research-october-27-2026) for limits and the [eval results](../../docs/evals/README.md) for known itinerary-quality failures.
+All agents use Anthropic's native `web_search_20250305` through `search_web`, using the same server-side Anthropic key stored in SSM. Compose enables it by default with Haiku 4.5 (specialists themselves default to Haiku 5.5); it adds Anthropic usage, not Deepgram usage. Research returns source links and retrieval times and does not provide verified booking inventory. See the [root guide](../../README.md#shared-web-research-october-27-2026) for limits and the [eval results](../../docs/evals/README.md) for known itinerary-quality failures.
 
 `WEB_SEARCH_ENABLED` and `WEB_SEARCH_MODEL` are configurable through Compose environment values, but the current AWS bootstrap does not copy these optional settings from your laptop or SSM. It regenerates the host `.env` with provider credentials, so defaults apply after bootstrap/update. To persist different search settings, extend the bootstrap configuration before deploying; editing the generated host `.env` alone does not survive updates. No additional search service or inbound port is required.
 

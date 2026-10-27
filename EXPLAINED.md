@@ -70,7 +70,8 @@ So: **the day plans, weather and web facts are real; the prices for flights, hot
 | Tool | What it is | Its job in Roam |
 | --- | --- | --- |
 | **Claude Opus 4.8** (Anthropic) | A powerful AI model | The manager: understands you, assigns work, writes replies |
-| **Claude Haiku 4.5** (Anthropic) | A smaller, cheaper, faster AI model | The six specialists, plus web research |
+| **Claude Haiku 5.5** (Anthropic) | A small, very cheap, fast AI model | The six specialists (since October 27, 2026; about 7× cheaper than Haiku 4.5 in tests) |
+| **Claude Haiku 4.5** (Anthropic) | The previous small model | Web research (looking things up online) |
 | **Claude Sonnet 5** (Anthropic) | A mid-sized AI model | The "grader" that checks itinerary quality in tests (not used for live users) |
 | **AI SDK** | A free code library | Lets Roam talk to Claude and hand it tools |
 | **Fastify** | A tool for building web servers | Receives your messages and streams results back |
