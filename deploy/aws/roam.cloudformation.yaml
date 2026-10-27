@@ -11,9 +11,12 @@ Parameters:
     Description: Public subnet (the default VPC's subnets work).
   InstanceType:
     Type: String
-    Default: t3.small
-    AllowedValues: [t3.small, t3.medium]
-    Description: t3.small (2 GiB + swap) builds and runs the stack. Not claimed free.
+    Default: t4g.small
+    AllowedValues: [t4g.small, t4g.medium]
+    Description: >-
+      Graviton (arm64). t4g.small (2 GiB + swap) is covered by the AWS T4g free
+      trial, 750 hours/month for every account until December 31, 2026; then
+      On-Demand. The image must match, so arm64 types only.
   GitRef:
     Type: String
     Default: main
@@ -23,7 +26,7 @@ Parameters:
     Default: https://github.com/rohansawant07/voice-agentic-ai.git
   ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
 Resources:
   HostSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -70,6 +73,10 @@ Resources:
     Properties:
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
+      # Standard credits: CPU throttles at the baseline instead of billing
+      # surplus credits, which the free trial does not cover.
+      CreditSpecification:
+        CPUCredits: standard
       IamInstanceProfile: !Ref HostProfile
       MetadataOptions:
         HttpTokens: required

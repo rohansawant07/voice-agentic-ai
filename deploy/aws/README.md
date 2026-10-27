@@ -6,13 +6,13 @@ Region: **us-east-1**. The kit is ready and was verified locally (see Verificati
 
 `roam.cloudformation.yaml` defines one stack:
 
-- One Amazon Linux 2023 **t3.small** (2 GiB RAM + 2 GiB swap) with an encrypted 20 GiB gp3 root volume. The volume is **retained** when the stack is deleted so conversation data is never lost silently.
+- One Amazon Linux 2023 **t4g.small** (Graviton/arm64, 2 GiB RAM + 2 GiB swap) with an encrypted 20 GiB gp3 root volume. CPU credits are set to **standard**: under sustained load (such as an image build) the CPU slows to its baseline instead of billing surplus credits. The volume is **retained** when the stack is deleted so conversation data is never lost silently.
 - An **Elastic IP**. The public URL is `https://<ip-with-dashes>.sslip.io`. Caddy obtains a Let's Encrypt certificate automatically; no domain purchase is needed. sslip.io is a free public wildcard DNS service that maps the name to the IP.
 - A security group that allows inbound **443 and 80 only** (80 serves ACME challenges and redirects to HTTPS). There is no SSH; administration uses Systems Manager.
 - An instance role that can read only `/roam/*` parameters and use Session Manager.
 - A Data Lifecycle Manager policy: **daily snapshots, seven kept**. Snapshots are crash-consistent; PostgreSQL recovers from them like a power loss. A restore has not been tested yet.
 
-On first boot the host clones this repository (`GitRef`, default `main`). It installs Docker plus **checksum-verified, pinned** Compose v5.5.1 and Buildx v0.37.2, then runs `bootstrap.sh`. That script reads secrets from SSM Parameter Store, writes `.env`, `.secrets/compose.env` and the htpasswd hash (mode 0600, except the hash file), and runs:
+On first boot the host clones this repository (`GitRef`, default `main`). It installs Docker plus **checksum-verified, pinned** Compose v5.5.1 and Buildx v0.37.2 for the host's architecture (arm64 on t4g; x86_64 checksums are kept for t3), then runs `bootstrap.sh`. That script reads secrets from SSM Parameter Store, writes `.env`, `.secrets/compose.env` and the htpasswd hash (mode 0600, except the hash file), and runs:
 
 ```
 docker compose -f compose.yaml -f deploy/aws/compose.aws.yaml up -d --build --wait
@@ -20,17 +20,19 @@ docker compose -f compose.yaml -f deploy/aws/compose.aws.yaml up -d --build --wa
 
 `compose.aws.yaml` adds Caddy on ports 80/443 and unpublishes the gateway. The traffic path is: browser → Caddy (TLS) → nginx gateway (Basic auth, rate limits on the real client IP) → web / orchestrator → PostgreSQL. WebSockets pass through unchanged.
 
-## Cost (on-demand, us-east-1, approximate)
+## Cost (us-east-1, approximate)
 
-| Item | Monthly |
-|---|---|
-| t3.small, 730 h | ~$15.20 |
-| Public IPv4 (Elastic IP) | ~$3.65 |
-| 20 GiB gp3 | ~$1.60 |
-| Snapshots (incremental, a few GiB) | < $0.50 |
-| **Total** | **~$21** |
+| Item | Monthly until Dec 31, 2026 | Monthly from Jan 1, 2027 |
+|---|---|---|
+| t4g.small, 730 h | **$0** (T4g free trial) | ~$12.30 On-Demand |
+| Public IPv4 (Elastic IP) | ~$3.65 | ~$3.65 |
+| 20 GiB gp3 | ~$1.60 | ~$1.60 |
+| Snapshots (incremental, a few GiB) | < $0.50 | < $0.50 |
+| **Total** | **~$6** | **~$18** |
 
-New-account credits or Free Tier eligibility may cover part of this; check **Billing → Free Tier / Credits** in the console. Anthropic and Deepgram usage is billed separately by those providers. An AWS Budgets alert is optional (see below). Alerts notify you; they do not cap spending.
+The [T4g free trial](https://aws.amazon.com/ec2/instance-types/t4/) gives **every** AWS account, new or existing, 750 t4g.small hours a month until December 31, 2026. That is one instance running all month. The hours are pooled across Regions, so a second t4g instance would exceed them. Standard CPU credits avoid the surplus-credit charges the trial does not cover.
+
+Accounts opened on or after July 15, 2025 are on the credit-based Free Plan: $100 at signup plus up to $100 for onboarding tasks. Those credits can absorb the remaining ~$6/month for the plan's six months; after that the account must be upgraded to a paid plan to keep running. Accounts opened earlier get no credits, but the T4g trial still applies. Check **Billing → Free Tier / Credits** in the console. An earlier version of this kit used t3.small at about $21/month; `ROAM_INSTANCE_TYPE=t4g.medium` is the only other allowed size. Anthropic and Deepgram usage is billed separately by those providers. An AWS Budgets alert is optional (see below). Alerts notify you; they do not cap spending.
 
 ## Deploy
 
@@ -74,13 +76,15 @@ deploy/aws/deploy.sh down      # delete the stack; lists retained volumes to cle
 ## Verification so far (October 27, 2026)
 
 - `cfn-lint` passes on the template; `shellcheck` passes on `deploy.sh` and `bootstrap.sh`.
+- The arm64 Compose and Buildx downloads match their published SHA-256 checksums and are aarch64 executables. Amazon Linux 2023 on arm64 reports `aarch64`, the value `bootstrap.sh` selects them by.
+- On an arm64 Mac, the AWS overlay built all images natively as arm64 at the current code (including web search). All eight containers were healthy, with 401 anonymous, 200 authenticated, 400 invalid body and a 308 HTTP→HTTPS redirect.
 - The exact Compose overlay ran locally under a separate project with `ROAM_HOST=localhost` (Caddy internal CA). Results:
   - All eight containers became healthy.
   - HTTP → HTTPS returned 308 and HSTS was present.
   - Anonymous and wrong-password requests got 401; authenticated UI got 200; an invalid chat body got 400; the health check (no auth) got 200.
   - A live planning turn over HTTPS returned 200 in 15.8s, with the authenticated WebSocket streaming delegation, tool and result events.
   - Gateway logs recorded the real client address rather than Caddy's.
-- **Not yet verified:** the CloudFormation stack in a real account, Let's Encrypt issuance for the sslip.io name, first-boot timing on t3.small, and snapshot restore. These happen on the first `deploy.sh up`.
+- **Not yet verified:** the CloudFormation stack in a real account, Let's Encrypt issuance for the sslip.io name, first-boot build time on t4g.small with standard credits, the arm64 AMI parameter resolving in the account, and snapshot restore. These happen on the first `deploy.sh up`.
 
 ## Limits and next steps
 

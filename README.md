@@ -12,7 +12,7 @@ Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults 
 
 ## Container preview
 
-The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. Use HTTP on port 3080 in Chrome or Safari if an embedded browser cannot show the login prompt. To host it with HTTPS on AWS (one EC2 host, about $21/month), run `deploy/aws/deploy.sh up` from a signed-in AWS CLI; see [AWS deployment](deploy/aws/README.md).
+The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. Use HTTP on port 3080 in Chrome or Safari if an embedded browser cannot show the login prompt. To host it with HTTPS on AWS (one t4g.small host, about $6/month under the AWS T4g free trial through 2026), run `deploy/aws/deploy.sh up` from a signed-in AWS CLI; see [AWS deployment](deploy/aws/README.md).
 
 ## Run locally
 

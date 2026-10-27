@@ -15,7 +15,7 @@ set -euo pipefail
 REGION=${AWS_REGION:-us-east-1}
 STACK=${ROAM_STACK:-roam}
 REF=${ROAM_GIT_REF:-main}
-INSTANCE_TYPE=${ROAM_INSTANCE_TYPE:-t3.small}
+INSTANCE_TYPE=${ROAM_INSTANCE_TYPE:-t4g.small}
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
 
@@ -125,13 +125,14 @@ up)
   signed_in
   [ -f .env ] || fail "Run from the repository with your .env present."
   say "Account $ACCOUNT, region $REGION, stack $STACK, instance $INSTANCE_TYPE."
-  say "Estimated on-demand cost: about \$21/month (t3.small, 20 GiB gp3, public IPv4, snapshots)."
+  say "Estimated cost: about \$6/month until Dec 31, 2026 (t4g.small free trial; you pay for the"
+  say "public IPv4, 20 GiB gp3 and snapshots), then about \$18/month On-Demand. Free Plan credits may cover it."
   say "Model and speech usage is billed separately by Anthropic and Deepgram."
   confirm "Create or update these billable resources and upload your API keys to SSM?"
   sync_secrets
   vpc=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --query 'Vpcs[0].VpcId' --output text)
   [ "$vpc" != None ] || fail "No default VPC in $REGION. Create one or pass VpcId/SubnetId yourself."
-  # us-east-1e has no t3 capacity; prefer the a-c zones.
+  # Not every zone offers every instance type; prefer the a-c zones.
   subnet=$(aws ec2 describe-subnets \
     --filters Name=vpc-id,Values="$vpc" Name=default-for-az,Values=true \
     Name=availability-zone,Values="${REGION}a,${REGION}b,${REGION}c" \

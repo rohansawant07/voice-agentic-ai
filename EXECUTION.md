@@ -58,6 +58,17 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-27 — AWS kit on the free t4g.small
+
+- Switched the stack from t3.small to **t4g.small** (Graviton, arm64): the arm64 Amazon Linux 2023 AMI and standard CPU credits, so there are no surplus-credit charges. The AWS T4g free trial covers 750 hours a month for every account until December 31, 2026. Estimated cost is about $6/month (public IPv4, storage, snapshots) instead of about $21, rising to about $18 from January 2027.
+- `bootstrap.sh` picks Compose v5.5.1 and Buildx v0.37.2 by `uname -m`, with published checksums for both arm64 and x86_64. `deploy.sh` defaults to t4g.small and shows the new estimate.
+- Verified:
+  - cfn-lint and shellcheck pass.
+  - The arm64 downloads match their published checksums and are aarch64 executables.
+  - Amazon Linux 2023 arm64 reports `aarch64`.
+  - The full AWS overlay built natively as arm64 on this Mac: eight healthy containers, 401/200/400/308 over HTTPS.
+- Still unverified until the first real deploy: the stack in an AWS account and first-boot build time with standard credits.
+
 ### 2026-10-27 — Itinerary grounding eval (M3)
 
 - Added `scripts/eval-itinerary.mjs` and `services/orchestrator/eval/itinerary.ts`. The script starts private MCP servers on ports 8111–8113, runs the real itinerary specialist (Haiku, with MCP tools and `search_web`) on four golden cases and captures every guide, activity and web result. Cases: Lake George, NY Nov 26–28 for six; Savannah, GA in April; Harpers Ferry, WV; San Juan, PR.

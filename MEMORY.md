@@ -17,7 +17,7 @@ Updated October 27, 2026 (trip board redesign, AWS kit). This file is durable re
 ## AWS constraints and next step
 
 - Region: us-east-1. Budget: close to zero. No owned domain. User asked on October 27 to deploy; no AWS CLI or credentials existed on the laptop, so no resources were created yet.
-- Ready kit: `deploy/aws/deploy.sh up` (requires AWS CLI v2 signed in). It confirms cost (about $21/month: t3.small, Elastic IP, 20 GiB gp3, snapshots), uploads `.env` keys to SSM `/roam/*`, deploys `roam.cloudformation.yaml`, and serves `https://<ip-dashed>.sslip.io` via Caddy. The login is saved to `.secrets/aws-tester-login.txt`.
+- Ready kit: `deploy/aws/deploy.sh up` (requires AWS CLI v2 signed in). It confirms cost (about $6/month until Dec 31, 2026 on the t4g.small free trial, then about $18: Elastic IP, 20 GiB gp3, snapshots; standard CPU credits), uploads `.env` keys to SSM `/roam/*`, deploys `roam.cloudformation.yaml`, and serves `https://<ip-dashed>.sslip.io` via Caddy. The login is saved to `.secrets/aws-tester-login.txt`.
 - Verified locally only (overlay under project `roam-awstest`). Still unverified in a real account: Let's Encrypt issuance for sslip.io, first-boot build time, snapshot restore.
 - `update` rebuilds from GitHub, so push first. The data volume is retained on `down`. Never rotate `/roam/postgres-password` alone.
 - Preserve the local database volume `roam_pgdata`. Do not use `docker compose down -v` on saved user data; use a separate `-p` project for experiments.
