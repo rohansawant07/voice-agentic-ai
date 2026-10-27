@@ -74,4 +74,4 @@ A named Docker volume survives container replacement, not disk failure. Before u
 
 ## AWS
 
-See [AWS preparation](aws/README.md). Region: us-east-1. No AWS deployment or paid resource creation is authorized until account eligibility and a budget are confirmed. The host template is only a scaffold, not a public app deployment. Docker operations on this laptop do not create AWS charges; live model or speech requests can still use provider credits.
+See [AWS deployment](aws/README.md). Region: us-east-1. `deploy/aws/deploy.sh up` creates one HTTPS host (about $21/month) after an explicit confirmation; nothing has been created yet. The AWS overlay (`aws/compose.aws.yaml`) adds Caddy in front of this same gateway. The gateway honors `X-Forwarded-For` only from private Docker ranges, so rate limits apply per real client. Docker operations on this laptop do not create AWS charges; live model or speech requests can still use provider credits.

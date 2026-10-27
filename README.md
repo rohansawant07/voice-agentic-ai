@@ -2,11 +2,11 @@
 
 A voice-enabled travel planning prototype for the US and its territories. Talk or type to a travel companion; flights, stays, itineraries and budgets appear on a trip board while specialist activity is visible alongside them.
 
-**Status: working local prototype, not a hosted booking service.** Documentation audited October 27, 2026; runtime verified October 26. The repository is public, but no public application URL is deployed. Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability.
+**Status: working local prototype, not a hosted booking service.** Trip board redesigned and verified October 27, 2026. The repository is public. An AWS deploy kit is ready ([deploy/aws](deploy/aws/README.md)), but no public application URL is live yet. Flights, hotels, rental cars and agency bookings use demo data. Airbnb defaults to direct search links, not live availability.
 
 ## Container preview
 
-The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. No AWS resources are created. The public application is still **not deployed**.
+The protected Docker version runs at **http://localhost:3080**. Follow [container setup](deploy/README.md); the setup script stores your local login in `.secrets/tester-login.txt`. Seven services run locally, including PostgreSQL. To host it with HTTPS on AWS (one EC2 host, about $21/month), run `deploy/aws/deploy.sh up` from a signed-in AWS CLI; see [AWS deployment](deploy/aws/README.md).
 
 ## Run locally
 
@@ -32,7 +32,7 @@ Individual package commands do **not** load root `.env` automatically. If runnin
 
 - **Yes, by cloning the public repository** and running the setup above with their own keys.
 - **Not by opening your localhost link.** On their device, `localhost` means their own machine.
-- A browser-only test needs a hosted frontend and reachable HTTP/WebSocket backend, or a protected temporary tunnel to both. HTTPS is needed for microphone use off localhost. A local protected Docker deployment is configured; no public tunnel or AWS deployment is active.
+- A browser-only test needs a hosted frontend and reachable HTTP/WebSocket backend, or a protected temporary tunnel to both. HTTPS is needed for microphone use off localhost. A local protected Docker deployment is configured. The AWS kit provides HTTPS and Basic auth, but no AWS deployment is active yet.
 - Before sharing your running backend, add access control and request limits. Direct development mode has no authentication. The container gateway now adds Basic authentication, session ownership scoping and request limits, but no per-user billing quota. CORS is not authentication; clients without an Origin header can call the backend. Shared demo agency mutations affect the same in-memory data.
 
 See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is triggered by pushing to GitHub.
@@ -43,7 +43,7 @@ See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is tri
 | --- | --- |
 | Conversation | Text requests, session history, same-session overlapping model turns rejected |
 | Voice | Deepgram Nova-3 or Whisper transcription; optional OpenAI or ElevenLabs synthesis |
-| UI | Responsive conversation / trip board, editable inspiration prompts, voice controls, itinerary timelines, expandable sources, planning activity |
+| UI | Responsive conversation / trip board; trip summary with picks, estimated total vs. budget and copyable plan; comparison rows with computed tags; live skeletons and step labels; day-tab itinerary; planning-activity timeline; follow-up suggestions; refresh-safe sessions with socket reconnect |
 | Specialists | Six registered specialists: flight, hotel, itinerary, car rental, budget, support |
 | Travel | Seeded flights/hotels/cars/activities; dietary filters; car rentals offered only when relevant/requested |
 | Regional plans | Curated NPS planning facts for Harpers Ferry and Shenandoah, independent of hotel inventory |
@@ -118,7 +118,7 @@ Existing activity events record total model-turn and specialist duration. There 
 
 [.env.example](.env.example) lists the implemented settings. Keep actual secrets in ignored `.env` files and server-side only. `NEXT_PUBLIC_ORCH_URL` is deliberately public and must be set **before building** a deployed frontend. `WEB_ORIGIN` must match its exact origin. Internal MCP URLs should not be publicly exposed.
 
-`DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `JUDGE_MODEL`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. Docker Compose and a host-only AWS template are present; Helm, EKS, live AWS deployment, tracing and golden-dataset evals are not.
+`DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `JUDGE_MODEL`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. Docker Compose and a single-host AWS stack (CloudFormation, Caddy HTTPS, SSM secrets, daily snapshots) are present; Helm, EKS, an active AWS deployment, tracing and golden-dataset evals are not.
 
 ## Development
 

@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Roam pilot. One encrypted EC2 host runs the Compose stack behind Caddy with
+  automatic HTTPS on <elastic-ip>.sslip.io. Creates billable resources; run
+  through deploy/aws/deploy.sh, which reads secrets from SSM Parameter Store.
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet (the default VPC's subnets work).
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues: [t3.small, t3.medium]
+    Description: t3.small (2 GiB + swap) builds and runs the stack. Not claimed free.
+  GitRef:
+    Type: String
+    Default: main
+    AllowedPattern: '[A-Za-z0-9._/-]+'
+  RepoUrl:
+    Type: String
+    Default: https://github.com/rohansawant07/voice-agentic-ai.git
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+Resources:
+  HostSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Roam HTTPS only. Port 80 serves ACME challenges and redirects. Manage through Session Manager.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0 }
+      SecurityGroupEgress:
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0 }
+  HostRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: read-roam-parameters
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/roam/*
+  HostProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref HostRole]
+  PublicAddress:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - { Key: Name, Value: roam }
+  Host:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref HostProfile
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
+        # Hop limit 1 keeps containers away from the instance credentials.
+        HttpPutResponseHopLimit: 1
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          SubnetId: !Ref SubnetId
+          GroupSet: [!Ref HostSecurityGroup]
+          AssociatePublicIpAddress: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            VolumeType: gp3
+            VolumeSize: 20
+            # Retained on stack deletion so conversation data is never lost silently.
+            DeleteOnTermination: false
+      PropagateTagsToVolumeOnCreation: true
+      Tags:
+        - { Key: Name, Value: roam }
+        - { Key: Backup, Value: roam }
+      UserData:
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash
+            set -euo pipefail
+            dnf install -y git
+            mkdir -p /opt/roam
+            chmod 700 /opt/roam
+            if [ ! -d /opt/roam/app/.git ]; then
+              git clone --depth 1 --branch '${GitRef}' '${RepoUrl}' /opt/roam/app
+            fi
+            echo '${Host}' > /opt/roam/host
+            bash /opt/roam/app/deploy/aws/bootstrap.sh
+          - Host: !Join ['', [!Join ['-', !Split ['.', !Ref PublicAddress]], '.sslip.io']]
+  AddressAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt PublicAddress.AllocationId
+      InstanceId: !Ref Host
+  SnapshotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: dlm.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole
+  DailySnapshots:
+    Type: AWS::DLM::LifecyclePolicy
+    Properties:
+      Description: Roam daily volume snapshots, 7 kept
+      State: ENABLED
+      ExecutionRoleArn: !GetAtt SnapshotRole.Arn
+      PolicyDetails:
+        ResourceTypes: [VOLUME]
+        TargetTags:
+          - { Key: Backup, Value: roam }
+        Schedules:
+          - Name: daily
+            CopyTags: true
+            CreateRule: { Interval: 24, IntervalUnit: HOURS, Times: ['07:00'] }
+            RetainRule: { Count: 7 }
+Outputs:
+  Url:
+    Value: !Sub
+      - https://${Host}
+      - Host: !Join ['', [!Join ['-', !Split ['.', !Ref PublicAddress]], '.sslip.io']]
+  InstanceId:
+    Value: !Ref Host
+  PublicIp:
+    Value: !Ref PublicAddress

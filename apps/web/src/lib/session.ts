@@ -13,17 +13,57 @@ export interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   partial?: boolean;
+  /** Server event time for assistant messages; dedupes socket replays. */
+  ts?: number;
 }
 
 export interface AgentActivity {
   agentId: string;
   state: "running" | "done" | "failed" | "needs_input";
   task: string;
-  tools: { tool: string; argsPreview: Record<string, unknown> }[];
+  tools: { tool: string; argsPreview: Record<string, unknown>; ts: number }[];
   summary?: string;
   data?: unknown;
   durationMs?: number;
+  startedAt: number;
+  finishedAt?: number;
 }
+
+export type Connection = "connecting" | "open" | "reconnecting";
+
+const STORAGE_KEY = "roam.session.v1";
+
+interface StoredSession {
+  sessionId: string;
+  messages: ChatMessage[];
+}
+
+function readStored(): StoredSession | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredSession;
+    return typeof parsed.sessionId === "string" && Array.isArray(parsed.messages)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(value: StoredSession | null) {
+  try {
+    if (value) localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Private mode or blocked storage: the trip simply won't survive a refresh.
+  }
+}
+
+const newSessionId = () =>
+  "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `s-${Math.random().toString(36).slice(2)}`;
 
 export interface SessionState {
   sessionId: string;
@@ -32,7 +72,9 @@ export interface SessionState {
   orb: OrbState;
   runningCount: number;
   voiceAvailable: boolean;
+  connection: Connection;
   sendText: (text: string) => void;
+  newTrip: () => void;
   startListening: () => Promise<void>;
   stopListening: () => void;
   stopSpeaking: () => void;
@@ -45,19 +87,28 @@ export interface SessionState {
  */
 export function useSession(): SessionState {
   // Client-only: SSR renders with an empty id, avoiding hydration mismatch.
+  // A stored session resumes after refresh; the server replays its events.
   const [sessionId, setSessionId] = useState("");
-  useEffect(() => {
-    setSessionId(
-      "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `s-${Math.random().toString(36).slice(2)}`,
-    );
-  }, []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  useEffect(() => {
+    const stored = readStored();
+    if (stored) {
+      setMessages(stored.messages.filter((m) => !m.partial));
+      setSessionId(stored.sessionId);
+    } else setSessionId(newSessionId());
+  }, []);
+  useEffect(() => {
+    if (!sessionId) return;
+    const settled = messages.filter((m) => !m.partial);
+    writeStored(settled.length ? { sessionId, messages: settled } : null);
+  }, [sessionId, messages]);
   const [agents, setAgents] = useState<Map<string, AgentActivity>>(new Map());
   const [orb, setOrb] = useState<OrbState>("idle");
-  const [runningCount, setRunningCount] = useState(0);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const [connection, setConnection] = useState<Connection>("connecting");
+  const runningCount = [...agents.values()].filter(
+    (a) => a.state === "running",
+  ).length;
 
   const voiceWs = useRef<WebSocket | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -65,41 +116,53 @@ export function useSession(): SessionState {
   const player = useRef<HTMLAudioElement | null>(null);
 
   // ── /ws activity feed ────────────────────────────────────────
+  // Every (re)connect replays the session's events. Handlers are idempotent
+  // (keyed by event ts), so a replay never duplicates what is already shown
+  // and a server that lost its history doesn't wipe the visible board.
   useEffect(() => {
     if (!sessionId) return;
-    const ws = new WebSocket(`${socketBase()}/ws?sessionId=${sessionId}`);
-    ws.onmessage = (m) => {
-      const ev = JSON.parse(m.data as string) as SessionEvent;
+    let ws: WebSocket | null = null;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    let closed = false;
+
+    const handle = (ev: SessionEvent) => {
       switch (ev.type) {
         case "delegation_started":
           setAgents((prev) => {
+            if (prev.get(ev.agentId)?.startedAt === ev.ts) return prev;
             const next = new Map(prev);
             next.set(ev.agentId, {
               agentId: ev.agentId,
               state: "running",
               task: ev.task,
               tools: [],
+              startedAt: ev.ts,
             });
             return next;
           });
-          setRunningCount((n) => n + 1);
           break;
         case "tool_called":
           setAgents((prev) => {
+            const a = prev.get(ev.agentId);
+            if (!a || a.tools.some((t) => t.ts === ev.ts && t.tool === ev.tool))
+              return prev;
             const next = new Map(prev);
-            const a = next.get(ev.agentId);
-            if (a)
-              next.set(ev.agentId, {
-                ...a,
-                tools: [...a.tools, { tool: ev.tool, argsPreview: ev.argsPreview }],
-              });
+            next.set(ev.agentId, {
+              ...a,
+              tools: [
+                ...a.tools,
+                { tool: ev.tool, argsPreview: ev.argsPreview, ts: ev.ts },
+              ],
+            });
             return next;
           });
           break;
         case "delegation_finished":
           setAgents((prev) => {
+            const a = prev.get(ev.agentId);
+            if (a?.finishedAt === ev.ts) return prev;
             const next = new Map(prev);
-            const a = next.get(ev.agentId);
             next.set(ev.agentId, {
               agentId: ev.agentId,
               task: a?.task ?? "",
@@ -108,13 +171,18 @@ export function useSession(): SessionState {
               summary: ev.summary,
               data: ev.data,
               durationMs: ev.durationMs,
+              startedAt: a?.startedAt ?? ev.ts - ev.durationMs,
+              finishedAt: ev.ts,
             });
             return next;
           });
-          setRunningCount((n) => Math.max(0, n - 1));
           break;
         case "assistant_message":
-          setMessages((prev) => [...prev, { role: "assistant", text: ev.text }]);
+          setMessages((prev) =>
+            prev.some((m) => m.role === "assistant" && m.ts === ev.ts)
+              ? prev
+              : [...prev, { role: "assistant", text: ev.text, ts: ev.ts }],
+          );
           break;
         case "run_finished":
           setOrb((o) => (o === "thinking" ? "idle" : o));
@@ -123,7 +191,26 @@ export function useSession(): SessionState {
           break;
       }
     };
-    return () => ws.close();
+
+    const connect = () => {
+      ws = new WebSocket(`${socketBase()}/ws?sessionId=${sessionId}`);
+      ws.onopen = () => {
+        attempts = 0;
+        setConnection("open");
+      };
+      ws.onmessage = (m) => handle(JSON.parse(m.data as string) as SessionEvent);
+      ws.onclose = () => {
+        if (closed) return;
+        setConnection("reconnecting");
+        retry = setTimeout(connect, Math.min(8000, 500 * 2 ** attempts++));
+      };
+    };
+    connect();
+    return () => {
+      closed = true;
+      clearTimeout(retry);
+      ws?.close();
+    };
   }, [sessionId]);
 
   // ── /voice socket ────────────────────────────────────────────
@@ -254,6 +341,17 @@ export function useSession(): SessionState {
     setOrb("thinking");
   }, []);
 
+  const newTrip = useCallback(() => {
+    recorder.current?.stop();
+    player.current?.pause();
+    writeStored(null);
+    setMessages([]);
+    setAgents(new Map());
+    setOrb("idle");
+    setConnection("connecting");
+    setSessionId(newSessionId());
+  }, []);
+
   const stopSpeaking = useCallback(() => {
     player.current?.pause();
     voiceWs.current?.send(JSON.stringify({ type: "cancel" }));
@@ -267,7 +365,9 @@ export function useSession(): SessionState {
     orb,
     runningCount,
     voiceAvailable,
+    connection,
     sendText,
+    newTrip,
     startListening,
     stopListening,
     stopSpeaking,

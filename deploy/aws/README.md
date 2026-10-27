@@ -1,40 +1,87 @@
-# AWS preparation — not deployed
+# Roam on AWS — single-host pilot
 
-Region requested: **us-east-1**. Budget requested: **close to zero**. The user explicitly requested preparation **without paid resources** while account credit eligibility is unknown. No AWS API credentials are configured and no AWS resource was created.
+Region: **us-east-1**. The kit is ready and was verified locally (see Verification). **No AWS resources exist until you run `deploy.sh up` in a signed-in account.** It creates billable resources and asks for confirmation first.
 
-The email supplied in chat is not an IAM credential and is intentionally not embedded in infrastructure or the repository.
+## What it creates
 
-## What is ready locally
+`roam.cloudformation.yaml` defines one stack:
 
-The root Dockerfile builds four production backend images and a standalone Next.js image. `compose.yaml` runs those behind an authenticated gateway with PostgreSQL and a persistent volume. The application supports database-backed history, cross-process turn locks, and a shared event log. This is a small private pilot foundation, not a high-availability production service.
+- One Amazon Linux 2023 **t3.small** (2 GiB RAM + 2 GiB swap) with an encrypted 20 GiB gp3 root volume. The volume is **retained** when the stack is deleted so conversation data is never lost silently.
+- An **Elastic IP**. The public URL is `https://<ip-with-dashes>.sslip.io`. Caddy obtains a Let's Encrypt certificate automatically; no domain purchase is needed. sslip.io is a free public wildcard DNS service that maps the name to the IP.
+- A security group that allows inbound **443 and 80 only** (80 serves ACME challenges and redirects to HTTPS). There is no SSH; administration uses Systems Manager.
+- An instance role that can read only `/roam/*` parameters and use Session Manager.
+- A Data Lifecycle Manager policy: **daily snapshots, seven kept**. Snapshots are crash-consistent; PostgreSQL recovers from them like a power loss. A restore has not been tested yet.
 
-## Before creating anything
+On first boot the host clones this repository (`GitRef`, default `main`). It installs Docker plus **checksum-verified, pinned** Compose v5.5.1 and Buildx v0.37.2, then runs `bootstrap.sh`. That script reads secrets from SSM Parameter Store, writes `.env`, `.secrets/compose.env` and the htpasswd hash (mode 0600, except the hash file), and runs:
 
-1. Sign into the intended AWS account yourself. Prefer an IAM Identity Center/SSO profile with limited deployment permissions; do not paste root/access keys into chat.
-2. Check Free Tier plan, remaining credits, expiration and current billed usage. AWS free eligibility depends on the account. Do not assume EC2, IPv4, storage or managed databases are free.
-3. Choose a real monthly limit and configure billing alerts. Alerts are not a hard spending cap. Model/STT costs are billed separately by their providers.
-4. Confirm a deployment budget and review a CloudFormation change set before executing it. Nothing in this repository auto-deploys to AWS.
+```
+docker compose -f compose.yaml -f deploy/aws/compose.aws.yaml up -d --build --wait
+```
 
-AWS's [Free Tier FAQ](https://aws.amazon.com/free/free-tier-faqs/) and [plan documentation](https://docs.aws.amazon.com/us_en/awsaccountbilling/latest/aboutv2/free-tier-plans.html) explain current eligibility. Recheck the account console at deployment time.
+`compose.aws.yaml` adds Caddy on ports 80/443 and unpublishes the gateway. The traffic path is: browser → Caddy (TLS) → nginx gateway (Basic auth, rate limits on the real client IP) → web / orchestrator → PostgreSQL. WebSockets pass through unchanged.
 
-## Reviewed starting point
+## Cost (on-demand, us-east-1, approximate)
 
-`host.cloudformation.yaml` is a **host-only template**, deliberately not executed. It creates one encrypted Amazon Linux EC2 host with IMDSv2, an SSM management role, no inbound ports, and outbound connectivity. It requires an existing VPC/subnet. The public IPv4 address enables outbound access without a NAT gateway, but can itself incur charges. The 30 GiB root volume is retained on termination to avoid silently losing the local database; retained storage continues to incur charges until explicitly removed after backup.
+| Item | Monthly |
+|---|---|
+| t3.small, 730 h | ~$15.20 |
+| Public IPv4 (Elastic IP) | ~$3.65 |
+| 20 GiB gp3 | ~$1.60 |
+| Snapshots (incremental, a few GiB) | < $0.50 |
+| **Total** | **~$21** |
 
-The template installs Docker, not the application, provider credentials, Compose plugin, a public gateway, or TLS. It is a scaffold for a reviewed private pilot. Do not treat successful template creation as a deployed Roam app. Template validation is local syntax validation only unless an AWS change set has been created.
+New-account credits or Free Tier eligibility may cover part of this; check **Billing → Free Tier / Credits** in the console. Anthropic and Deepgram usage is billed separately by those providers. An AWS Budgets alert is optional (see below). Alerts notify you; they do not cap spending.
 
-When access and budget are approved: build Linux **amd64** images (the template uses x86 instances), transfer versioned images from a registry, install a pinned Compose plugin from Docker's official source, provision secrets outside Git, run the schema migration/startup, and verify all service probes. Use SSM port forwarding for the first private test; no inbound SSH or app ports are needed. Configure snapshots/backups and perform a restore test before storing anything important.
+## Deploy
 
-## Public browser testing without buying a domain
+Prerequisites: AWS CLI v2, an identity allowed to create EC2/IAM/CloudFormation/SSM/DLM resources, and your local `.env` with `ANTHROPIC_API_KEY` (and optionally `DEEPGRAM_API_KEY` for voice).
 
-CloudFront supplies an HTTPS `*.cloudfront.net` address and supports WebSockets. That can become the public entry point once an origin design and budget are approved. See [default HTTPS certificate](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/DownloadDistValuesGeneral.html) and [WebSocket guidance](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-working-with.websockets.html).
+```bash
+brew install awscli            # or the official installer
+aws configure sso              # preferred; or: aws login
+```
 
-A public deployment must disable caching of authenticated HTML, API calls and WebSocket routes; forward the required Authorization, Origin and WebSocket headers; set `WEB_ORIGIN` to the exact public origin; restrict origin access; and establish the origin connection's security deliberately. The current template does **not** create a CloudFront distribution or solve public TLS/origin routing. Do not expose Basic authentication over plain public HTTP.
+```bash
+ROAM_BUDGET_EMAIL=you@example.com ROAM_BUDGET_USD=25 deploy/aws/deploy.sh up
+```
 
-## Scaling path and limits
+The script:
+1. Shows the account, region and estimated cost, then asks for confirmation.
+2. Copies your API keys from `.env` to SSM as SecureString values. It writes them through a private temp file, never to the command line. It generates a database password, gateway token and tester password once and keeps them on later runs.
+3. Picks the default VPC's subnet in us-east-1a, b or c, then runs `aws cloudformation deploy`.
+4. Optionally creates the `roam-monthly` budget alert.
+5. Saves the URL and login to `.secrets/aws-tester-login.txt` (ignored by Git), then waits until `https://…/healthz` answers. The first boot builds the images and takes about 10–15 minutes.
 
-The database-backed turn guard and event log allow separate orchestrator instances to coordinate. Four model turns are admitted globally per database. Each WebSocket polls the shared event table every 500 ms; this adds database traffic and is intended for a small pilot. It is not a proven high-volume pub/sub system.
+Day-to-day:
 
-A single-host Compose deployment still has one failure domain and one PostgreSQL instance. For paid production, move PostgreSQL to a backed-up managed service, use a proper identity provider, move event delivery to an appropriate shared streaming/pub/sub system if measurements require it, and run app replicas through ECS/load balancing with graceful draining and load tests. Redis, EKS and an always-on ALB are not provisioned merely to claim scalability.
+```bash
+deploy/aws/deploy.sh status    # URL and health
+deploy/aws/deploy.sh update    # pull main on the host and rebuild (ROAM_GIT_REF to pin)
+deploy/aws/deploy.sh logs      # bootstrap and cloud-init logs via SSM
+deploy/aws/deploy.sh down      # delete the stack; lists retained volumes to clean up
+```
 
-Agency operations remain seeded demo data; mutation endpoints are disabled in the container setup. No real booking/financial system has been added. Application API keys are server-side only.
+`update` pulls from GitHub, so push your commits first. Rotating the tester password: put a new `/roam/tester-password` value, then run `update`. **Never rotate `/roam/postgres-password`** without also changing it inside PostgreSQL; the retained volume keeps the old one.
+
+## Security notes
+
+- Basic auth is served only over HTTPS. HTTP redirects with 308, and HSTS is set.
+- API keys live in SSM SecureString (AWS-managed key) and in a 0600 `.env` on the encrypted volume. They are never baked into images.
+- Instance metadata requires IMDSv2 with hop limit 1, so containers cannot read the instance role credentials.
+- There is a single shared `tester` identity. Give each tester their own credential, or move to a real identity provider, before wider sharing.
+- Agency mutations stay disabled. Travel inventory is demo data, and Airbnb results are search links only.
+
+## Verification so far (October 27, 2026)
+
+- `cfn-lint` passes on the template; `shellcheck` passes on `deploy.sh` and `bootstrap.sh`.
+- The exact Compose overlay ran locally under a separate project with `ROAM_HOST=localhost` (Caddy internal CA). Results:
+  - All eight containers became healthy.
+  - HTTP → HTTPS returned 308 and HSTS was present.
+  - Anonymous and wrong-password requests got 401; authenticated UI got 200; an invalid chat body got 400; the health check (no auth) got 200.
+  - A live planning turn over HTTPS returned 200 in 15.8s, with the authenticated WebSocket streaming delegation, tool and result events.
+  - Gateway logs recorded the real client address rather than Caddy's.
+- **Not yet verified:** the CloudFormation stack in a real account, Let's Encrypt issuance for the sslip.io name, first-boot timing on t3.small, and snapshot restore. These happen on the first `deploy.sh up`.
+
+## Limits and next steps
+
+One host and one PostgreSQL instance give one failure domain; this is a pilot, not high availability. Builds run on the host, so an update briefly uses most of the CPU. For production: build images in CI and push them to ECR, use a managed database with tested restores, add per-user identity and quotas, and add monitoring and alarms. If Let's Encrypt rate-limits sslip.io names, point a domain you own at the Elastic IP. Then change `/opt/roam/host` and `WEB_ORIGIN` on the host and run `update`.

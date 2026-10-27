@@ -1,0 +1,11 @@
+{
+	# Certificates come from Let's Encrypt over the HTTP/TLS-ALPN challenge.
+	admin off
+}
+
+{$ROAM_HOST} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	# Caddy sets X-Forwarded-For to the real client, which the gateway rate-limits on.
+	reverse_proxy gateway:8080
+}

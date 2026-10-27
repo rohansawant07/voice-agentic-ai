@@ -20,13 +20,13 @@ These rows track when earlier milestones first landed. For the current interface
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
 | 7 | M3 — evals (golden dataset, judges, tracing) | ⬜ not started | |
 | 8 | M4 — Docker, compose, Helm on k3d | 🟡 Docker/Compose complete; Helm/k3d not implemented | `67aea1b` |
-| 9 | M5 — AWS (EKS, ECR, OIDC deploy, secrets, ALB) | ⬜ not started | |
+| 9 | M5 — AWS | 🟡 single-host kit built and verified locally (CloudFormation, Caddy HTTPS, SSM secrets, snapshots); awaiting account sign-in and first `deploy.sh up`. EKS/ECR/ALB not pursued at pilot budget | see 2026-10-27 changelog |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
 
 **Local prototype status:** running; remote browser sharing still requires deployment and access controls. `ANTHROPIC_API_KEY` + `DEEPGRAM_API_KEY` are in local `.env` (gitignored); text loop, UI, and voice input all ran live. Spoken *replies* need an `OPENAI_API_KEY` (+ `VOICE_TTS=openai`) — optional.
 
 **Known gaps (tracked for M3+):**
-- Card selection is visual-only — the ✓ doesn't yet recompute the budget meter or inform the orchestrator on the next turn (DESIGN §5.2 selection model; stub in `page.tsx onSelectionChange`).
+- Card picks now drive the trip summary's estimated total and persist per session, but they still don't inform the orchestrator on the next turn or update the budget specialist's meter.
 - Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
 - Weather specialist mis-geocoded "San Juan" in one live run and gracefully failed — seed case for the golden dataset.
 
@@ -56,6 +56,25 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-27 — Trip board redesign and AWS deploy kit
+
+- Rebuilt the results board around a trip summary: route, dates, travelers, pick slots, estimated total vs. stated budget, provenance line and Copy plan. Picks persist per session.
+- Flights and cars became comparison rows; stays became cards. Tags (Cheapest, Fastest, Lowest price, Top rated) are computed from the shown options. Prices are labeled per person or for the stay. SVG icons replace emojis.
+- Added running skeletons with plain-language step labels, a sticky section jump bar, a day-tab itinerary timeline and a planning-activity timeline with totals and per-specialist bars.
+- Added refresh-safe sessions (localStorage), WebSocket reconnect with backoff and an idempotent event replay, a New trip button, and follow-up suggestions only for specialists with usable results. Raised reading text to 13–15px and compacted the header.
+- Added `apps/web/test/trip.test.ts` (five trip-logic tests). Lint, typecheck, production build and the existing tests passed; the Postgres integration test was skipped without TEST_DATABASE_URL.
+- Replaced the host-only scaffold with `deploy/aws/roam.cloudformation.yaml` and added the supporting pieces:
+  - The stack: EC2 t3.small, Elastic IP, 80/443-only security group, SSM-only role, retained encrypted volume, daily DLM snapshots.
+  - `bootstrap.sh`: pinned, checksum-verified Compose and Buildx; swap; SSM secrets.
+  - `compose.aws.yaml` and a Caddyfile: Caddy HTTPS on `<ip>.sslip.io`.
+  - `deploy.sh`: up/update/status/logs/down, with optional budget alert.
+  - Gateway real-IP handling.
+- Verified locally: cfn-lint and shellcheck clean. The AWS overlay ran all eight containers healthy with these results:
+  - 308 redirect, HSTS present, 401 anonymous, 200 authenticated, 400 invalid body.
+  - A live HTTPS planning turn returned 200 with WebSocket events in 15.8s.
+  - Real client IP was recorded at the gateway.
+  - No AWS resources were created; the account is not yet signed in on this machine.
 
 ### 2026-10-27 — Documentation and handoff audit
 

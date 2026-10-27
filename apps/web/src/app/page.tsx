@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useSession } from "../lib/session";
-import { AgentsGraph, ResultsCanvas } from "../components/canvas";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession, type AgentActivity } from "../lib/session";
+import { ActivityTimeline, ResultsCanvas } from "../components/canvas";
 import { Icon } from "../components/icon";
 
 const SUGGESTIONS = [
@@ -28,6 +28,22 @@ const SUGGESTIONS = [
   },
 ];
 
+function followUps(agents: Map<string, AgentActivity>): string[] {
+  const has = (id: string, key: "options" | "days") => {
+    const a = agents.get(id);
+    const data = a?.data as Record<string, unknown[] | undefined> | undefined;
+    return a?.state === "done" && Boolean(data?.[key]?.length);
+  };
+  const ideas: string[] = [];
+  if (has("flight-agent", "options")) ideas.push("Only show nonstop flights");
+  if (has("hotel-agent", "options")) ideas.push("Find a cheaper place to stay");
+  if (has("itinerary-agent", "days")) ideas.push("Add a day trip outside the city");
+  if (ideas.length > 0 && !agents.has("budget-agent"))
+    ideas.push("Break down the full trip budget");
+  // Nothing usable yet usually means Roam asked a question; let the person answer.
+  return ideas.slice(0, 3);
+}
+
 export default function SessionPage() {
   const s = useSession();
   const [tab, setTab] = useState<"results" | "agents">("results");
@@ -41,6 +57,8 @@ export default function SessionPage() {
   const busy =
     s.orb === "thinking" || s.runningCount > 0 || s.orb === "listening";
   const hasMessages = s.messages.length > 0;
+  const lastIsAssistant = s.messages.at(-1)?.role === "assistant";
+  const ideas = useMemo(() => followUps(s.agents), [s.agents]);
 
   useEffect(() => {
     if (s.messages.length > 0)
@@ -140,7 +158,28 @@ export default function SessionPage() {
         <span className="header-tag">
           <Icon name="pin" size={14} /> US & territories
         </span>
+        {hasMessages && (
+          <button
+            className="new-trip"
+            onClick={() => {
+              s.newTrip();
+              setDraft("");
+              setVoiceError("");
+              setTab("results");
+              setMobilePane("conversation");
+            }}
+            disabled={s.runningCount > 0 || s.orb === "thinking"}
+          >
+            <Icon name="plus" size={16} /> New trip
+          </button>
+        )}
       </header>
+      {s.connection === "reconnecting" && (
+        <div className="connection-banner" role="status">
+          Reconnecting to Roam. Your trip is saved and will reappear when the
+          connection returns.
+        </div>
+      )}
       <div className="mobile-nav" aria-label="Workspace view">
         <button
           aria-pressed={mobilePane === "conversation"}
@@ -166,8 +205,11 @@ export default function SessionPage() {
               <span>A little inspiration. A plan that fits.</span>
             </div>
             <span
-              className={`connection-dot ${busy ? "working" : ""}`}
-              aria-label={busy ? "Planning" : "Ready"}
+              className={`connection-dot ${busy ? "working" : ""} ${s.connection !== "open" ? "offline" : ""}`}
+              role="img"
+              aria-label={
+                s.connection !== "open" ? "Connecting" : busy ? "Planning" : "Ready"
+              }
             />
           </div>
           <div
@@ -230,7 +272,18 @@ export default function SessionPage() {
                 <span />
                 <span />
                 <span />
-                Finding your kind of getaway
+                {s.runningCount > 0
+                  ? `Researching with ${s.runningCount} specialist${s.runningCount === 1 ? "" : "s"}`
+                  : "Finding your kind of getaway"}
+              </div>
+            )}
+            {lastIsAssistant && !busy && (
+              <div className="follow-ups" aria-label="Suggested replies">
+                {ideas.map((idea) => (
+                  <button key={idea} onClick={() => choose(idea)}>
+                    {idea}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -314,16 +367,8 @@ export default function SessionPage() {
           </div>
         </section>
         <section className="pane-canvas" aria-label="Trip board">
-          <div className="board-heading">
-            <div>
-              <span className="board-kicker">Your next chapter</span>
-              <h2>The trip board</h2>
-            </div>
-            <span className="board-icon">
-              <Icon name="map" size={23} />
-            </span>
-          </div>
           <nav className="canvas-tabs" aria-label="Trip board views">
+            <h2>Trip board</h2>
             <button
               aria-pressed={tab === "results"}
               className={tab === "results" ? "active" : ""}
@@ -351,14 +396,14 @@ export default function SessionPage() {
           </nav>
           {tab === "results" ? (
             <ResultsCanvas
+              key={s.sessionId}
+              sessionId={s.sessionId}
               agents={s.agents}
+              messages={s.messages}
               onInspiration={choose}
-              onSelectionChange={() => {
-                /* Local comparison selection; booking is not submitted. */
-              }}
             />
           ) : (
-            <AgentsGraph agents={s.agents} />
+            <ActivityTimeline agents={s.agents} />
           )}
         </section>
       </main>
