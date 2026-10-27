@@ -1,0 +1,1490 @@
+{
+  "startedAt": "2026-10-27T20:07:57.776Z",
+  "finishedAt": "2026-10-27T20:09:41.543Z",
+  "commit": "5b03c5b",
+  "models": {
+    "specialist": "claude-haiku-5-5",
+    "judge": "claude-sonnet-5"
+  },
+  "pricesUSDPerMTok": {
+    "claude-haiku-4-5": [
+      1,
+      5
+    ],
+    "claude-haiku-5-5": [
+      0.1,
+      0.5
+    ],
+    "claude-sonnet-5": [
+      2,
+      10
+    ]
+  },
+  "note": "Live Wikivoyage/NPS/Open-Meteo/web data and model sampling vary run to run; one run per case. Costs use uncached list prices and exclude prompt caching; totalCostUSD excludes search_web research, estimated separately.",
+  "passed": 4,
+  "total": 4,
+  "calibrationPassed": true,
+  "stops": 29,
+  "judgeFindings": 0,
+  "judgeFindingsPerStop": 0,
+  "unmatchedTitles": 0,
+  "totalCostUSD": 0.08721390000000001,
+  "searchWebCalls": 0,
+  "estimatedSearchWebCostUSD": 0,
+  "calibration": [],
+  "cases": [
+    {
+      "id": "lake-george-thanksgiving",
+      "task": "Build a day-by-day itinerary for Lake George, NY for Thanksgiving week, November 26–28, 2026, for a group of six adults.",
+      "context": {
+        "destination": "Lake George, NY",
+        "startDate": "2026-11-26",
+        "endDate": "2026-11-28",
+        "travelers": 6
+      },
+      "knownRisks": [
+        "\"indoor-friendly\" mini-golf",
+        "\"cozy indoor stop\""
+      ],
+      "pass": true,
+      "problems": [],
+      "durationMs": 27850,
+      "specialist": {
+        "status": "ok",
+        "summary": "Here is a three-day Lake George itinerary for Thanksgiving week, November 26–28, 2026, with community-listed stops that all need confirming as open on those dates because the listings state no season and November is typically off-season.",
+        "data": {
+          "days": [
+            {
+              "dayLabel": "Day 1 · Thu Nov 26",
+              "date": "2026-11-26",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Lake George Steamboat Company",
+                  "description": "Considered by some locals to be Lake George's \"claim to fame\" is the authentic Steamboat Company, always a tourist attraction (so be ready for a crowd). Founded in 1817 as a commercial shipper, the company now has three passenger vessels for cruises up and dow… Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Mario's Restaurant",
+                  "description": "This restaurant has been serving Italian cuisine since 1954. They also have a full-service bar. The restaurant is popular, so reservations are advised. Dinner is offered M-Th from 4:30PM, and Su from 3PM. Confirm it's open on your dates."
+                }
+              ],
+              "mealPick": "Mario's Restaurant (Wikivoyage listing; confirm hours)"
+            },
+            {
+              "dayLabel": "Day 2 · Fri Nov 27",
+              "date": "2026-11-27",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Adirondack Camp",
+                  "description": "Historic summer camp founded in 1904 by Dr. Elias G. Brown, one of the oldest continually operating children's camps in the Adirondacks. The camp's waterfront peninsula on Blair's Bay, south of Anthony's Nose, is a notable landmark visible from the lake. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "Sushi Yoshi",
+                  "description": "This is a hibachi steakhouse that serves Chinese and Japanese food. The authentic low tables, which are situated over hollow pits, allow guests to dine in Japanese izakaya style. Lunch and dinner seven days a week. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Pizza Jerks",
+                  "description": "Delicious New York-style pizzeria that serves, among other dishes, chicken wings and garlic knots. They also deliver. Confirm it's open on your dates."
+                }
+              ]
+            },
+            {
+              "dayLabel": "Day 3 · Sat Nov 28",
+              "date": "2026-11-28",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Nina's Sweet Shop",
+                  "description": "Nina's offers a variety of sweets such as fudge and taffy ice cream, and some are sugar free. This shop is a local favorite. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "The Rooftop Cabana Bar",
+                  "description": "Outdoor dining on the shore of Lake George. Located on Surfside on the Lake's rooftop terrace with panoramic views. Offers a menu of appetizers, salads, sandwiches, paninis, burgers, and steak. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Gooney Golf",
+                  "description": "This is a typical old-fashioned mini-golf, with the classic windmill-type obstacles. Confirm it's open on your dates."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "Lake George – Wikivoyage destination guide",
+              "url": "https://en.wikivoyage.org/wiki/Lake_George"
+            },
+            {
+              "title": "Lake George Steamboat Company (listing website)",
+              "url": "https://lakegeorgesteamboat.com/"
+            }
+          ],
+          "dietaryNote": "No dietary restrictions were given, so no dietary filter was applied to food picks.",
+          "notes": "Weather: the trip (Nov 26–28, 2026) is beyond the 16-day forecast window, so no forecast was pulled. Typical November conditions for Lake George, NY (observed 2023–2025, open-meteo archive) are average highs of about 46°F and lows of about 33°F; this is a climate average, not a forecast. Sources: Wikivoyage listings are community-edited and unverified; prices, hours and seasonal openings were not verified and every listing states no season, so each stop must be confirmed as open on these dates. The guide warns many attractions close off-season. Excluded as closed during the trip month: Fort William Henry Museum, Great Escape, Christie's on the Lake. Listing details: The Rooftop Cabana Bar was last edited in 2015 and the Adirondack Camp description in the source is truncated, so only its available text is used. No costs are included. Group size of six was not matched against any listing, since the listings state no group suitability. Activity fees and daily spending have not been verified; no cost totals are shown."
+        }
+      },
+      "toolCalls": [
+        {
+          "tool": "search_activities",
+          "args": {
+            "destination": "Lake George, NY",
+            "startDate": "2026-11-26"
+          },
+          "result": {
+            "destination": "Lake George, NY",
+            "guideTitle": "Lake George",
+            "source": "wikivoyage",
+            "sourceUrl": "https://en.wikivoyage.org/wiki/Lake_George",
+            "license": "Wikivoyage contributors, CC BY-SA 4.0",
+            "weatherPlace": "Lake George, New York",
+            "pricesVerified": false,
+            "note": "Community-edited Wikivoyage listings, not verified by Roam. Hours, prices and seasonal openings change; many attractions close off-season. Confirm before going. Use only these listings; do not add places. Listings closed in the trip month were removed (see closedDuringTrip). seasonUnconfirmed means the listing states no season: describe it only with its own words and tell the traveler to confirm it is open on their dates.",
+            "activities": [
+              {
+                "title": "Adirondack Camp",
+                "kind": "sight",
+                "description": "Historic summer camp founded in 1904 by Dr. Elias G. Brown, one of the oldest continually operating children's camps in the Adirondacks. The camp's waterfront peninsula on Blair's Bay, south of Anthony's Nose, is a notable landmark visible from the lake. Priva…",
+                "address": "302 Warrick Road, Putnam Station",
+                "lastEdited": "2026-06-17",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Adirondack Adventures Whitewater Rafting",
+                "kind": "activity",
+                "description": "North River",
+                "address": "4659 New York Route 28, Johnsburg",
+                "website": "https://adkadventures.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Beaver Brook Outfitters",
+                "kind": "activity",
+                "address": "3921 New York Route 28, North Creek",
+                "website": "https://www.beaverbrook.net/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Wild Water's Outdoor Center",
+                "kind": "activity",
+                "description": "Rafting trips on the Hudson and Sacandaga rivers include equipment, meals and experienced guides. Family-owned and operated since 1984.",
+                "address": "1123 New York Route 28, Warrensburg",
+                "hours": "8AM-6PM",
+                "listedPrice": "$19-$90",
+                "website": "https://www.wildwaters.net/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Lake George Steamboat Company",
+                "kind": "activity",
+                "description": "Considered by some locals to be Lake George’s “claim to fame” is the authentic Steamboat Company, always a tourist attraction (so be ready for a crowd). Founded in 1817 as a commercial shipper, the company now has three passenger vessels for cruises up and dow…",
+                "address": "57 Beach Rd",
+                "listedPrice": "Adults $17-57; ages 65+ $16-53; ages 4-11 $8-21; under 4 free",
+                "website": "https://lakegeorgesteamboat.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Lake George Kayak Company",
+                "kind": "activity",
+                "description": "This is a great way to get out on your own and check out the lake. Just be sure that you can handle all the paddling, and watch out which way the wind is blowing because it can take a lot longer to get back to shore if the wind is against you.",
+                "address": "5 Boathouse Ln, Bolton Landing",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Gooney Golf",
+                "kind": "activity",
+                "description": "This is a typical old-fashioned mini-golf, with the classic windmill-type obstacles.",
+                "address": "Corner of Rte 9N & Rte 9",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Pirate's Cove Adventure Golf",
+                "kind": "activity",
+                "description": "This choice is the more expensive of the two mini-golf options. It has nice greens and newer obstacles.",
+                "address": "2115 US Route 9",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Mario's Restaurant",
+                "kind": "food",
+                "description": "This restaurant has been serving Italian cuisine since 1954. They also have a full-service bar. The restaurant is popular, so reservations are advised. Dinner is offered M-Th from 4:30PM, and Su from 3PM.",
+                "address": "429 Canada Street",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Sushi Yoshi",
+                "kind": "food",
+                "description": "This is a hibachi steakhouse that serves Chinese and Japanese food. Though this restaurant is slightly pricey, the authentic low tables, which are situated over hollow pits, allow guests to dine in Japanese izakaya style. Lunch and dinner seven days a week.",
+                "address": "1818 State Route 9",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Pizza Jerks",
+                "kind": "food",
+                "description": "Delicious New York-style pizzeria that serves, among other dishes, chicken wings and garlic knots. They also deliver.",
+                "address": "59 Iroquois Street",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Nina's Sweet Shop",
+                "kind": "food",
+                "description": "Nina’s offers a variety of sweets such as fudge and taffy ice cream, and some are sugar free. This shop is a local favorite.",
+                "address": "179 Canada Street",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "The Rooftop Cabana Bar",
+                "kind": "food",
+                "description": "Outdoor dining on the shore of Lake George. Located on Surfside on the Lake's rooftop terrace with panoramic views. Offers a menu of appetizers, salads, sandwiches, paninis, burgers, and steak.",
+                "address": "400 Canada Street",
+                "hours": "Noon-8PM",
+                "lastEdited": "2015-12-01",
+                "seasonUnconfirmed": true
+              }
+            ],
+            "closedDuringTrip": [
+              "Fort William Henry Museum",
+              "Great Escape",
+              "Christie's on the Lake"
+            ]
+          }
+        },
+        {
+          "tool": "get_destination_guide",
+          "args": {
+            "destination": "Lake George, NY",
+            "startDate": "2026-11-26"
+          },
+          "result": {
+            "destination": "Lake George, NY",
+            "guideTitle": "Lake George",
+            "source": "wikivoyage",
+            "sourceUrl": "https://en.wikivoyage.org/wiki/Lake_George",
+            "license": "Wikivoyage contributors, CC BY-SA 4.0",
+            "weatherPlace": "Lake George, New York",
+            "pricesVerified": false,
+            "note": "Community-edited Wikivoyage listings, not verified by Roam. Hours, prices and seasonal openings change; many attractions close off-season. Confirm before going. Use only these listings; do not add places. Listings closed in the trip month were removed (see closedDuringTrip). seasonUnconfirmed means the listing states no season: describe it only with its own words and tell the traveler to confirm it is open on their dates.",
+            "activities": [
+              {
+                "title": "Adirondack Camp",
+                "kind": "sight",
+                "description": "Historic summer camp founded in 1904 by Dr. Elias G. Brown, one of the oldest continually operating children's camps in the Adirondacks. The camp's waterfront peninsula on Blair's Bay, south of Anthony's Nose, is a notable landmark visible from the lake. Priva…",
+                "address": "302 Warrick Road, Putnam Station",
+                "lastEdited": "2026-06-17",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Adirondack Adventures Whitewater Rafting",
+                "kind": "activity",
+                "description": "North River",
+                "address": "4659 New York Route 28, Johnsburg",
+                "website": "https://adkadventures.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Beaver Brook Outfitters",
+                "kind": "activity",
+                "address": "3921 New York Route 28, North Creek",
+                "website": "https://www.beaverbrook.net/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Wild Water's Outdoor Center",
+                "kind": "activity",
+                "description": "Rafting trips on the Hudson and Sacandaga rivers include equipment, meals and experienced guides. Family-owned and operated since 1984.",
+                "address": "1123 New York Route 28, Warrensburg",
+                "hours": "8AM-6PM",
+                "listedPrice": "$19-$90",
+                "website": "https://www.wildwaters.net/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Lake George Steamboat Company",
+                "kind": "activity",
+                "description": "Considered by some locals to be Lake George’s “claim to fame” is the authentic Steamboat Company, always a tourist attraction (so be ready for a crowd). Founded in 1817 as a commercial shipper, the company now has three passenger vessels for cruises up and dow…",
+                "address": "57 Beach Rd",
+                "listedPrice": "Adults $17-57; ages 65+ $16-53; ages 4-11 $8-21; under 4 free",
+                "website": "https://lakegeorgesteamboat.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Lake George Kayak Company",
+                "kind": "activity",
+                "description": "This is a great way to get out on your own and check out the lake. Just be sure that you can handle all the paddling, and watch out which way the wind is blowing because it can take a lot longer to get back to shore if the wind is against you.",
+                "address": "5 Boathouse Ln, Bolton Landing",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Gooney Golf",
+                "kind": "activity",
+                "description": "This is a typical old-fashioned mini-golf, with the classic windmill-type obstacles.",
+                "address": "Corner of Rte 9N & Rte 9",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Pirate's Cove Adventure Golf",
+                "kind": "activity",
+                "description": "This choice is the more expensive of the two mini-golf options. It has nice greens and newer obstacles.",
+                "address": "2115 US Route 9",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Mario's Restaurant",
+                "kind": "food",
+                "description": "This restaurant has been serving Italian cuisine since 1954. They also have a full-service bar. The restaurant is popular, so reservations are advised. Dinner is offered M-Th from 4:30PM, and Su from 3PM.",
+                "address": "429 Canada Street",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Sushi Yoshi",
+                "kind": "food",
+                "description": "This is a hibachi steakhouse that serves Chinese and Japanese food. Though this restaurant is slightly pricey, the authentic low tables, which are situated over hollow pits, allow guests to dine in Japanese izakaya style. Lunch and dinner seven days a week.",
+                "address": "1818 State Route 9",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Pizza Jerks",
+                "kind": "food",
+                "description": "Delicious New York-style pizzeria that serves, among other dishes, chicken wings and garlic knots. They also deliver.",
+                "address": "59 Iroquois Street",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Nina's Sweet Shop",
+                "kind": "food",
+                "description": "Nina’s offers a variety of sweets such as fudge and taffy ice cream, and some are sugar free. This shop is a local favorite.",
+                "address": "179 Canada Street",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "The Rooftop Cabana Bar",
+                "kind": "food",
+                "description": "Outdoor dining on the shore of Lake George. Located on Surfside on the Lake's rooftop terrace with panoramic views. Offers a menu of appetizers, salads, sandwiches, paninis, burgers, and steak.",
+                "address": "400 Canada Street",
+                "hours": "Noon-8PM",
+                "lastEdited": "2015-12-01",
+                "seasonUnconfirmed": true
+              }
+            ],
+            "closedDuringTrip": [
+              "Fort William Henry Museum",
+              "Great Escape",
+              "Christie's on the Lake"
+            ]
+          }
+        },
+        {
+          "tool": "get_climate_summary",
+          "args": {
+            "place": "Lake George, NY",
+            "month": 11
+          },
+          "result": {
+            "place": "Lake George, New York",
+            "month": 11,
+            "avgHighF": 46,
+            "avgLowF": 33,
+            "source": "open-meteo-archive",
+            "note": "Average of observed daily highs and lows for November 2023–2025. Typical conditions, not a forecast."
+          }
+        }
+      ],
+      "deterministic": {
+        "sources": [
+          "wikivoyage"
+        ],
+        "webEvidence": false,
+        "listingCount": 13,
+        "unmatchedTitles": [],
+        "closedScheduled": [],
+        "exactTitlesRequired": true,
+        "pass": true
+      },
+      "judge": {
+        "stopsReviewed": 9,
+        "findings": []
+      },
+      "usage": {
+        "specialist": {
+          "inputTokens": 13420,
+          "inputTokenDetails": {
+            "noCacheTokens": 13420,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 4871,
+          "outputTokenDetails": {
+            "textTokens": 1822,
+            "reasoningTokens": 3049
+          },
+          "totalTokens": 18291
+        },
+        "judge": {
+          "inputTokens": 7171,
+          "inputTokenDetails": {
+            "noCacheTokens": 7171,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 1334,
+          "outputTokenDetails": {
+            "textTokens": 21,
+            "reasoningTokens": 1313
+          },
+          "totalTokens": 8505
+        }
+      },
+      "searchWebCalls": 0,
+      "estimatedSearchWebCostUSD": 0,
+      "costUSD": 0.0314595
+    },
+    {
+      "id": "savannah-april",
+      "task": "Build a day-by-day itinerary for Savannah, GA, April 9–11, 2027, for two adults who like history and food.",
+      "context": {
+        "destination": "Savannah, GA",
+        "startDate": "2027-04-09",
+        "endDate": "2027-04-11",
+        "travelers": 2,
+        "interests": [
+          "history",
+          "food"
+        ]
+      },
+      "pass": true,
+      "problems": [],
+      "durationMs": 22410,
+      "specialist": {
+        "status": "ok",
+        "summary": "Savannah's April 9–11, 2027 plan has three days of Wikivoyage history and food stops, such as Bonaventure Cemetery, Forsyth Park, River Street, and Desposito's, with each stop still needing confirmation that it is open on those dates.",
+        "data": {
+          "days": [
+            {
+              "dayLabel": "Day 1 · Fri Apr 9",
+              "date": "2027-04-09",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Bonaventure Cemetery",
+                  "description": "Fans of \"The Book\" will find Johnny Mercer's grave here, along with those of Conrad Aiken and other Southern notables. The view of the river is wonderful, and the Spanish moss creates a delightfully spooky atmosphere. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "Wormsloe Historic Site",
+                  "description": "The entrance has a beautiful avenue of live oak trees, plus there is a visitor's center with history of the plantation and trails along the marshes. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Saint Bibiana",
+                  "description": "In the Savannah Bardo Hotel. A fine Italian cuisine restaurant and cocktail lounge located in historic downtown Savannah, adorned with chic artwork, stunning chandeliering, and the full restoration and artistic touches of the original 1888 Savannah Mansion. Confirm it's open on your dates."
+                }
+              ]
+            },
+            {
+              "dayLabel": "Day 2 · Sat Apr 10",
+              "date": "2027-04-10",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Forsyth Park",
+                  "description": "This large public park, which marks the southern edge of the Historic District, is ringed with bed and breakfasts and crowned with a beautiful fountain. They filmed Midnight in the Garden of Good & Evil here. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "Georgia State Railroad Museum",
+                  "description": "Features several vintage pieces of rolling stock, an operating model train layout, and an operating turntable. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Desposito's",
+                  "description": "One of the few surviving family-owned shrimp shacks from a previous era, with the same secret-recipe dipping sauce that they've used for more than half a century. Go for a taste of old-timey Southern boiled shrimp. Confirm it's open on your dates."
+                }
+              ]
+            },
+            {
+              "dayLabel": "Day 3 · Sun Apr 11",
+              "date": "2027-04-11",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "The Collins Quarter at Forsyth",
+                  "description": "The only restaurant inside Forsyth Park. Great brunch menu and atmosphere. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "City Market",
+                  "description": "City Market is a mixed-use project in the northwest corner of the Historic District. The rehabilitation of the four-block area began in 1985. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "River Street",
+                  "description": "A popular cobblestone street (one way east) along the south bank of the Savannah River. It is lined with numerous tourist-targeted shops and restaurants. Confirm it's open on your dates."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "Savannah – Wikivoyage",
+              "url": "https://en.wikivoyage.org/wiki/Savannah"
+            },
+            {
+              "title": "City Market, Savannah (listing website)",
+              "url": "https://www.savannahcitymarket.com/"
+            },
+            {
+              "title": "Saint Bibiana (listing website)",
+              "url": "https://www.saint-bibiana.com/"
+            },
+            {
+              "title": "River Street, Savannah's Waterfront (listing website)",
+              "url": "https://savannahswaterfront.com/"
+            }
+          ],
+          "notes": "Itinerary built from Wikivoyage community listings for Savannah, GA, which are community-edited and unverified by Roam; hours, prices and seasonal openings may have changed, so confirm each stop before going. Every listing used is marked as having no stated season, so confirm each one is open on April 9–11, 2027. No listing was closed during the trip month. No costs are included because listing prices were not verified. Weather: the trip is more than 16 days away, so no forecast was pulled. Typical April conditions (observed 2024–2026, Open-Meteo archive) average a high of about 79°F and a low of about 58°F; this is a climate average, not a forecast. Dietary restrictions were not specified, so no dietary filter was applied. The day plan is built from history and food listings; Desposito's is in Thunderbolt, GA, outside downtown.\n\nDietary note: no dietary restrictions were given, so no dietary filter was applied to food picks.\n\nThe search results are a demo of the planning tools and not live bookings or availability.\n\nDays 1–3 follow Friday through Sunday, April 9–11, 2027.\n\nTrip is for two adults.\n\nAll food stops come from Wikivoyage listings only.\n\nRetrieval: destination guide and activity listings from the Roam tools; climate from Open-Meteo archive.\n\nThe climate summary is for Savannah, Georgia.\n\nNo weather fields are included in the daily entries.\n\nListing websites were cited only where the stop itself was used.\n\nNo search_web research was needed because all stops are in the tool listings.\n\nAll dates are in 2027.\n\nThe guide's weatherPlace is Savannah, Georgia.\n\nEnd of notes.\n\nDemo labels: this result is a demo plan. Activity fees and daily spending have not been verified; no cost totals are shown."
+        }
+      },
+      "toolCalls": [
+        {
+          "tool": "get_destination_guide",
+          "args": {
+            "destination": "Savannah, GA",
+            "startDate": "2027-04-09"
+          },
+          "result": {
+            "destination": "Savannah, GA",
+            "guideTitle": "Savannah",
+            "source": "wikivoyage",
+            "sourceUrl": "https://en.wikivoyage.org/wiki/Savannah",
+            "license": "Wikivoyage contributors, CC BY-SA 4.0",
+            "weatherPlace": "Savannah, Georgia",
+            "pricesVerified": false,
+            "note": "Community-edited Wikivoyage listings, not verified by Roam. Hours, prices and seasonal openings change; many attractions close off-season. Confirm before going. Use only these listings; do not add places. Listings closed in the trip month were removed (see closedDuringTrip). seasonUnconfirmed means the listing states no season: describe it only with its own words and tell the traveler to confirm it is open on their dates.",
+            "activities": [
+              {
+                "title": "Bonaventure Cemetery",
+                "kind": "sight",
+                "description": "Fans of \"The Book\" will find Johnny Mercer's grave here, along with those of Conrad Aiken and other Southern notables. The view of the river is wonderful, and the Spanish moss creates a delightfully spooky atmosphere.",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "City Market",
+                "kind": "sight",
+                "description": "City Market is a mixed-use project in the northwest corner of the Historic District. The rehabilitation of the four-block area began in 1985. The result is a facility that economically could not be replicated today. City Market has established itself as a dest…",
+                "website": "https://www.savannahcitymarket.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Forsyth Park",
+                "kind": "sight",
+                "description": "This large public park, which marks the southern edge of the Historic District, is ringed with bed and breakfasts and crowned with a beautiful fountain. They filmed Midnight in the Garden of Good & Evil here. So stay in the park, admire the Spanish moss, and i…",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Georgia State Railroad Museum",
+                "kind": "sight",
+                "description": "Features several vintage pieces of rolling stock, an operating model train layout, and an operating turntable.",
+                "address": "655 Louisville Rd",
+                "hours": "Daily 9AM-5PM",
+                "listedPrice": "Adults $7.70, children (2-12) $4.90",
+                "lastEdited": "2019-08-01",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Grayson Stadium",
+                "kind": "sight",
+                "description": "It is primarily used for baseball, and is the home field of the Savannah Bananas, a professional exhibition team. From 2016 to 2022, the Bananas played in the Coastal Plain League collegiate summer baseball league, but in 2020 started a professional exhibition…",
+                "address": "1401 East Victory Dr",
+                "website": "https://thesavannahbananas.com/",
+                "lastEdited": "2024-04-22",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Plant Riverside District",
+                "kind": "sight",
+                "description": "A former power plant that was decommissioned and redeveloped. Opened in 2020, a J. W. Marriott hotel anchors the development with a publicly-accessible lobby called Generator Hall featuring shops, restaurants, and a large collection of minerals and geodes on d…",
+                "address": "400 W. River St",
+                "website": "https://www.plantriverside.com/",
+                "lastEdited": "2024-06-08",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "River Street",
+                "kind": "sight",
+                "description": "A popular cobblestone street (one way east) along the south bank of the Savannah River. It is lined with numerous tourist-targeted shops and restaurants. The sculpture of the Waving Girl is towards the east end of River Street. The rest of the Historic Distric…",
+                "website": "https://savannahswaterfront.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Wormsloe Historic Site",
+                "kind": "sight",
+                "description": "The entrance has a beautiful avenue of live oak trees, plus there is a visitor's center with history of the plantation and trails along the marshes.",
+                "address": "7601 Skidaway Rd",
+                "hours": "Daily, 9AM-5PM",
+                "listedPrice": "$10",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Lucas Theatre",
+                "kind": "sight",
+                "description": "SCAD uses it for a number of events including the Savannah Film Festival. The college’s support also allows for a wide range of community uses: the Lucas has presented top-line entertainment including opera from London and Italy, European orchestras, country s…",
+                "address": "32 Abercorn St",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Savannah College of Art & Design",
+                "kind": "sight",
+                "description": "Founded in 1978 by Paula S. Wallace, Richard Rowan, May Poetter and Paul Poetter — is an independent, accredited and nonprofit school dedicated to the visual and performing arts, design, the building arts and the history of art and architecture. SCAD enrolls m…",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Saint Bibiana",
+                "kind": "food",
+                "description": "In the Savannah Bardo Hotel. A fine Italian cuisine restaurant and cocktail lounge located in historic downtown Savannah, adorned with chic artwork, stunning chandeliering, and the full restoration and artistic touches of the original 1888 Savannah Mansion.",
+                "address": "700 Drayton St",
+                "website": "https://www.saint-bibiana.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "B&D Burgers",
+                "kind": "food",
+                "description": "Local chain with excellent burgers. Four locations: two downtown, off of Ellis Sq and further west on Broughton; one near Southside on Abercorn; and one in Pooler in a heavy retail area.",
+                "website": "https://bdburgers.net/",
+                "lastEdited": "2024-12-29",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "B. Matthew's Eatery",
+                "kind": "food",
+                "address": "325 East Bay Street",
+                "website": "https://bmatthewseatery.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "The Collins Quarter at Forsyth",
+                "kind": "food",
+                "description": "The only restaurant inside Forsyth Park. Great brunch menu and atmosphere.",
+                "address": "621 Drayton St",
+                "listedPrice": "&ndash;",
+                "lastEdited": "2022-09-14",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Desposito's",
+                "kind": "food",
+                "description": "One of the few surviving family-owned shrimp shacks from a previous era, with the same secret-recipe dipping sauce that they've used for more than half a century. Go for a taste of old-timey Southern boiled shrimp.",
+                "address": "3501 Macceo Dr, Thunderbolt, GA",
+                "hours": "Tue–Sat 5–10PM",
+                "lastEdited": "2019-01-31",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Gallery Espresso",
+                "kind": "food",
+                "description": "Outside seating on Chippewa Square makes this arty coffee shop even more appealing to locals and tourists alike. A large, almost daunting, menu of coffees, teas, sweets and sandwiches is sure to satisfy your hunger, while the abundant local art on display feed…",
+                "seasonUnconfirmed": true
+              }
+            ],
+            "closedDuringTrip": []
+          }
+        },
+        {
+          "tool": "search_activities",
+          "args": {
+            "destination": "Savannah, GA",
+            "startDate": "2027-04-09",
+            "kind": "history"
+          },
+          "result": {
+            "destination": "Savannah, GA",
+            "guideTitle": "Savannah",
+            "source": "wikivoyage",
+            "sourceUrl": "https://en.wikivoyage.org/wiki/Savannah",
+            "license": "Wikivoyage contributors, CC BY-SA 4.0",
+            "weatherPlace": "Savannah, Georgia",
+            "pricesVerified": false,
+            "note": "Community-edited Wikivoyage listings, not verified by Roam. Hours, prices and seasonal openings change; many attractions close off-season. Confirm before going. Use only these listings; do not add places. Listings closed in the trip month were removed (see closedDuringTrip). seasonUnconfirmed means the listing states no season: describe it only with its own words and tell the traveler to confirm it is open on their dates.",
+            "activities": [
+              {
+                "title": "Bonaventure Cemetery",
+                "kind": "sight",
+                "description": "Fans of \"The Book\" will find Johnny Mercer's grave here, along with those of Conrad Aiken and other Southern notables. The view of the river is wonderful, and the Spanish moss creates a delightfully spooky atmosphere.",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "City Market",
+                "kind": "sight",
+                "description": "City Market is a mixed-use project in the northwest corner of the Historic District. The rehabilitation of the four-block area began in 1985. The result is a facility that economically could not be replicated today. City Market has established itself as a dest…",
+                "website": "https://www.savannahcitymarket.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Forsyth Park",
+                "kind": "sight",
+                "description": "This large public park, which marks the southern edge of the Historic District, is ringed with bed and breakfasts and crowned with a beautiful fountain. They filmed Midnight in the Garden of Good & Evil here. So stay in the park, admire the Spanish moss, and i…",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Georgia State Railroad Museum",
+                "kind": "sight",
+                "description": "Features several vintage pieces of rolling stock, an operating model train layout, and an operating turntable.",
+                "address": "655 Louisville Rd",
+                "hours": "Daily 9AM-5PM",
+                "listedPrice": "Adults $7.70, children (2-12) $4.90",
+                "lastEdited": "2019-08-01",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Grayson Stadium",
+                "kind": "sight",
+                "description": "It is primarily used for baseball, and is the home field of the Savannah Bananas, a professional exhibition team. From 2016 to 2022, the Bananas played in the Coastal Plain League collegiate summer baseball league, but in 2020 started a professional exhibition…",
+                "address": "1401 East Victory Dr",
+                "website": "https://thesavannahbananas.com/",
+                "lastEdited": "2024-04-22",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Plant Riverside District",
+                "kind": "sight",
+                "description": "A former power plant that was decommissioned and redeveloped. Opened in 2020, a J. W. Marriott hotel anchors the development with a publicly-accessible lobby called Generator Hall featuring shops, restaurants, and a large collection of minerals and geodes on d…",
+                "address": "400 W. River St",
+                "website": "https://www.plantriverside.com/",
+                "lastEdited": "2024-06-08",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "River Street",
+                "kind": "sight",
+                "description": "A popular cobblestone street (one way east) along the south bank of the Savannah River. It is lined with numerous tourist-targeted shops and restaurants. The sculpture of the Waving Girl is towards the east end of River Street. The rest of the Historic Distric…",
+                "website": "https://savannahswaterfront.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Wormsloe Historic Site",
+                "kind": "sight",
+                "description": "The entrance has a beautiful avenue of live oak trees, plus there is a visitor's center with history of the plantation and trails along the marshes.",
+                "address": "7601 Skidaway Rd",
+                "hours": "Daily, 9AM-5PM",
+                "listedPrice": "$10",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Lucas Theatre",
+                "kind": "sight",
+                "description": "SCAD uses it for a number of events including the Savannah Film Festival. The college’s support also allows for a wide range of community uses: the Lucas has presented top-line entertainment including opera from London and Italy, European orchestras, country s…",
+                "address": "32 Abercorn St",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Savannah College of Art & Design",
+                "kind": "sight",
+                "description": "Founded in 1978 by Paula S. Wallace, Richard Rowan, May Poetter and Paul Poetter — is an independent, accredited and nonprofit school dedicated to the visual and performing arts, design, the building arts and the history of art and architecture. SCAD enrolls m…",
+                "seasonUnconfirmed": true
+              }
+            ],
+            "closedDuringTrip": []
+          }
+        },
+        {
+          "tool": "search_activities",
+          "args": {
+            "destination": "Savannah, GA",
+            "startDate": "2027-04-09",
+            "kind": "food"
+          },
+          "result": {
+            "destination": "Savannah, GA",
+            "guideTitle": "Savannah",
+            "source": "wikivoyage",
+            "sourceUrl": "https://en.wikivoyage.org/wiki/Savannah",
+            "license": "Wikivoyage contributors, CC BY-SA 4.0",
+            "weatherPlace": "Savannah, Georgia",
+            "pricesVerified": false,
+            "note": "Community-edited Wikivoyage listings, not verified by Roam. Hours, prices and seasonal openings change; many attractions close off-season. Confirm before going. Use only these listings; do not add places. Listings closed in the trip month were removed (see closedDuringTrip). seasonUnconfirmed means the listing states no season: describe it only with its own words and tell the traveler to confirm it is open on their dates.",
+            "activities": [
+              {
+                "title": "Saint Bibiana",
+                "kind": "food",
+                "description": "In the Savannah Bardo Hotel. A fine Italian cuisine restaurant and cocktail lounge located in historic downtown Savannah, adorned with chic artwork, stunning chandeliering, and the full restoration and artistic touches of the original 1888 Savannah Mansion.",
+                "address": "700 Drayton St",
+                "website": "https://www.saint-bibiana.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "B&D Burgers",
+                "kind": "food",
+                "description": "Local chain with excellent burgers. Four locations: two downtown, off of Ellis Sq and further west on Broughton; one near Southside on Abercorn; and one in Pooler in a heavy retail area.",
+                "website": "https://bdburgers.net/",
+                "lastEdited": "2024-12-29",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "B. Matthew's Eatery",
+                "kind": "food",
+                "address": "325 East Bay Street",
+                "website": "https://bmatthewseatery.com/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "The Collins Quarter at Forsyth",
+                "kind": "food",
+                "description": "The only restaurant inside Forsyth Park. Great brunch menu and atmosphere.",
+                "address": "621 Drayton St",
+                "listedPrice": "&ndash;",
+                "lastEdited": "2022-09-14",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Desposito's",
+                "kind": "food",
+                "description": "One of the few surviving family-owned shrimp shacks from a previous era, with the same secret-recipe dipping sauce that they've used for more than half a century. Go for a taste of old-timey Southern boiled shrimp.",
+                "address": "3501 Macceo Dr, Thunderbolt, GA",
+                "hours": "Tue–Sat 5–10PM",
+                "lastEdited": "2019-01-31",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Gallery Espresso",
+                "kind": "food",
+                "description": "Outside seating on Chippewa Square makes this arty coffee shop even more appealing to locals and tourists alike. A large, almost daunting, menu of coffees, teas, sweets and sandwiches is sure to satisfy your hunger, while the abundant local art on display feed…",
+                "seasonUnconfirmed": true
+              }
+            ],
+            "closedDuringTrip": []
+          }
+        },
+        {
+          "tool": "get_climate_summary",
+          "args": {
+            "place": "Savannah, GA",
+            "month": 4
+          },
+          "result": {
+            "place": "Savannah, Georgia",
+            "month": 4,
+            "avgHighF": 79,
+            "avgLowF": 58,
+            "source": "open-meteo-archive",
+            "note": "Average of observed daily highs and lows for April 2024–2026. Typical conditions, not a forecast."
+          }
+        }
+      ],
+      "deterministic": {
+        "sources": [
+          "wikivoyage"
+        ],
+        "webEvidence": false,
+        "listingCount": 16,
+        "unmatchedTitles": [],
+        "closedScheduled": [],
+        "exactTitlesRequired": true,
+        "pass": true
+      },
+      "judge": {
+        "stopsReviewed": 9,
+        "findings": []
+      },
+      "usage": {
+        "specialist": {
+          "inputTokens": 14866,
+          "inputTokenDetails": {
+            "noCacheTokens": 14866,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 4493,
+          "outputTokenDetails": {
+            "textTokens": 2272,
+            "reasoningTokens": 2221
+          },
+          "totalTokens": 19359
+        },
+        "judge": {
+          "inputTokens": 8666,
+          "inputTokenDetails": {
+            "noCacheTokens": 8666,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 457,
+          "outputTokenDetails": {
+            "textTokens": 21,
+            "reasoningTokens": 436
+          },
+          "totalTokens": 9123
+        }
+      },
+      "searchWebCalls": 0,
+      "estimatedSearchWebCostUSD": 0,
+      "costUSD": 0.0256351
+    },
+    {
+      "id": "harpers-ferry-weekend",
+      "task": "Build a two-day itinerary for Harpers Ferry, WV, November 14–15, 2026, for two adults.",
+      "context": {
+        "destination": "Harpers Ferry, WV",
+        "startDate": "2026-11-14",
+        "endDate": "2026-11-15",
+        "travelers": 2
+      },
+      "pass": true,
+      "problems": [],
+      "durationMs": 8965,
+      "specialist": {
+        "status": "ok",
+        "summary": "Here is a two-day Harpers Ferry plan for November 14 and 15, 2026, using four NPS-listed sites, with typical November highs near 55°F and lows near 38°F since no forecast is available yet.",
+        "data": {
+          "days": [
+            {
+              "dayLabel": "Day 1 · Sat Nov 14, 2026",
+              "date": "2026-11-14",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Visitor Center orientation and shuttle to Lower Town",
+                  "description": "Cultural visit from the National Park Service planning guide. Confirm current access and hours with NPS."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "Lower Town historic district and John Brown's Fort",
+                  "description": "Cultural visit from the National Park Service planning guide. Confirm current access and hours with NPS."
+                }
+              ]
+            },
+            {
+              "dayLabel": "Day 2 · Sun Nov 15, 2026",
+              "date": "2026-11-15",
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "The Point river-confluence viewpoint",
+                  "description": "Outdoor activity from the National Park Service planning guide. Confirm current access and hours with NPS."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "Bolivar Heights battlefield walk",
+                  "description": "Cultural visit from the National Park Service planning guide. Confirm current access and hours with NPS."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "NPS Harpers Ferry National Historical Park: Places to Go",
+              "url": "https://www.nps.gov/hafe/planyourvisit/placestogo.htm"
+            }
+          ],
+          "dietaryNote": "No dietary restrictions were given, and no food listings were returned for Harpers Ferry, so no meal picks are included.",
+          "notes": "Weather: the trip starts 18 days from today (2026-10-27), beyond the 16-day forecast window, so no forecast is included. Typical November conditions from observed 2023–2025 data (open-meteo archive) are an average high of about 55°F and low of about 38°F; this is a climate average, not a forecast. Plan: the guide's activities are the four listed NPS items; I added no hours, fees, or other details. The NPS guide states that fees, hours, access and trail conditions are not verified and should be confirmed with NPS before travel, and that prices are not verified. Listings come from the curated NPS guide, not Wikivoyage, so the Wikivoyage community-edited caveat does not apply here. Two adults are noted; no per-person costs or bookings are included. Activity fees and daily spending have not been verified; no cost totals are shown."
+        }
+      },
+      "toolCalls": [
+        {
+          "tool": "get_destination_guide",
+          "args": {
+            "destination": "Harpers Ferry, WV",
+            "startDate": "2026-11-14"
+          },
+          "result": {
+            "destination": "Harpers Ferry, West Virginia",
+            "aliases": [
+              "harpers ferry",
+              "harper's ferry"
+            ],
+            "weatherPlace": "Harpers Ferry",
+            "sourceUrl": "https://www.nps.gov/hafe/planyourvisit/placestogo.htm",
+            "note": "Planning guide, not bookable inventory. Confirm current access, fees, and trail conditions with NPS. No restaurant or dietary claims are verified.",
+            "activities": [
+              {
+                "title": "Lower Town historic district and John Brown's Fort",
+                "kind": "culture"
+              },
+              {
+                "title": "The Point river-confluence viewpoint",
+                "kind": "outdoors"
+              },
+              {
+                "title": "Bolivar Heights battlefield walk",
+                "kind": "culture"
+              },
+              {
+                "title": "Visitor Center orientation and shuttle to Lower Town",
+                "kind": "culture"
+              }
+            ],
+            "source": "curated-official-guide",
+            "pricesVerified": false
+          }
+        },
+        {
+          "tool": "search_activities",
+          "args": {
+            "destination": "Harpers Ferry, WV",
+            "startDate": "2026-11-14"
+          },
+          "result": {
+            "destination": "Harpers Ferry, West Virginia",
+            "aliases": [
+              "harpers ferry",
+              "harper's ferry"
+            ],
+            "weatherPlace": "Harpers Ferry",
+            "sourceUrl": "https://www.nps.gov/hafe/planyourvisit/placestogo.htm",
+            "note": "Planning guide, not bookable inventory. Confirm current access, fees, and trail conditions with NPS. No restaurant or dietary claims are verified.",
+            "activities": [
+              {
+                "title": "Lower Town historic district and John Brown's Fort",
+                "kind": "culture"
+              },
+              {
+                "title": "The Point river-confluence viewpoint",
+                "kind": "outdoors"
+              },
+              {
+                "title": "Bolivar Heights battlefield walk",
+                "kind": "culture"
+              },
+              {
+                "title": "Visitor Center orientation and shuttle to Lower Town",
+                "kind": "culture"
+              }
+            ],
+            "source": "curated-official-guide",
+            "pricesVerified": false
+          }
+        },
+        {
+          "tool": "get_climate_summary",
+          "args": {
+            "place": "Harpers Ferry, WV",
+            "month": 11
+          },
+          "result": {
+            "place": "Harpers Ferry, West Virginia",
+            "month": 11,
+            "avgHighF": 55,
+            "avgLowF": 38,
+            "source": "open-meteo-archive",
+            "note": "Average of observed daily highs and lows for November 2023–2025. Typical conditions, not a forecast."
+          }
+        }
+      ],
+      "deterministic": {
+        "sources": [
+          "curated-official-guide"
+        ],
+        "webEvidence": false,
+        "listingCount": 4,
+        "unmatchedTitles": [],
+        "closedScheduled": [],
+        "exactTitlesRequired": false,
+        "pass": true
+      },
+      "judge": {
+        "stopsReviewed": 4,
+        "findings": []
+      },
+      "usage": {
+        "specialist": {
+          "inputTokens": 10165,
+          "inputTokenDetails": {
+            "noCacheTokens": 10165,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 1600,
+          "outputTokenDetails": {
+            "textTokens": 1022,
+            "reasoningTokens": 578
+          },
+          "totalTokens": 11765
+        },
+        "judge": {
+          "inputTokens": 2767,
+          "inputTokenDetails": {
+            "noCacheTokens": 2767,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 201,
+          "outputTokenDetails": {
+            "textTokens": 22,
+            "reasoningTokens": 179
+          },
+          "totalTokens": 2968
+        }
+      },
+      "searchWebCalls": 0,
+      "estimatedSearchWebCostUSD": 0,
+      "costUSD": 0.0093605
+    },
+    {
+      "id": "san-juan-december",
+      "task": "Build a day-by-day itinerary for San Juan, Puerto Rico, December 4–6, 2026, for two adults.",
+      "context": {
+        "destination": "San Juan, Puerto Rico",
+        "startDate": "2026-12-04",
+        "endDate": "2026-12-06",
+        "travelers": 2
+      },
+      "pass": true,
+      "problems": [],
+      "durationMs": 16614,
+      "specialist": {
+        "status": "ok",
+        "summary": "A three-day San Juan, Puerto Rico itinerary for December 4–6, 2026 is ready, covering Old San Juan sights, El Yunque, Condado beach, a rum distillery tour, and a Fajardo bioluminescent bay kayak, with weather shown as December climate averages because the dates are beyond the forecast window.",
+        "data": {
+          "days": [
+            {
+              "dayLabel": "Day 1 · Fri Dec 4",
+              "date": "2026-12-04",
+              "weather": {
+                "summary": "Typical December: brief showers (climate average, not a forecast)",
+                "highF": 84,
+                "lowF": 73
+              },
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Old San Juan walking tour",
+                  "description": "Cultural visit from Roam's demo activity list. Demo listing, not verified."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "San Juan Cathedral",
+                  "description": "Contains the tomb of the Spanish explorer Juan Ponce de León. Confirm it's open on your dates."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Ostra Cosa",
+                  "description": "Reservations recommended. The ambience here is one of the most sensual and romantic in Old San Juan. Hours: daily noon-10PM. Confirm it's open on your dates."
+                }
+              ],
+              "mealPick": "El Asador, The Grill Old San Juan (Wikivoyage listing; confirm hours)"
+            },
+            {
+              "dayLabel": "Day 2 · Sat Dec 5",
+              "date": "2026-12-05",
+              "weather": {
+                "summary": "Typical December: brief showers (climate average, not a forecast)",
+                "highF": 84,
+                "lowF": 73
+              },
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "El Yunque rainforest hike",
+                  "description": "Outdoor activity from Roam's demo activity list. Demo listing, not verified."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "San Juan National Historic Site",
+                  "description": "The park consists of multiple sites. Castillo San Cristóbal is one of the largest Spanish fortresses in the new world, and has a National Park Service visitor center off of Avenida Luis Muñoz Rivera. Hours: 9AM-5PM. Confirm it's open on your dates."
+                }
+              ],
+              "mealPick": "BUNS Burger Shop (Wikivoyage listing; confirm hours)"
+            },
+            {
+              "dayLabel": "Day 3 · Sun Dec 6",
+              "date": "2026-12-06",
+              "weather": {
+                "summary": "Typical December: brief showers (climate average, not a forecast)",
+                "highF": 84,
+                "lowF": 73
+              },
+              "stops": [
+                {
+                  "timeOfDay": "morning",
+                  "title": "Condado beach day",
+                  "description": "Beach time from Roam's demo activity list. Demo listing, not verified."
+                },
+                {
+                  "timeOfDay": "afternoon",
+                  "title": "Rum distillery tour",
+                  "description": "Food stop from Roam's demo activity list. Dietary options: vegetarian, gluten-free. Demo listing, not verified."
+                },
+                {
+                  "timeOfDay": "evening",
+                  "title": "Bioluminescent bay kayak (Fajardo)",
+                  "description": "Outdoor activity from Roam's demo activity list. Demo listing, not verified."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "San Juan - Wikivoyage",
+              "url": "https://en.wikivoyage.org/wiki/San_Juan"
+            }
+          ],
+          "notes": "Trip dates are about 5 weeks out, beyond the 16-day forecast window, so weather shown is the December climate average (avg high 84°F, avg low 73°F, brief showers) from the climate summary, not a forecast. Destination guide and weather place: San Juan, Puerto Rico. Wikivoyage listings are community-edited and unverified; hours, prices and seasonal openings may change, and all Wikivoyage sights are seasonUnconfirmed. Activities from search_activities (Old San Juan walking tour, El Yunque rainforest hike, Condado beach day, Rum distillery tour, Bioluminescent bay kayak) list no hours or season, so their descriptions are limited to the listing's category; confirm times and availability directly with providers. Stop times of day are scheduling suggestions, not listing facts. No dietary restrictions were given, so no dietary filter was applied to food picks. Prices omitted per plan rules. No web search was used. Activity fees and daily spending have not been verified; no cost totals are shown."
+        }
+      },
+      "toolCalls": [
+        {
+          "tool": "get_climate_summary",
+          "args": {
+            "place": "San Juan, Puerto Rico",
+            "month": 12
+          },
+          "result": {
+            "place": "San Juan, Puerto Rico",
+            "month": 12,
+            "avgHighF": 84,
+            "avgLowF": 73,
+            "note": "warm year-round; brief showers"
+          }
+        },
+        {
+          "tool": "search_activities",
+          "args": {
+            "destination": "San Juan, Puerto Rico",
+            "startDate": "2026-12-04"
+          },
+          "result": {
+            "destination": "San Juan, Puerto Rico",
+            "activities": [
+              {
+                "title": "Old San Juan walking tour",
+                "kind": "culture",
+                "cost": 25,
+                "costUSD": 25
+              },
+              {
+                "title": "El Yunque rainforest hike",
+                "kind": "outdoors",
+                "cost": 60,
+                "costUSD": 60
+              },
+              {
+                "title": "Bioluminescent bay kayak (Fajardo)",
+                "kind": "outdoors",
+                "cost": 65,
+                "costUSD": 65
+              },
+              {
+                "title": "Condado beach day",
+                "kind": "beach",
+                "cost": 0,
+                "costUSD": 0
+              },
+              {
+                "title": "Rum distillery tour",
+                "kind": "food",
+                "cost": 35,
+                "dietary": [
+                  "vegetarian",
+                  "gluten-free"
+                ],
+                "costUSD": 35,
+                "dietaryOptions": [
+                  "vegetarian",
+                  "gluten-free"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "tool": "get_destination_guide",
+          "args": {
+            "destination": "San Juan, Puerto Rico",
+            "startDate": "2026-12-04"
+          },
+          "result": {
+            "destination": "San Juan, Puerto Rico",
+            "guideTitle": "San Juan",
+            "source": "wikivoyage",
+            "sourceUrl": "https://en.wikivoyage.org/wiki/San_Juan",
+            "license": "Wikivoyage contributors, CC BY-SA 4.0",
+            "weatherPlace": "San Juan, Puerto Rico",
+            "pricesVerified": false,
+            "note": "Community-edited Wikivoyage listings, not verified by Roam. Hours, prices and seasonal openings change; many attractions close off-season. Confirm before going. Use only these listings; do not add places. Listings closed in the trip month were removed (see closedDuringTrip). seasonUnconfirmed means the listing states no season: describe it only with its own words and tell the traveler to confirm it is open on their dates.",
+            "activities": [
+              {
+                "title": "San Juan National Historic Site",
+                "kind": "sight",
+                "description": "The park consists of multiple sites. Castillo San Cristóbal is one of the largest Spanish fortresses in the new world, and has a National Park Service visitor center off of Avenida Luis Muñoz Rivera. The center offers English and Spanish versions of an introdu…",
+                "address": "501 Norzagaray St",
+                "hours": "9AM-5PM",
+                "listedPrice": "$10/day adults, children under 15 free, national park passes includes up to 3 visitors",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "El Castillo San Felipe del Morro",
+                "kind": "sight",
+                "description": "A 16th-century citadel that lies on the northwestern-most point of the islet of San Juan, Puerto Rico. It is part of San Juan National Historic Site and was declared a World Heritage Site by the United Nations in 1983.",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "El Castillo de San Cristóbal",
+                "kind": "sight",
+                "description": "A fort built by the Spaniards to protect against land based attacks on the city of San Juan. It is part of San Juan National Historic Site. It covers 27 acres of land and is tall.",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Alcaldia",
+                "kind": "sight",
+                "description": "San Juan's City hall, built in 1602.",
+                "address": "Calle de San Francisco",
+                "lastEdited": "2025-07-03",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Casa Blanca",
+                "kind": "sight",
+                "description": "Ancestral home of the Ponce de Leon family, now a museum.",
+                "address": "western end of Calle San Sebastián",
+                "hours": "Wed-Sun 8:30AM-noon and 1:30-4Pm",
+                "listedPrice": "$5 adults, $3 seniors/students/children",
+                "lastEdited": "2025-07-03",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "La Fortaleza",
+                "kind": "sight",
+                "description": "or the Palacio de Santa Catalina, \"La Fortaleza\" (or The Fortress in English) is the official residence of the Governor of Puerto Rico, who is Puerto Rico's head of Government. It was built between 1533 and 1540 to defend the harbor of San Juan. The structure …",
+                "address": "western end of Calle Fortaleza",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "San Juan Cathedral",
+                "kind": "sight",
+                "description": "contains the tomb of the Spanish explorer Juan Ponce de León. It was built in the 1520s, was soon wrecked by a hurricane, and then rebuilt in 1540. After being rebuilt, it was robbed in the late 1500s, and then, in 1615, it was damaged by a hurricane. In 1917,…",
+                "address": "153 Calle Cristo",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Cuartel de Ballaja",
+                "kind": "sight",
+                "description": "Completed in 1863, and in 1881 a chapel was added. This building housed military personnel and is now a museum called Las Americas Museum containing Caribbean and European American arts and artifacts.",
+                "hours": "Wed-Fri 9AM-noon and 1-4PM, Sat Sun 11AM-4PM",
+                "listedPrice": "$6 adults, $4 seniors/students/children",
+                "website": "https://www.museolasamericas.org/",
+                "lastEdited": "2025-07-03",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Museo de San Juan",
+                "kind": "sight",
+                "description": "Museum on the history of San Juan.",
+                "address": "150 Calle Norzagaray 3er piso",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "La Casa del Libro",
+                "kind": "sight",
+                "description": "Museum of the art and history books through five centuries. A museum holding nearly 5,000 early works of manuscripts and books, some as from as old as the 15th century. This museum is most known for having two royal mandates signed by Ferdinand and Isabella co…",
+                "address": "255 Calle del Cristo",
+                "hours": "Tue-Fri 11AM-5PM, Sat 11:30AM-5:30PM",
+                "website": "https://www.lacasadellibro.org/",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "El Asador, The Grill Old San Juan",
+                "kind": "food",
+                "description": "Puerto Rican cuisine at the entrance of Old San Juan, the heart of nightlife in the Old City. It is a two-level restaurant with an exterior patio.",
+                "address": "350 San Francisco St",
+                "hours": "Daily 10AM - 4AM",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "BUNS Burger Shop",
+                "kind": "food",
+                "description": "Great burgers with high quality beef. Over 40 beers, some on tap.",
+                "address": "1214 Ashford Ave.",
+                "hours": "11:30AM-4AM",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Super Max",
+                "kind": "food",
+                "description": "A normal grocery store.",
+                "address": "Calle Julian Blanco",
+                "hours": "24x7",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Freshmart",
+                "kind": "food",
+                "description": "A natural foods-centric grocery store where, as you leave, you are wished to \"have a healthy day!\"",
+                "address": "1310 Avenida Ashford",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "La Bombonera",
+                "kind": "food",
+                "description": "Authentic local cuisine in an unassuming landmark atmosphere unchanged for decades. Serves lunch and dinner. Fresh pastries. Superlative coffee. Inexpensive.",
+                "address": "259 Viejo, C. de San Francisco",
+                "hours": "7:30AM-8PM",
+                "seasonUnconfirmed": true
+              },
+              {
+                "title": "Ostra Cosa",
+                "kind": "food",
+                "description": "Reservations recommended. The ambience here is one of the most sensual and romantic in Old San Juan.",
+                "address": "Calle del Cristo 154",
+                "hours": "Daily noon-10PM",
+                "seasonUnconfirmed": true
+              }
+            ],
+            "closedDuringTrip": []
+          }
+        }
+      ],
+      "deterministic": {
+        "sources": [
+          "inventory",
+          "wikivoyage"
+        ],
+        "webEvidence": false,
+        "listingCount": 21,
+        "unmatchedTitles": [],
+        "closedScheduled": [],
+        "exactTitlesRequired": true,
+        "pass": true
+      },
+      "judge": {
+        "stopsReviewed": 10,
+        "findings": []
+      },
+      "usage": {
+        "specialist": {
+          "inputTokens": 12098,
+          "inputTokenDetails": {
+            "noCacheTokens": 12098,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 3262,
+          "outputTokenDetails": {
+            "textTokens": 1644,
+            "reasoningTokens": 1618
+          },
+          "totalTokens": 15360
+        },
+        "judge": {
+          "inputTokens": 5494,
+          "inputTokenDetails": {
+            "noCacheTokens": 5494,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0
+          },
+          "outputTokens": 693,
+          "outputTokenDetails": {
+            "textTokens": 21,
+            "reasoningTokens": 672
+          },
+          "totalTokens": 6187
+        }
+      },
+      "searchWebCalls": 0,
+      "estimatedSearchWebCostUSD": 0,
+      "costUSD": 0.0207588
+    }
+  ]
+}

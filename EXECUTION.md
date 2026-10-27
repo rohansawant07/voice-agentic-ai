@@ -18,7 +18,7 @@ These rows track when earlier milestones first landed. For the current interface
 | 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | ✅ done — live demo ran (clarify → 4-agent fan-out → $1,220/$1,500) | `2409022` |
 | 5 | M2 — voice pipeline (STT/TTS) | 🟡 STT live-verified (Deepgram); TTS code done, awaiting OpenAI/ElevenLabs key | `b59d390` `7ca22ce` |
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
-| 7 | M3 — evals (golden dataset, judges, tracing) | 🟡 itinerary grounding eval built and run (4 golden cases + 2 judge calibrations, Sonnet judge, ~$0.27/run, offline only); 1/4 cases grounded in the latest of five runs. The code guard removed title and date failures, and generated descriptions for title-only listings brought findings to 0.30 per stop. Wording on described Wikivoyage listings remains. Findings in `docs/evals/`. Other specialists, tracing and online evals not started | see 2026-10-27 changelog |
+| 7 | M3 — evals (golden dataset, judges, tracing) | 🟡 itinerary grounding eval built and run (4 golden cases + 2 judge calibrations, Sonnet judge, ~$0.27/run, offline only); After scoping tools and focusing prompts, 3/4 cases grounded on Haiku 4.5 (0.13 findings per stop) and 4/4 on Haiku 5.5 (single samples). Findings in `docs/evals/`. Other specialists, tracing and online evals not started | see 2026-10-27 changelog |
 | 8 | M4 — Docker, compose, Helm on k3d | 🟡 Docker/Compose complete; Helm/k3d not implemented | `67aea1b` |
 | 9 | M5 — AWS | ✅ live single-host pilot at https://98-95-105-10.sslip.io (t4g.small, Caddy HTTPS, SSM secrets, daily snapshots). EKS/ECR/ALB not pursued at pilot budget | see 2026-10-27 changelog |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
@@ -29,7 +29,7 @@ These rows track when earlier milestones first landed. For the current interface
 - Card picks now drive the trip summary's estimated total and persist per session, but they still don't inform the orchestrator on the next turn or update the budget specialist's meter.
 - Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
 - Weather mis-geocoding of "San Juan" (it searched US only, missing Puerto Rico) is fixed by state/territory-aware geocoding.
-- Haiku still embellishes Wikivoyage listings that have their own text (0.30 judge findings per stop; see `docs/evals/README.md`). Titles, closures, trip dates, empty plans and title-only descriptions are now enforced in code. Specialist calls can still throw on schema mismatch. Because Haiku keeps proposing merged or generic stops that the guard removes, plans can end with fewer days or stops than requested.
+- Haiku 4.5 still occasionally embellishes Wikivoyage listings that have their own text (0.13 judge findings per stop; Haiku 5.5 had none in one run; see `docs/evals/README.md`). Only the itinerary specialist has an eval. Titles, closures, trip dates, empty plans and title-only descriptions are now enforced in code. Specialist calls can still throw on schema mismatch. Because Haiku keeps proposing merged or generic stops that the guard removes, plans can end with fewer days or stops than requested.
 
 ---
 
@@ -58,6 +58,22 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-27 — Scoped specialist tools and focused prompts
+
+- Added a per-agent tool allowlist (`AgentDefinition.tools`, applied by `toolsFor`). Every specialist used to see every tool on its MCP server. Now:
+  - flights: search, fare rules and hold;
+  - stays: rentals and hotels;
+  - itinerary: guide, activities and weather;
+  - cars: car search;
+  - budget: currency only;
+  - support: agency tools.
+- `search_web` stays on all seven agents and the orchestrator stays on Opus 4.8, per the user's choice. Rewrote the six specialist prompts as short, task-specific briefs. The itinerary prompt now states the rules the guard enforces.
+- Added offline tests: allowlisted names must exist on the agent's servers, and destructive tools are held only by the flight and support agents.
+- Eval:
+  - [Scoped, Haiku 4.5](docs/evals/itinerary-2026-10-27-scoped.json): **3/4 passed**, 0.13 findings per stop (from 0.30), specialist input tokens −29%, no stops needing removal, $0.20.
+  - [Same on Haiku 5.5](docs/evals/itinerary-2026-10-27-haiku-5-5.json): **4/4**, 0 findings, specialist cost $0.012 versus $0.083.
+  - Single samples, itinerary specialist only. The default specialist model is unchanged (`claude-haiku-4-5`).
+
 ### 2026-10-27 — Deployed to AWS; plain-English explainer
 
 - Installed AWS CLI 2.38.6 and signed in with `aws login` (account 559215333273; it reports no Free Plan data, so charges are real). Ran `deploy/aws/deploy.sh up` with a $10 budget alert to the user's email.
@@ -67,6 +83,7 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
   - First boot took about 19 minutes. The Let's Encrypt certificate is valid to January 25, 2027.
   - Live checks: 200/401/401/200/400/308. A Harpers Ferry planning turn returned 200 in 22.5s with WebSocket events.
 - Added `EXPLAINED.md`, a non-technical walkthrough of the whole project, its tools and the deployment, linked from the README.
+
 ### 2026-10-27 — Generated descriptions for title-only itinerary stops
 
 - The itinerary guard writes stop descriptions from the listing's own fields for entries without guide text: NPS entries, Roam's demo activity list, and Wikivoyage listings with only an address or website. The description gives kind, source, any address, hours, listed price or dietary options, and a provenance caveat. Model wording is kept only where the listing has its own description. The specialist now collects full listing fields, not just titles.

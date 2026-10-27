@@ -22,6 +22,7 @@ const JUDGE_MODEL = process.env.JUDGE_MODEL ?? "claude-sonnet-5";
 /** USD per million tokens [input, output]; uncached first-party rates. */
 const PRICES: Record<string, [number, number]> = {
   "claude-haiku-4-5": [1, 5],
+  "claude-haiku-5-5": [0.1, 0.5],
   "claude-sonnet-5": [2, 10],
 };
 const GROUNDING_TOOLS = new Set(["get_destination_guide", "search_activities"]);

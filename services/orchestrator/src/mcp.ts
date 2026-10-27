@@ -29,9 +29,10 @@ export function mcpReady(): boolean {
   return toolsets.size === Object.keys(URLS).length;
 }
 
-/** Tools for one specialist, scoped to its registry-declared servers. */
-export function toolsFor(servers: McpServerName[]): ToolSet {
+/** Tools for one specialist, scoped to its registry-declared servers and tool allowlist. */
+export function toolsFor(servers: McpServerName[], allow?: string[]): ToolSet {
   const merged: ToolSet = {};
   for (const s of servers) Object.assign(merged, toolsets.get(s) ?? {});
-  return merged;
+  if (!allow) return merged;
+  return Object.fromEntries(Object.entries(merged).filter(([name]) => allow.includes(name)));
 }

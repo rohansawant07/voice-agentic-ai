@@ -50,7 +50,9 @@ Measured on October 27, 2026, at uncached list prices: Haiku 4.5 $1/$5 and Sonne
 | [61514fe run 2](itinerary-2026-10-27-61514fe-run2.json) | before web search | $0.098 | $0.181 | $0.015 | $0.29 | 3.6 min |
 | [before guard](itinerary-2026-10-27.json) | `1bd5079` (web search) + this eval | $0.087 | $0.167 | $0.016 | $0.27 | 3.5 min |
 | [with guard](itinerary-2026-10-27-guarded.json) | `1b38139` + itinerary guard | $0.143 | $0.154 | $0.015 | $0.31 | 3.3 min |
-| [with generated descriptions](itinerary-2026-10-27-described.json) | `48cc520` | $0.127 | $0.132 | $0.016 | **$0.27** | 3.1 min |
+| [with generated descriptions](itinerary-2026-10-27-described.json) | `48cc520` | $0.127 | $0.132 | $0.016 | $0.27 | 3.1 min |
+| [scoped tools + focused prompts](itinerary-2026-10-27-scoped.json) | this change, Haiku 4.5 | $0.083 | $0.105 | $0.015 | **$0.20** | 2.3 min |
+| [same, on Haiku 5.5](itinerary-2026-10-27-haiku-5-5.json) | this change, `SPECIALIST_MODEL=claude-haiku-5-5` | **$0.012** | $0.075 | skipped | **$0.09** | 1.7 min |
 
 Budget **about $0.25–0.35 per full run**. Other notes:
 
@@ -59,13 +61,42 @@ Budget **about $0.25–0.35 per full run**. Other notes:
 - **Not counted in `totalCostUSD`:**
   - `search_web` calls are separate Haiku research requests plus Anthropic's web-search fee. The record counts them and estimates about $0.03 each. The specialist made none in the current run.
   - A specialist call that throws (for example a schema mismatch) records $0, though its tokens were billed.
-- Developing this eval and the guard cost about $1.65 in total: five committed runs plus one discarded run made before the judge saw the trip request. Two attempts stopped on an empty credit balance and cost nothing.
+- Developing this eval, the guard and the prompt changes cost about $1.94 in total: seven committed runs plus one discarded run made before the judge saw the trip request. Two attempts stopped on an empty credit balance and cost nothing.
+- Haiku 5.5 is priced at $0.10/$0.50 per million tokens (prompts under 100K). The eval's price table includes it.
 
 Each run is one sample per case, taken from live, changing sources (Wikivoyage edits, forecasts, the web) and a sampled model. Treat a pass as "no problem seen this run", not a guarantee.
 
 ## Results (October 27, 2026)
 
-Both calibration fixtures passed in every run. **The latest run passed 1/4 (Harpers Ferry); every earlier run passed 0/4.**
+Both calibration fixtures passed in every run where they ran. **With scoped tools and focused prompts: 3/4 on Haiku 4.5 and 4/4 on Haiku 5.5.** Earlier runs passed 0/4, then 1/4.
+
+### Scoped tools and focused prompts
+
+Each specialist now gets only its allowlisted MCP tools (`tools` in `packages/core/src/registry.ts`), plus `search_web`. Before, every specialist saw every tool on its server: the flight agent saw hotel, car and currency tools. The six prompts were rewritten as short, task-specific briefs.
+
+The itinerary prompt now tells Haiku what the guard enforces:
+
+- one day per trip date;
+- each stop is exactly one listing;
+- no merged or generic stops;
+- describe a stop only with words from its own listing.
+
+An offline test checks every allowlisted name against the tools its servers register, and that only the flight and support agents hold destructive tools.
+
+| Measure | Generated descriptions (old prompts, all tools) | Scoped + focused, Haiku 4.5 | Scoped + focused, Haiku 5.5 |
+|---|---|---|---|
+| Cases passed | 1/4 | **3/4** | **4/4** |
+| Judge findings per stop | 0.30 (7 / 23) | 0.13 (4 / 30) | **0** (0 / 29) |
+| Stops the guard removed | 9 | 0 | 0 |
+| Lake George days | 2 of 3 | 3 of 3 | 3 of 3 |
+| Specialist input / output tokens | 82,070 / 8,983 | 58,591 / 4,909 | 50,549 / 14,226 |
+| Specialist cost, 4 itineraries | $0.127 | $0.083 | **$0.012** |
+
+Notes:
+
+- The only remaining findings are Savannah's, on Haiku 4.5 (4 findings).
+- Haiku 5.5 writes more output tokens, because its adaptive thinking is on by default. It is still about 7× cheaper than Haiku 4.5 per itinerary.
+- **These are single samples, and the eval covers only the itinerary specialist.** The flight, stays, car, budget and support specialists have no eval. Their prompt changes and a Haiku 5.5 switch are untested on live traffic.
 
 ### Generated descriptions for title-only listings
 

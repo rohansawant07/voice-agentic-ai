@@ -16,6 +16,8 @@ export interface AgentDefinition {
   systemPrompt: string;
   /** Which MCP servers' tools this agent may use. */
   mcpServers: McpServerName[];
+  /** Allowlist of MCP tool names from those servers; every tool is exposed when omitted. */
+  tools?: string[];
   /** Defaults to SPECIALIST_MODEL. */
   model?: string;
   /** Tool-loop budget. */

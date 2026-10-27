@@ -78,11 +78,16 @@ Voice only converts speech. Deepgram turns recorded audio into text, which then 
 | Customers, bookings, refunds, tickets | Seeded demo agency data | No |
 | Airbnb stays | A dated airbnb.com search link (live lookup is opt-in and off by default) | Link only |
 
+Each specialist gets only the tools on its allowlist (`tools` in `packages/core/src/registry.ts`), plus `search_web`:
+
 | Specialist | Tools it can call |
 | --- | --- |
-| Flights, Stays, Rental cars, Budget | Travel tools (demo inventory; Stays also builds Airbnb links) + `search_web` |
-| Itinerary | Travel tools (guides and Wikivoyage), weather tools and `search_web` |
-| Bookings | Agency tools (demo bookings; mutations disabled in Compose) + public-policy `search_web` |
+| Flights | `search_flights`, `get_fare_rules`, `hold_booking` (only with confirmation) |
+| Stays | `search_vacation_rentals`, `search_hotels`, `get_hotel_details` |
+| Itinerary | `get_destination_guide`, `search_activities`, `get_forecast`, `get_climate_summary` |
+| Rental cars | `search_car_rentals` |
+| Budget | `convert_currency` |
+| Bookings | Agency tools: lookup, list, get, cancel, modify, ticket (demo bookings; mutations disabled in Compose) |
 | Orchestrator | Specialist delegation + `search_web` |
 
 Wikivoyage listings are rejected when they belong to a non-US place, a same-named town in another state, or a disambiguation page. Listings that state they are closed on the trip dates are removed in code before the model sees them. Prices from community guides are never totaled. Real fares and room rates would need a paid travel data provider; `TRAVEL_PROVIDER` and Amadeus settings are placeholders only.

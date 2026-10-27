@@ -113,7 +113,7 @@ export async function runSpecialist(
     abortSignal: AbortSignal.timeout(60000),
       model: anthropic(def.model ?? SPECIALIST_MODEL),
       system: def.systemPrompt + WEB_RULES,
-      tools: instrument({ ...toolsFor(def.mcpServers), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance, observer),
+      tools: instrument({ ...toolsFor(def.mcpServers, def.tools), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance, observer),
       stopWhen: isStepCount(def.maxSteps),
       output: Output.object({ schema: resultSchema(def) }),
       prompt: `Task: ${req.task}\n\nKnown context:\n${JSON.stringify(req.context ?? {}, null, 2)}\n\nToday's date: ${new Date().toISOString().slice(0, 10)}`,
