@@ -61,7 +61,7 @@ Picking a flight, stay or car updates the trip summary's estimated total and is 
 
 ## Where the data comes from
 
-Voice only converts speech. Deepgram turns recorded audio into text, which then follows exactly the same path as a typed message. Optional OpenAI or ElevenLabs synthesis reads the reply aloud. Planning is done by Claude: one orchestrator delegates to six specialists, and each specialist can call **only its own tools**. **No agent has open web search.** That is deliberate, so every fact on the board traces to a known source.
+Voice only converts speech. Deepgram turns recorded audio into text, which then follows exactly the same path as a typed message. Optional OpenAI or ElevenLabs synthesis reads the reply aloud. Planning is done by Claude: one orchestrator delegates to six specialists, and each specialist has its scoped MCP tools plus shared **public web search**. The orchestrator also has web search. Research includes source links and retrieval dates; it does not turn demo inventory into live availability.
 
 | Data | Source | Live internet? |
 | --- | --- | --- |
@@ -90,6 +90,8 @@ flowchart LR
   G -->|Pages and assets| WEB["Next.js :3000"]
   G <-->|"/api/chat, /ws, /voice"| O["Fastify orchestrator :8080"]
   O <--> DB["PostgreSQL: history, events, shared turn locks"]
+  O --> SEARCH["Shared Anthropic web research: citations + timestamps"]
+  AI --> SEARCH
   O --> AI["Claude orchestrator + six specialist calls"]
   O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
   AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
@@ -184,3 +186,15 @@ Project-local UI skills are documented in [SOURCES.md](.agents/skills/SOURCES.md
 - [Operations](docs/OPERATIONS.md): sharing, state/cache design and deployment gaps.
 - [Performance](docs/PERFORMANCE.md): method, measurements and limitations.
 - [Execution history](EXECUTION.md): current status and historical changes.
+
+## Shared web research (October 27, 2026)
+
+All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic web-search research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
+
+Set `WEB_SEARCH_ENABLED=false` to disable it or `WEB_SEARCH_MODEL` to choose a compatible Anthropic model. Compose forwards both settings. The Anthropic organization must permit web search. A live check with the configured account returned the official NPS Harpers Ferry operating-hours page.
+
+Research returns a summary, HTTP(S) source URLs and retrieval timestamps. Sources are retained with specialist completion events and shown under **Planning activity → Web sources**; direct orchestrator research appends sources to its reply. Provider errors and results without citations return an explicit unavailable result. No application search cache is added.
+
+Search is for current public facts, not guaranteed real-time inventory. Mock flights/hotels/cars remain demo inventory; Airbnb remains direct links; private booking records still require agency tools. Agents are instructed to exclude personal/booking details from queries and treat retrieved content as untrusted evidence. These are model instructions, not a complete data-loss-prevention system.
+
+Provider reference: https://ai-sdk.dev/providers/ai-sdk-providers/anthropic

@@ -65,6 +65,8 @@ services:
       MCP_TRAVEL_URL: http://travel:8101/mcp
       MCP_WEATHER_URL: http://weather:8102/mcp
       MCP_AGENCY_URL: http://agency:8103/mcp
+      WEB_SEARCH_ENABLED: ${WEB_SEARCH_ENABLED:-true}
+      WEB_SEARCH_MODEL: ${WEB_SEARCH_MODEL:-claude-haiku-4-5}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ORCHESTRATOR_MODEL: ${ORCHESTRATOR_MODEL:-claude-opus-4-8}
       SPECIALIST_MODEL: ${SPECIALIST_MODEL:-claude-haiku-4-5}

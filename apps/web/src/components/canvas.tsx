@@ -631,6 +631,19 @@ export function ActivityTimeline({
                 </ul>
               )}
               {a.summary && <p className="activity-result">{a.summary}</p>}
+              {!!a.sources?.length && (
+                <details className="activity-result">
+                  <summary>Web sources ({a.sources.length})</summary>
+                  <ul>
+                    {a.sources.filter(s => /^https?:\/\//i.test(s.url)).map(s => (
+                      <li key={s.url}>
+                        <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}</a>
+                        {" — checked "}{s.retrievedAt.slice(0, 10)}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </li>
           );
         })}

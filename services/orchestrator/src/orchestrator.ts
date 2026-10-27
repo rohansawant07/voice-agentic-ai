@@ -2,6 +2,7 @@ import { generateText, isStepCount, tool, type ModelMessage, type ToolSet } from
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { AGENT_REGISTRY } from "@concierge/core";
+import { webTools, WEB_RULES, type WebSource } from "./web-search.js";
 import { bus } from "./bus.js";
 import { runSpecialist } from "./specialist.js";
 
@@ -36,7 +37,7 @@ Destructive actions (cancel, modify, hold a booking):
 - Never pass confirmed: true without that explicit yes in this conversation.
 
 Speaking style (your reply is read aloud by TTS):
-- At most 3 short sentences before yielding. Warm, plain, no markdown, no lists, no URLs.
+- At most 3 short sentences before yielding. Warm, plain, no lists. When using web research directly, include source URLs in the text so the customer can verify the claims.
 - Round prices in speech ("about two-ninety round trip"); exact numbers live on the customer's screen.
 - Never enumerate more than 2 options aloud — say "I've put three options on your screen."
 - If a specialist failed, say what you couldn't get and what you'll try instead — never expose internals.`;
@@ -67,11 +68,12 @@ export async function runOrchestrator(
   history: ModelMessage[],
 ): Promise<string> {
   const started = Date.now();
+  const sources: WebSource[] = [];
   const { text } = await generateText({
     abortSignal: AbortSignal.timeout(120000),
     model: anthropic(ORCHESTRATOR_MODEL),
-    system: SYSTEM,
-    tools: delegateTools(sessionId),
+    system: SYSTEM + WEB_RULES,
+    tools: { ...delegateTools(sessionId), ...webTools(undefined, undefined, sources) },
     stopWhen: isStepCount(10),
     messages: [
       ...history,
@@ -83,11 +85,12 @@ export async function runOrchestrator(
     ],
   });
 
+  const reply = sources.length ? `${text}\n\nSources: ${sources.map(s => s.url).join("\n")}` : text;
   await bus.emit({
     type: "assistant_message",
     sessionId,
     ts: Date.now(),
-    text,
+    text: reply,
   });
   await bus.emit({
     type: "run_finished",
@@ -95,5 +98,5 @@ export async function runOrchestrator(
     ts: Date.now(),
     durationMs: Date.now() - started,
   });
-  return text;
+  return reply;
 }

@@ -29,6 +29,7 @@ export type SessionEvent =
     })
   | (SessionEventBase & {
       type: "delegation_finished";
+      sources?: { url: string; title?: string; retrievedAt: string }[];
       agentId: string;
       status: DelegationStatus;
       summary: string;

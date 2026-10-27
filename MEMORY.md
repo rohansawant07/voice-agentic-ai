@@ -25,3 +25,7 @@ Updated October 27, 2026 (trip board redesign, AWS kit). This file is durable re
 ## Remaining work
 
 First AWS deploy and sslip.io certificate check, proper multi-user identity/quotas, backups and restore validation, replica/load testing, observability and token-cost metrics. Card picks drive a local estimated total but do not inform the orchestrator; no real bookings or payments are implemented.
+
+## Web research update
+
+All seven agents now have Anthropic-backed search_web using the existing key. See README.md for budgets/configuration and citation display. Live NPS search verified; deterministic failure/budget tests added. This adds provider usage and does not replace mock inventory with live booking APIs.

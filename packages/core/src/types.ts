@@ -35,6 +35,7 @@ export interface DelegationRequest {
 export type DelegationStatus = "ok" | "failed" | "needs_input";
 
 export interface DelegationResult<T = unknown> {
+  sources?: { url: string; title?: string; retrievedAt: string }[];
   status: DelegationStatus;
   /** Validated against the agent's outputSchema when status === "ok". */
   data?: T;

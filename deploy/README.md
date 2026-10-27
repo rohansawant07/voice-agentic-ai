@@ -75,3 +75,15 @@ A named Docker volume survives container replacement, not disk failure. Before u
 ## AWS
 
 See [AWS deployment](aws/README.md). Region: us-east-1. `deploy/aws/deploy.sh up` creates one HTTPS host (about $21/month) after an explicit confirmation; nothing has been created yet. The AWS overlay (`aws/compose.aws.yaml`) adds Caddy in front of this same gateway. The gateway honors `X-Forwarded-For` only from private Docker ranges, so rate limits apply per real client. Docker operations on this laptop do not create AWS charges; live model or speech requests can still use provider credits.
+
+## Shared web research (October 27, 2026)
+
+All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic web-search research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
+
+Set `WEB_SEARCH_ENABLED=false` to disable it or `WEB_SEARCH_MODEL` to choose a compatible Anthropic model. Compose forwards both settings. The Anthropic organization must permit web search. A live check with the configured account returned the official NPS Harpers Ferry operating-hours page.
+
+Research returns a summary, HTTP(S) source URLs and retrieval timestamps. Sources are retained with specialist completion events and shown under **Planning activity → Web sources**; direct orchestrator research appends sources to its reply. Provider errors and results without citations return an explicit unavailable result. No application search cache is added.
+
+Search is for current public facts, not guaranteed real-time inventory. Mock flights/hotels/cars remain demo inventory; Airbnb remains direct links; private booking records still require agency tools. Agents are instructed to exclude personal/booking details from queries and treat retrieved content as untrusted evidence. These are model instructions, not a complete data-loss-prevention system.
+
+Provider reference: https://ai-sdk.dev/providers/ai-sdk-providers/anthropic

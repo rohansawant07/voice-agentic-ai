@@ -18,6 +18,7 @@ export interface ChatMessage {
 }
 
 export interface AgentActivity {
+  sources?: { url: string; title?: string; retrievedAt: string }[];
   agentId: string;
   state: "running" | "done" | "failed" | "needs_input";
   task: string;
@@ -169,6 +170,7 @@ export function useSession(): SessionState {
               tools: a?.tools ?? [],
               state: ev.status === "ok" ? "done" : ev.status,
               summary: ev.summary,
+              sources: ev.sources,
               data: ev.data,
               durationMs: ev.durationMs,
               startedAt: a?.startedAt ?? ev.ts - ev.durationMs,

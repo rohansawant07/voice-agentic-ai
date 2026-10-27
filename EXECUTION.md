@@ -236,3 +236,7 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ## October 26, 2026 — Roam interface redesign
 
 Replaced the sparse split view with an inspiration-led trip board, refreshed typography and navy/blue palette, a persistent conversation composer, clear voice controls, explicit mobile pane navigation, responsive result grids, and itinerary timelines with expandable source notes. Inspiration actions populate an editable draft. Preserved direct Airbnb link labeling. Verified desktop and 390px mobile views, draft selection, message submission, and a live Harpers Ferry itinerary response.
+
+### 2026-10-27 — Shared web search
+
+Added bounded Anthropic web research to the orchestrator and all six specialists, preserved source links/timestamps in specialist events and the activity UI, and added configuration plus deterministic budget/error tests. Live research returned official NPS sources using the configured key.

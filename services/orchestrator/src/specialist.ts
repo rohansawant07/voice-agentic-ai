@@ -6,6 +6,7 @@ import type {
   DelegationRequest,
   DelegationResult,
 } from "@concierge/core";
+import { webTools, WEB_RULES, type WebSource } from "./web-search.js";
 import { bus } from "./bus.js";
 import { toolsFor } from "./mcp.js";
 
@@ -88,13 +89,14 @@ export async function runSpecialist(
   });
 
   const provenance = { unpricedGuide: false };
+  const sources: WebSource[] = [];
   let result: DelegationResult;
   try {
     const { output } = await generateText({
     abortSignal: AbortSignal.timeout(60000),
       model: anthropic(def.model ?? SPECIALIST_MODEL),
-      system: def.systemPrompt,
-      tools: instrument(toolsFor(def.mcpServers), sessionId, def.id, provenance),
+      system: def.systemPrompt + WEB_RULES,
+      tools: instrument({ ...toolsFor(def.mcpServers), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance),
       stopWhen: isStepCount(def.maxSteps),
       output: Output.object({ schema: resultSchema(def) }),
       prompt: `Task: ${req.task}\n\nKnown context:\n${JSON.stringify(req.context ?? {}, null, 2)}\n\nToday's date: ${new Date().toISOString().slice(0, 10)}`,
@@ -120,8 +122,10 @@ export async function runSpecialist(
     };
   }
 
+  result.sources = sources;
   await bus.emit({
     type: "delegation_finished",
+    sources,
     sessionId,
     ts: Date.now(),
     agentId: def.id,

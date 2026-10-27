@@ -13,6 +13,8 @@ flowchart LR
   G -->|Pages and assets| WEB["Next.js :3000"]
   G <-->|"/api/chat, /ws, /voice"| O["Fastify orchestrator :8080"]
   O <--> DB["PostgreSQL: history, events, shared turn locks"]
+  O --> SEARCH["Shared Anthropic web research: citations + timestamps"]
+  AI --> SEARCH
   O --> AI["Claude orchestrator + six specialist calls"]
   O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
   AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
@@ -127,3 +129,15 @@ The public GitHub repository is not a hosted application. Remote browser testing
 needs a reachable HTTPS frontend/backend, correct build-time API URL and exact
 allowed origin, WebSocket support, and access controls before exposing provider
 usage. CI checks source but does not deploy.
+
+## Shared web research (October 27, 2026)
+
+All six specialists and the orchestrator now have `search_web`. It runs a bounded Anthropic web-search research call using the existing server-side Anthropic key; no extra MCP service or search-provider key is needed. Defaults: enabled, Haiku 4.5, two research calls per agent run, up to two provider searches per research call, 25-second research deadline and 1,800 output tokens. This adds Anthropic usage; these limits are per agent run, not per-user spending quotas.
+
+Set `WEB_SEARCH_ENABLED=false` to disable it or `WEB_SEARCH_MODEL` to choose a compatible Anthropic model. Compose forwards both settings. The Anthropic organization must permit web search. A live check with the configured account returned the official NPS Harpers Ferry operating-hours page.
+
+Research returns a summary, HTTP(S) source URLs and retrieval timestamps. Sources are retained with specialist completion events and shown under **Planning activity → Web sources**; direct orchestrator research appends sources to its reply. Provider errors and results without citations return an explicit unavailable result. No application search cache is added.
+
+Search is for current public facts, not guaranteed real-time inventory. Mock flights/hotels/cars remain demo inventory; Airbnb remains direct links; private booking records still require agency tools. Agents are instructed to exclude personal/booking details from queries and treat retrieved content as untrusted evidence. These are model instructions, not a complete data-loss-prevention system.
+
+Provider reference: https://ai-sdk.dev/providers/ai-sdk-providers/anthropic
