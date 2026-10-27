@@ -7,7 +7,7 @@ import type {
   DelegationResult,
   ItineraryAgentOutput,
 } from "@concierge/core";
-import { guardItinerary, hasItineraryContent, tripRange, type ItineraryEvidence } from "./itinerary-guard.js";
+import { guardItinerary, hasItineraryContent, listingFrom, tripRange, type ItineraryEvidence } from "./itinerary-guard.js";
 import { webTools, WEB_RULES, type WebSource } from "./web-search.js";
 import { bus } from "./bus.js";
 import { toolsFor } from "./mcp.js";
@@ -58,10 +58,11 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
         for (const item of envelope.success ? envelope.data.content : []) {
           if (item.type !== "text" || !item.text) continue;
           try {
-            const payload = JSON.parse(item.text) as { source?: string; pricesVerified?: boolean; activities?: { title?: unknown }[]; closedDuringTrip?: unknown[] };
+            const payload = JSON.parse(item.text) as { source?: string; pricesVerified?: boolean; activities?: Record<string, unknown>[]; closedDuringTrip?: unknown[] };
             if ((payload.source === "curated-official-guide" || payload.source === "wikivoyage") && payload.pricesVerified === false) provenance.unpricedGuide = true;
             if (name === "get_destination_guide" || name === "search_activities") {
-              for (const a of payload.activities ?? []) if (typeof a.title === "string") provenance.listings.push(a.title);
+              for (const a of payload.activities ?? [])
+                if (typeof a.title === "string") provenance.listings.push(listingFrom(a, payload.source ?? "inventory"));
               for (const c of payload.closedDuringTrip ?? []) if (typeof c === "string") provenance.closed.push(c);
             }
           } catch { /* Not every tool returns JSON text. */ }

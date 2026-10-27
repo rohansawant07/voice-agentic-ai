@@ -18,7 +18,7 @@ These rows track when earlier milestones first landed. For the current interface
 | 4 | M1 — orchestrator text loop, parallel fan-out, WS feed | ✅ done — live demo ran (clarify → 4-agent fan-out → $1,220/$1,500) | `2409022` |
 | 5 | M2 — voice pipeline (STT/TTS) | 🟡 STT live-verified (Deepgram); TTS code done, awaiting OpenAI/ElevenLabs key | `b59d390` `7ca22ce` |
 | 6 | M2 — Next.js web UI (split pane, canvas, orb) | ✅ done — live multi-turn demo in browser incl. voice input | `9096029` |
-| 7 | M3 — evals (golden dataset, judges, tracing) | 🟡 itinerary grounding eval built and run (4 golden cases + 2 judge calibrations, Sonnet judge, ~$0.27/run, offline only); 0/4 cases grounded in all four runs. The code guard removed title and date failures; description embellishment remains (0.52 findings per stop). Findings in `docs/evals/`. Other specialists, tracing and online evals not started | see 2026-10-27 changelog |
+| 7 | M3 — evals (golden dataset, judges, tracing) | 🟡 itinerary grounding eval built and run (4 golden cases + 2 judge calibrations, Sonnet judge, ~$0.27/run, offline only); 1/4 cases grounded in the latest of five runs. The code guard removed title and date failures, and generated descriptions for title-only listings brought findings to 0.30 per stop. Wording on described Wikivoyage listings remains. Findings in `docs/evals/`. Other specialists, tracing and online evals not started | see 2026-10-27 changelog |
 | 8 | M4 — Docker, compose, Helm on k3d | 🟡 Docker/Compose complete; Helm/k3d not implemented | `67aea1b` |
 | 9 | M5 — AWS | 🟡 single-host kit built and verified locally (CloudFormation, Caddy HTTPS, SSM secrets, snapshots); awaiting account sign-in and first `deploy.sh up`. EKS/ECR/ALB not pursued at pilot budget | see 2026-10-27 changelog |
 | 10 | M6 — hardening (HPA, alarms, online evals) | ⬜ not started | |
@@ -29,7 +29,7 @@ These rows track when earlier milestones first landed. For the current interface
 - Card picks now drive the trip summary's estimated total and persist per session, but they still don't inform the orchestrator on the next turn or update the budget specialist's meter.
 - Current benchmark: 2.33s clarification, 17.21s regional itinerary, 38.10s multi-specialist text medians (n=3 each). One failed specialist attempt recovered on retry. See `docs/PERFORMANCE.md`; historical 60–80s observations below describe earlier runs.
 - Weather mis-geocoding of "San Juan" (it searched US only, missing Puerto Rico) is fixed by state/territory-aware geocoding.
-- Itinerary descriptions still add unsourced descriptors (0.52 judge findings per stop after the guard; see `docs/evals/README.md`). Titles, closures, trip dates and empty plans are now enforced in code. Specialist calls can still throw on schema mismatch, and a plan can end with fewer days than requested when the guard removes invented stops.
+- Haiku still embellishes Wikivoyage listings that have their own text (0.30 judge findings per stop; see `docs/evals/README.md`). Titles, closures, trip dates, empty plans and title-only descriptions are now enforced in code. Specialist calls can still throw on schema mismatch. Because Haiku keeps proposing merged or generic stops that the guard removes, plans can end with fewer days or stops than requested.
 
 ---
 
@@ -57,6 +57,16 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 ---
 
 ## Changelog
+
+### 2026-10-27 — Generated descriptions for title-only itinerary stops
+
+- The itinerary guard writes stop descriptions from the listing's own fields for entries without guide text: NPS entries, Roam's demo activity list, and Wikivoyage listings with only an address or website. The description gives kind, source, any address, hours, listed price or dietary options, and a provenance caveat. Model wording is kept only where the listing has its own description. The specialist now collects full listing fields, not just titles.
+- The judge accepts the two new caveats. The eval exits with a single `eval aborted:` line on provider errors such as an empty credit balance.
+- Eval re-run ([with generated descriptions](docs/evals/itinerary-2026-10-27-described.json), $0.27) compared with the guarded run:
+  - **1/4 passed** (Harpers Ferry, previously 8 findings).
+  - Judge findings per stop: 0.52 → 0.30. San Juan findings: 4 → 2.
+  - Remaining findings are Haiku's wording on Wikivoyage listings that have their own text ("historic square", "upscale") and one fact borrowed from another listing.
+  - Plans are thinner: the guard removed 9 merged or generic stops, and Lake George kept 2 of 3 days.
 
 ### 2026-10-27 — Itinerary guard: exact titles, trip dates, no empty plans
 

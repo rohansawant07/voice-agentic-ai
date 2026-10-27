@@ -49,7 +49,8 @@ Measured on October 27, 2026, at uncached list prices: Haiku 4.5 $1/$5 and Sonne
 | [61514fe run 1](itinerary-2026-10-27-61514fe-run1.json) | before web search; no calibration yet | $0.088 | $0.154 | n/a | $0.24 | 2.7 min |
 | [61514fe run 2](itinerary-2026-10-27-61514fe-run2.json) | before web search | $0.098 | $0.181 | $0.015 | $0.29 | 3.6 min |
 | [before guard](itinerary-2026-10-27.json) | `1bd5079` (web search) + this eval | $0.087 | $0.167 | $0.016 | $0.27 | 3.5 min |
-| [with guard](itinerary-2026-10-27-guarded.json) | `1b38139` + itinerary guard | $0.143 | $0.154 | $0.015 | **$0.31** | 3.3 min |
+| [with guard](itinerary-2026-10-27-guarded.json) | `1b38139` + itinerary guard | $0.143 | $0.154 | $0.015 | $0.31 | 3.3 min |
+| [with generated descriptions](itinerary-2026-10-27-described.json) | `48cc520` | $0.127 | $0.132 | $0.016 | **$0.27** | 3.1 min |
 
 Budget **about $0.25–0.35 per full run**. Other notes:
 
@@ -58,13 +59,35 @@ Budget **about $0.25–0.35 per full run**. Other notes:
 - **Not counted in `totalCostUSD`:**
   - `search_web` calls are separate Haiku research requests plus Anthropic's web-search fee. The record counts them and estimates about $0.03 each. The specialist made none in the current run.
   - A specialist call that throws (for example a schema mismatch) records $0, though its tokens were billed.
-- Developing this eval and the guard cost about $1.37 in total: four committed runs plus one discarded run made before the judge saw the trip request.
+- Developing this eval and the guard cost about $1.65 in total: five committed runs plus one discarded run made before the judge saw the trip request. Two attempts stopped on an empty credit balance and cost nothing.
 
 Each run is one sample per case, taken from live, changing sources (Wikivoyage edits, forecasts, the web) and a sampled model. Treat a pass as "no problem seen this run", not a guarantee.
 
 ## Results (October 27, 2026)
 
-Both calibration fixtures passed in every run. **No case passed in any run (0/4 each time).**
+Both calibration fixtures passed in every run. **The latest run passed 1/4 (Harpers Ferry); every earlier run passed 0/4.**
+
+### Generated descriptions for title-only listings
+
+Listings with no description of their own carry only a title, a kind and sometimes an address, hours or price. These are NPS guide entries, Roam's demo activity list, and Wikivoyage entries with only an address or website. The guard now writes their stop description from those fields plus a provenance caveat, for example: "Cultural visit from the National Park Service planning guide. Confirm current access and hours with NPS." Model wording is kept only where the listing has its own description. The judge accepts the two new caveats.
+
+| Measure | With guard | With generated descriptions |
+|---|---|---|
+| Cases passed | 0/4 | **1/4** (Harpers Ferry) |
+| Judge findings per stop | 0.52 (16 / 31) | **0.30** (7 / 23) |
+| Harpers Ferry / San Juan findings | 8 / 4 | **0** / 2 |
+| Stop titles not in listings | 0 | 0 |
+| Stops the guard removed | 5 | 9 |
+| Days | 2 of 3 Lake George; others complete | Same |
+
+What remains:
+
+- **Wording on listings with their own text.** Haiku still embellishes Wikivoyage listings: "historic square", "a unique group experience", "upscale" for a restaurant described as romantic.
+- **Facts borrowed from another listing.** The "27 acres" figure belongs to El Castillo de San Cristóbal but was attributed to the San Juan National Historic Site.
+- **Thinner plans.** Haiku keeps proposing merged or generic stops ("Mini-Golf Competition", "Casa Blanca and La Casa del Libro"), and the guard removes them. Lake George again lost its third day, and San Juan has 6 stops over 3 days.
+- **Plain, repetitive descriptions** on NPS entries. That is the intended trade.
+
+These are one sample per run.
 
 ### Itinerary guard
 

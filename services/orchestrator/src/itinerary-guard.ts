@@ -1,9 +1,41 @@
 import type { ItineraryAgentOutput } from "@concierge/core";
 
+/** One guide or activity listing as a tool returned it, tagged with its guide source. */
+export interface EvidenceListing {
+  title: string;
+  /** "curated-official-guide", "wikivoyage", or "inventory" for the demo activity catalog. */
+  source: string;
+  kind?: string;
+  description?: string;
+  address?: string;
+  hours?: string;
+  listedPrice?: string;
+  dietaryOptions?: string[];
+  seasonUnconfirmed?: boolean;
+}
+
+const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+
+/** Picks the known listing fields out of an untrusted tool payload entry. */
+export function listingFrom(raw: Record<string, unknown>, source: string): EvidenceListing {
+  const dietary = raw.dietaryOptions ?? raw.dietary;
+  return {
+    title: String(raw.title),
+    source,
+    kind: text(raw.kind),
+    description: text(raw.description),
+    address: text(raw.address),
+    hours: text(raw.hours),
+    listedPrice: text(raw.listedPrice),
+    dietaryOptions: Array.isArray(dietary) ? dietary.filter((d): d is string => typeof d === "string") : undefined,
+    seasonUnconfirmed: raw.seasonUnconfirmed === true || undefined,
+  };
+}
+
 /** What the itinerary specialist's tools returned, collected while it ran. */
 export interface ItineraryEvidence {
-  /** Titles from get_destination_guide / search_activities results. */
-  listings: string[];
+  /** Listings from get_destination_guide / search_activities results. */
+  listings: EvidenceListing[];
   /** Listings removed as closed on the trip dates (closedDuringTrip). */
   closed: string[];
   /** search_web returned cited evidence, which the prompt allows for extra stops. */
@@ -46,6 +78,37 @@ export function tripRange(context: Record<string, unknown> | undefined): { start
   return { start: pick("startDate", "checkIn", "departDate"), end: pick("endDate", "checkOut", "returnDate") };
 }
 
+const KIND_LABELS: Record<string, string> = {
+  culture: "Cultural visit",
+  outdoors: "Outdoor activity",
+  beach: "Beach time",
+  family: "Family activity",
+  food: "Food stop",
+  sight: "Sight",
+  activity: "Activity",
+};
+const SOURCE_LABELS: Record<string, string> = {
+  "curated-official-guide": "the National Park Service planning guide",
+  wikivoyage: "Wikivoyage",
+  inventory: "Roam's demo activity list",
+};
+
+/**
+ * A description built only from a listing's own fields, for listings with no
+ * guide text, so title-only entries never pick up model-supplied detail.
+ */
+export function describeListing(l: EvidenceListing): string {
+  const parts = [`${KIND_LABELS[l.kind ?? ""] ?? "Stop"} from ${SOURCE_LABELS[l.source] ?? "the trip guide"}.`];
+  if (l.address) parts.push(`Address: ${l.address}.`);
+  if (l.hours) parts.push(`Listed hours: ${l.hours}.`);
+  if (l.listedPrice) parts.push(`Listed price: ${l.listedPrice}.`);
+  if (l.dietaryOptions?.length) parts.push(`Dietary options: ${l.dietaryOptions.join(", ")}.`);
+  if (l.source === "curated-official-guide") parts.push("Confirm current access and hours with NPS.");
+  else if (l.source === "inventory") parts.push("Demo listing, not verified.");
+  if (l.seasonUnconfirmed) parts.push("Confirm it's open on your dates.");
+  return parts.join(" ");
+}
+
 const dayCount = (start: string, end: string) =>
   Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1;
 
@@ -58,20 +121,31 @@ export function guardItinerary(data: ItineraryAgentOutput, evidence: ItineraryEv
   if (!data.days?.length) return data;
   const removed: string[] = [];
   const closed = new Set(evidence.closed.map(normalize));
+  const titles = evidence.listings.map((l) => l.title);
+  // The same place can come back from both tools; prefer the record with guide text.
+  const byTitle = new Map<string, EvidenceListing>();
+  for (const l of evidence.listings) {
+    const seen = byTitle.get(l.title);
+    if (!seen || (!seen.description && l.description)) byTitle.set(l.title, l);
+  }
   let days = data.days;
 
-  if (evidence.listings.length) {
+  if (titles.length) {
     days = days.map((day) => {
       const stops = day.stops.flatMap((stop) => {
-        const listing = matchListing(stop.title, evidence.listings);
-        if (listing && !closed.has(normalize(listing))) return [{ ...stop, title: listing }];
+        const title = matchListing(stop.title, titles);
+        if (title && !closed.has(normalize(title))) {
+          const listing = byTitle.get(title)!;
+          // Model wording is kept only where the listing has its own description.
+          return [{ ...stop, title, description: listing.description ? stop.description : describeListing(listing) }];
+        }
         // Web-backed extra stops are allowed by the prompt; closed places never are.
-        if (!listing && evidence.webEvidence && !closed.has(normalize(stop.title))) return [stop];
+        if (!title && evidence.webEvidence && !closed.has(normalize(stop.title))) return [stop];
         removed.push(stop.title);
         return [];
       });
       const meal = day.mealPick && normalize(day.mealPick);
-      const mealListed = meal && evidence.listings.some((l) => ` ${meal} `.includes(` ${normalize(l)} `));
+      const mealListed = meal && titles.some((l) => ` ${meal} `.includes(` ${normalize(l)} `));
       return { ...day, stops, ...(day.mealPick && !mealListed ? { mealPick: undefined } : {}) };
     });
   }
