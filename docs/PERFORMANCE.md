@@ -53,7 +53,22 @@ Twenty sequential samples per endpoint after one excluded warm-up request. Measu
 - The multi-specialist request begins delegation around seven seconds in and exposes its first successful result around sixteen seconds in. The UI can show activity and partial completed sections before the final response.
 - Specialist retries can increase latency. One recovered itinerary failure occurred in the slowest multi-specialist run.
 - Different scenario contents produce different output lengths and tool work. Do not pool these into a single “average latency” without a representative traffic mix.
-- There is no evidence for a cache-hit ratio, per-request token cost, maximum concurrent users, uptime, or a production p95. Those require additional instrumentation and load tests.
+- There is no production evidence for a cache-hit ratio, per-request token cost, maximum concurrent users, uptime, or a production p95. Those require additional instrumentation and load tests. The single local prompt-caching measurement is below.
+
+## Prompt caching
+
+On 2026-10-28 the same two-turn conversation ran through the orchestrator (Opus 4.8) with `ORCHESTRATOR_PROMPT_CACHE=off` and then with caching on. The first turn planned two days in Harpers Ferry, and the second asked for a more relaxed second day. The figures cover orchestrator tokens summed over every step of each turn. Specialist (Haiku 5.5) and web research costs are not included. Raw data: [2026-10-28-prompt-cache.json](benchmarks/2026-10-28-prompt-cache.json). Prices are $5 per million input tokens, $6.25 for cache writes, $0.50 for cache reads and $25 for output.
+
+| Turn | Caching off | Caching on | Same tokens on, priced uncached |
+| --- | --- | --- | --- |
+| 1, plan the trip | $0.0619: 10,259 input, 423 output | $0.0698: 8,864 written, 3,899 read, 496 output | $0.0762 |
+| 2, follow-up | $0.0727: 12,016 input, 506 output | $0.0391: 3,387 written, 8,026 read, 557 output | $0.0710 |
+| Both turns | $0.1346 | $0.1089 | $0.1472 |
+
+- The follow-up turn cost 46% less, because it read the conversation and the tools and system prompt from the cache. Priced against the same tokens without caching, the first turn saved 8% and the follow-up 45%.
+- The first turn writes the cache at 1.25 times the input price, so a one-message conversation saves little. The savings grow with each reply that arrives within 5 minutes, and across sessions that share the cached tools and system prompt.
+- History is capped at 24 messages. After 12 turns the oldest messages drop off, which changes the cached prefix, so only the tools and system prompt keep hitting the cache.
+- This is one sample per mode. The model took a different number of steps in each run, so the token counts differ between runs too.
 
 ## Method and reproduction
 

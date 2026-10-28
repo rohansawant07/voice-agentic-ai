@@ -1,4 +1,4 @@
-import { generateText, isStepCount, tool, type ModelMessage, type ToolSet } from "ai";
+import { generateText, isStepCount, tool, type LanguageModelUsage, type ModelMessage, type ToolSet } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { AGENT_REGISTRY } from "@concierge/core";
@@ -9,7 +9,7 @@ import { runSpecialist } from "./specialist.js";
 const ORCHESTRATOR_MODEL = process.env.ORCHESTRATOR_MODEL ?? "claude-opus-4-8";
 
 /**
- * Stable prompt ordering supports potential provider prompt caching:
+ * Stable prompt ordering keeps the prompt cache valid:
  * this string is frozen — no dates, no session data. Volatile context
  * goes at the end of the message list.
  */
@@ -63,20 +63,48 @@ function delegateTools(sessionId: string): ToolSet {
   return tools;
 }
 
+/** Set ORCHESTRATOR_PROMPT_CACHE=off to send requests without cache breakpoints. */
+const PROMPT_CACHE = process.env.ORCHESTRATOR_PROMPT_CACHE !== "off";
+const CACHE = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
+
+/** Offline measurement hook: the turn's summed token usage, never sent to the bus. */
+export interface OrchestratorObserver {
+  usage?(usage: LanguageModelUsage): void;
+}
+
+/**
+ * Prompt caching uses three breakpoints:
+ * 1. the system prompt, which caches the tools and system prompt shared by every session;
+ * 2. the last history message, so the customer's next turn reuses this conversation;
+ * 3. the request-level automatic breakpoint, which moves to the newest block on each
+ *    delegation step, so later steps of this turn read what earlier steps wrote.
+ */
+function withHistoryBreakpoint(history: ModelMessage[]): ModelMessage[] {
+  const last = history.at(-1);
+  if (!PROMPT_CACHE || !last) return history;
+  return [...history.slice(0, -1), { ...last, providerOptions: { ...last.providerOptions, ...CACHE } } as ModelMessage];
+}
+
 export async function runOrchestrator(
   sessionId: string,
   history: ModelMessage[],
+  observer?: OrchestratorObserver,
 ): Promise<string> {
   const started = Date.now();
   const sources: WebSource[] = [];
-  const { text } = await generateText({
+  const { text, totalUsage } = await generateText({
     abortSignal: AbortSignal.timeout(120000),
     model: anthropic(ORCHESTRATOR_MODEL),
-    system: SYSTEM + WEB_RULES,
+    instructions: {
+      role: "system",
+      content: SYSTEM + WEB_RULES,
+      ...(PROMPT_CACHE && { providerOptions: CACHE }),
+    },
     tools: { ...delegateTools(sessionId), ...webTools(undefined, undefined, sources) },
     stopWhen: isStepCount(10),
+    ...(PROMPT_CACHE && { providerOptions: CACHE }),
     messages: [
-      ...history,
+      ...withHistoryBreakpoint(history),
       // volatile context stays AFTER the cacheable prefix
       {
         role: "user" as const,
@@ -84,6 +112,7 @@ export async function runOrchestrator(
       },
     ],
   });
+  observer?.usage?.(totalUsage);
 
   const reply = sources.length ? `${text}\n\nSources: ${sources.map(s => s.url).join("\n")}` : text;
   await bus.emit({

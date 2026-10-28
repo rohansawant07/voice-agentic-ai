@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-28",
+  "model": "claude-opus-4-8",
+  "pricesPerMTok": {
+    "input": 5,
+    "cacheWrite5m": 6.25,
+    "cacheRead": 0.5,
+    "output": 25
+  },
+  "scenario": [
+    "Plan a two-day trip to Harpers Ferry, West Virginia for two adults on November 14-15, 2026. We're driving from Washington DC, so no flights or hotels, just the day plans.",
+    "Make the second day more relaxed, with less hiking."
+  ],
+  "note": "Orchestrator usage only (summed over all steps of each turn). Specialist (Haiku 5.5) and search_web research costs are excluded. One sample per mode, run locally against private MCP servers; the model may take a different number of steps in each run.",
+  "runs": [
+    {
+      "mode": "off",
+      "turn": 1,
+      "seconds": 32.518,
+      "inputTokens": 10259,
+      "noCache": 10259,
+      "cacheWrite": 0,
+      "cacheRead": 0,
+      "outputTokens": 423,
+      "costUSD": 0.0619,
+      "sameTokensWithoutCacheUSD": 0.0619
+    },
+    {
+      "mode": "off",
+      "turn": 2,
+      "seconds": 45.692,
+      "inputTokens": 12016,
+      "noCache": 12016,
+      "cacheWrite": 0,
+      "cacheRead": 0,
+      "outputTokens": 506,
+      "costUSD": 0.0727,
+      "sameTokensWithoutCacheUSD": 0.0727
+    },
+    {
+      "mode": "on",
+      "turn": 1,
+      "seconds": 43.329,
+      "inputTokens": 12767,
+      "noCache": 4,
+      "cacheWrite": 8864,
+      "cacheRead": 3899,
+      "outputTokens": 496,
+      "costUSD": 0.0698,
+      "sameTokensWithoutCacheUSD": 0.0762
+    },
+    {
+      "mode": "on",
+      "turn": 2,
+      "seconds": 38.506,
+      "inputTokens": 11417,
+      "noCache": 4,
+      "cacheWrite": 3387,
+      "cacheRead": 8026,
+      "outputTokens": 557,
+      "costUSD": 0.0391,
+      "sameTokensWithoutCacheUSD": 0.071
+    }
+  ]
+}

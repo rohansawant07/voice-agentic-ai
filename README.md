@@ -130,7 +130,7 @@ Without `DATABASE_URL`, conversations and agency demo records are process-local.
 | MCP tool definitions | Orchestrator `Map` | Discovered once at startup; no automatic refresh |
 | Wikivoyage guide responses | Travel-service process-local cache | 6-hour TTL, at most 200 entries; lost on restart |
 | Web search/weather/model responses | No application result cache | Repeated requests repeat tool/provider work |
-| Provider prompt cache | No explicit cache configuration or hit metrics | Stable prompt ordering exists; savings/hits are not verified |
+| Provider prompt cache | Orchestrator only: breakpoints on the system prompt (with tools), the last history message, and an automatic one per step | 5-minute TTL. In one measurement the second turn cost 46% less. Specialists are not cached. Set `ORCHESTRATOR_PROMPT_CACHE=off` to disable; see [PERFORMANCE.md](docs/PERFORMANCE.md#prompt-caching) |
 
 The browser keeps the session ID, settled messages and picks in localStorage, so a refresh resumes the trip. The activity socket reconnects and replays the session's events without duplicating them. **New trip** clears them. These constraints apply to direct in-memory mode. PostgreSQL mode coordinates history, locks and events across instances; the single-host pilot is not high availability. See [operations](docs/OPERATIONS.md) for the suggested next steps.
 

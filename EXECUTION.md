@@ -58,6 +58,31 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-28 — Orchestrator prompt caching
+
+- The comment saying the orchestrator's prompt was laid out for caching was true, but no request ever set a cache breakpoint, so nothing was cached. The orchestrator now sets three breakpoints with the 5-minute TTL:
+  - the system prompt, which caches the tool definitions with it;
+  - the last history message, so the customer's next turn reuses the conversation;
+  - the request-level automatic breakpoint, which follows each delegation step.
+- `ORCHESTRATOR_PROMPT_CACHE=off` turns caching off. It is in `.env.example` and Compose. `runOrchestrator` gained an optional usage observer for offline measurement, the same pattern the specialists use.
+- Measured once each way on a two-turn Harpers Ferry conversation, counting orchestrator tokens only:
+  - Off: $0.0619 + $0.0727.
+  - On: $0.0698 + $0.0391.
+  - The follow-up turn was 46% cheaper, and both turns together were 19% cheaper.
+  - The first turn pays the 1.25× cache write, so single-message sessions save little.
+  - See `docs/PERFORMANCE.md#prompt-caching` and `docs/benchmarks/2026-10-28-prompt-cache.json`. Orchestrator tokens for the measurement cost $0.24. Specialist and web research calls cost extra and were not counted.
+- Specialists are not cached. Their prompts are short and run once per delegation.
+- Not deployed yet; the AWS host needs another `deploy.sh update`.
+
+### 2026-10-28 — AWS deploys build one image at a time; new palette live
+
+- Two `deploy.sh update` runs of `aa6ea77` failed on the t4g.small. Building all five images at once pushed the load average to 13–19 on 2 vCPUs, and registry downloads timed out. Each service's `pnpm deploy` step also had no package-store mount, so it downloaded every package again. The site kept serving the previous build both times.
+- `bootstrap.sh` now builds the services one at a time and then runs `compose up --wait`. The `Dockerfile` gives `pnpm deploy` the shared store cache with `--prefer-offline`.
+- The next update (`dee6129`) built and started in 4 min 41 s. Public checks at https://98-95-105-10.sslip.io:
+  - `/healthz` 200, HTTP→HTTPS 308, anonymous 401, signed-in 200, empty `/api/chat` body 400;
+  - the served stylesheet carries the sand, sage and oxblood tokens.
+- AWS CLI sign-in had expired before the first attempt; the user signed in again with `aws login`.
+
 ### 2026-10-28 — Sand background, sage navigation, oxblood only where it should stand out
 
 - On request, sand is now the background everywhere: the conversation pane and composer area too, not only the trip board. The dark theme from the previous entry is removed, so the page stays sand whatever the system setting.
