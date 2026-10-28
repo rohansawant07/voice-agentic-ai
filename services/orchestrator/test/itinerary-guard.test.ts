@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { ItineraryAgentOutput } from "@concierge/core";
-import { describeListing, guardItinerary, hasItineraryContent, listingFrom, matchListing, tripRange, type ItineraryEvidence } from "../src/itinerary-guard.js";
+import { describeListing, destinationKey, guardItinerary, hasItineraryContent, listingFrom, matchListing, tripRange, type ItineraryEvidence } from "../src/itinerary-guard.js";
 
 const listings = ["Lake George Steamboat Company", "Gooney Golf", "Pirate's Cove Adventure Golf", "Mario's Restaurant", "Casa Blanca"];
 const wikivoyage = (title: string) => ({ title, source: "wikivoyage", kind: "activity", description: `${title} listing text.` });
@@ -61,6 +61,27 @@ test("days outside the trip, duplicates and extra days are removed", () => {
   }, evidence);
   assert.deepEqual(out.days?.map((d) => d.date), ["2026-11-26", "2026-11-27", "2026-11-28"]);
   assert.match(out.notes ?? "", /Removed 3 day\(s\) outside the trip dates\./);
+});
+
+test("compared destinations each keep a plan for the trip dates", () => {
+  const dates = ["2026-11-26", "2026-11-27", "2026-11-28"];
+  const labelled = (place: string) => [...dates, "2026-11-29"].map((d, i) => ({ ...day(d, "Gooney Golf"), dayLabel: `${place} · Day ${i + 1}` }));
+  const out = guardItinerary({
+    days: [...labelled("Lenox, MA"), ...labelled("Harpers Ferry, WV"), ...labelled("Lake Placid, NY")],
+    destinations: [
+      { destination: "Lenox, MA (primary)", pitch: "Berkshires" },
+      { destination: "Harpers Ferry, WV (backup)", pitch: "History" },
+      { destination: "Lake Placid, NY (third option)", pitch: "Coldest" },
+    ],
+  }, evidence);
+  assert.deepEqual(out.days?.map((d) => `${d.dayLabel.split(" · ")[0]} ${d.date}`), [
+    ...dates.map((d) => `Lenox, MA ${d}`),
+    ...dates.map((d) => `Harpers Ferry, WV ${d}`),
+    ...dates.map((d) => `Lake Placid, NY ${d}`),
+  ]);
+  assert.match(out.notes ?? "", /Removed 3 day\(s\) outside the trip dates\./);
+  assert.equal(destinationKey("Day 1 · Thu Nov 26"), "");
+  assert.equal(destinationKey("Thu Nov 26 in Lenox", [{ destination: "Lenox, MA" }]), "lenox");
 });
 
 test("no listings means titles are not enforced; empty results are not usable", () => {

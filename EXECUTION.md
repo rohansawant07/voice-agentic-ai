@@ -58,6 +58,18 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-28 — Compared destinations keep their own day plans
+
+- A live test on AWS asked for a 4–5 hour drive from New York City over Thanksgiving with a backup. It returned Lenox as the primary pick, Harpers Ferry as the backup and Lake Placid as a third option, but only Lenox kept day plans. The itinerary guard allowed one plan per date across the whole result, so it removed the other destinations' six days as "outside the trip dates".
+- The guard now dedupes and limits days per destination. `destinationKey` finds the suggested destination named in each `dayLabel` ("Lenox, MA · Day 1 · Thu Nov 26"). Otherwise it uses the label text before "Day N". Plain "Day 1 · …" labels share one key, so single-destination trips are checked as before.
+- New test: three destinations × four days for a three-day trip keeps nine days and removes three. Orchestrator tests and workspace typecheck pass.
+- Local rerun of the Thanksgiving conversation, which needs the live MCP servers and Anthropic: Newport, the Berkshires and Harpers Ferry each kept three days for Nov 26–28, and Woodstock was returned as a pitch-only backup. The guard removed no days.
+- Still open:
+  - Drive times are not checked by any tool; the notes say they are approximate.
+  - Thanksgiving Day hours are not verified.
+  - In the rerun, the first itinerary delegation for four to five destinations hit the 60-second specialist timeout, and the orchestrator retried it.
+- Not deployed to AWS yet.
+
 ### 2026-10-28 — Orchestrator prompt caching
 
 - The comment saying the orchestrator's prompt was laid out for caching was true, but no request ever set a cache breakpoint, so nothing was cached. The orchestrator now sets three breakpoints with the 5-minute TTL:

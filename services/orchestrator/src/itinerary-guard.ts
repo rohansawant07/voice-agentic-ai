@@ -113,6 +113,22 @@ const dayCount = (start: string, end: string) =>
   Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1;
 
 /**
+ * Which compared destination a day belongs to. The prompt names the destination
+ * in each comparison dayLabel ("Lenox, MA · Day 1 · Thu Nov 26"): match a suggested
+ * destination's place name, else use the label text before "Day N". Plain
+ * "Day 1 · …" labels share one key, so a single-destination trip keeps one plan.
+ */
+export function destinationKey(dayLabel: string, destinations: { destination: string }[] = []): string {
+  const label = ` ${normalize(dayLabel)} `;
+  const places = destinations
+    .map((d) => normalize(d.destination.split(/[,(]/)[0] ?? ""))
+    .filter((p) => p.length >= 3 && label.includes(` ${p} `));
+  const place = places.sort((a, b) => b.length - a.length)[0];
+  if (place) return place;
+  return normalize(dayLabel.split(/\bday\s*\d/i)[0] ?? "");
+}
+
+/**
  * Enforces in code what the prompt asks for: stops use exact listing titles,
  * closed or unlisted places are removed, and days stay inside the trip dates.
  * Returns the corrected data plus a plain note describing what was removed.
@@ -154,17 +170,20 @@ export function guardItinerary(data: ItineraryAgentOutput, evidence: ItineraryEv
 
   let outOfRange = 0;
   if (evidence.start) {
-    const seen = new Set<string>();
+    // Each compared destination gets its own plan for the trip dates.
+    const limit = evidence.end ? dayCount(evidence.start, evidence.end) : Infinity;
+    const seen = new Map<string, Set<string>>();
     const kept = days.filter((d) => {
       if (!ISO_DATE.test(d.date)) return true;
       const inside = d.date >= evidence.start! && (!evidence.end || d.date <= evidence.end);
-      if (!inside || seen.has(d.date)) return false;
-      seen.add(d.date);
+      const key = destinationKey(d.dayLabel, data.destinations);
+      const dates = seen.get(key) ?? new Set<string>();
+      if (!inside || dates.has(d.date) || dates.size >= limit) return false;
+      seen.set(key, dates.add(d.date));
       return true;
     });
-    const limit = evidence.end ? dayCount(evidence.start, evidence.end) : kept.length;
-    outOfRange = days.length - Math.min(kept.length, limit);
-    days = kept.slice(0, limit);
+    outOfRange = days.length - kept.length;
+    days = kept;
   }
 
   const notes = [
