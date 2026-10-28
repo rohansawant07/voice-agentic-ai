@@ -96,6 +96,11 @@ compose() {
   docker compose -f compose.yaml -f deploy/aws/compose.aws.yaml \
     --env-file .env --env-file .secrets/compose.env "$@"
 }
-compose up -d --build --wait --remove-orphans
+# Build one image at a time: parallel builds overload a 2-vCPU, 2 GiB host and
+# the package downloads time out. The shared build stage is cached after the first.
+for service in travel weather agency orchestrator web; do
+  compose build "$service"
+done
+compose up -d --wait --remove-orphans
 docker image prune -f >/dev/null
 echo "== roam ready at https://$HOST"

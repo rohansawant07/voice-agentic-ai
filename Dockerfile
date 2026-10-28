@@ -12,7 +12,9 @@ RUN pnpm build
 
 FROM build AS service-package
 ARG SERVICE=orchestrator
-RUN pnpm --filter @concierge/${SERVICE} deploy --legacy --prod /out
+# Reuse the install's package store; without it each service re-downloads every package.
+RUN --mount=type=cache,id=roam-pnpm,target=/root/.local/share/pnpm/store \
+  pnpm --filter @concierge/${SERVICE} deploy --legacy --prod --prefer-offline /out
 
 FROM node:22-bookworm-slim AS service
 ENV NODE_ENV=production HOST=0.0.0.0
