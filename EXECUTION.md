@@ -58,6 +58,16 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-28 — AWS host updated with the guard fix and drive-time check; comparisons time out
+
+- Ran `deploy.sh update` on `main` at `218becf`. That ships the per-destination guard fix (`e5997c4`) and the drive-time check (`00b7df0`). The run took 297 s, and all eight containers are healthy.
+- Public checks: `/healthz` 200, HTTP→HTTPS 308, anonymous 401, signed-in 200, empty `/api/chat` body 400.
+- **Live problem:** the Thanksgiving comparison returned 500 after 128 s, with no reply.
+  - Both itinerary delegations hit the 60-second specialist timeout. Tool calls, including `get_drive_time`, finished by about 30 s.
+  - The rest went to a `search_web` call (25 s limit) and the model writing three destinations of day plans.
+  - The second attempt then ran into the orchestrator's 120-second turn timeout. The gateway allows 180 s on `/api/chat`.
+- Single-destination turns are not affected.
+
 ### 2026-10-28 — Drive-time check for "within N hours of <city>"
 
 - Why: a live request for "a 4–5 hour drive from NYC over Thanksgiving, with a backup" returned Lenox MA, Harpers Ferry WV and Lake Placid NY. No tool checked drive times; the specialist's notes admitted it. Routed from New York they are about 3 h 35 min, 5 h 17 min and 5 h 56 min without traffic, so none fit a strict 4–5 hour window.
