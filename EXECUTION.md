@@ -58,11 +58,26 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-28 — Sand background, sage navigation, oxblood only where it should stand out
+
+- On request, sand is now the background everywhere: the conversation pane and composer area too, not only the trip board. The dark theme from the previous entry is removed, so the page stays sand whatever the system setting.
+- Sage `#A5A79B` is now the color of the top bar and the mobile pane switcher, with a darker sage line under each. Quiet states use pale sage instead of an oxblood tint: hover, the active tab and day tab, the running status, user message bubbles, the voice button at rest, timeline dots and the activity bars.
+- Oxblood is kept for things that should stand out:
+  - the logo mark;
+  - the send button and the voice button while speaking;
+  - selected flight, stay and car options;
+  - links;
+  - the flights budget segment;
+  - the trip summary panel;
+  - focus rings.
+- Suggestion cards got a paper background, and the divider between the panes is darker so it shows on sand. Muted text on sand was darkened to `#6A594B` so it still passes 4.5:1.
+- All new pairings pass WCAG AA: text on sage 6.7:1, muted text on sage 4.8:1, sage-ink on pale sage 5.3:1. Checked locally at desktop width and 375 px mobile. Web typecheck, tests, lint and build pass. The AWS host is not updated yet.
+
 ### 2026-10-28 — Sand, sage and oxblood palette with dark mode
 
 - Replaced the navy and blue palette with sand `#E8D2B5` (page background), sage `#A5A79B` (secondary surfaces such as chips, tags and skeletons) and oxblood `#590907` (accent, primary buttons and the trip summary panel).
 - Every color in `apps/web/src/app/globals.css` is now a `:root` token; about 110 hard-coded hex values were replaced. The exceptions are the photo overlay on the hero, the white tints on the oxblood panel and the rating stars.
-- Added a `prefers-color-scheme: dark` theme. It uses a light rose accent (`#E7A398`) because oxblood is too dark to show on a dark background. The trip summary keeps its oxblood panel in both themes.
+- Added a `prefers-color-scheme: dark` theme (removed again in the next entry). It uses a light rose accent (`#E7A398`) because oxblood is too dark to show on a dark background. The trip summary keeps its oxblood panel in both themes.
 - Error states use a separate brick red (`#A8321F`) so they don't look like the accent. The activities budget segment moved to plum so it doesn't look like the warning color.
 - A script checked every text and background token pair against WCAG AA (4.5:1 for text, 3:1 for bars and focus rings) in both themes, and all pass. Body text on sand is 11.1:1 and muted text 4.9:1. The palette was previewed locally in light and dark. The trip summary panel and status chips were checked with injected mock markup instead of a paid planning turn. Web typecheck, tests, lint and build pass. The AWS host still runs the old palette until the next `deploy.sh update`.
 
