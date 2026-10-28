@@ -72,7 +72,11 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
   - The first turn pays the 1.25× cache write, so single-message sessions save little.
   - See `docs/PERFORMANCE.md#prompt-caching` and `docs/benchmarks/2026-10-28-prompt-cache.json`. Orchestrator tokens for the measurement cost $0.24. Specialist and web research calls cost extra and were not counted.
 - Specialists are not cached. Their prompts are short and run once per delegation.
-- Not deployed yet; the AWS host needs another `deploy.sh update`.
+- Deployed the same day with `deploy.sh update` to `4c2de51`. With sequential builds the update finished in a few minutes. All eight containers are healthy, and the orchestrator runs with `ORCHESTRATOR_PROMPT_CACHE=on`.
+- Public checks after that deploy:
+  - `/healthz` 200, HTTP→HTTPS 308, anonymous 401, signed-in 200, empty `/api/chat` body 400;
+  - a live Harpers Ferry planning turn returned 200 in 20.2 s, using the exact NPS listing titles.
+- Cache hit rates on the host are not logged; the savings come from the local measurement.
 
 ### 2026-10-28 — AWS deploys build one image at a time; new palette live
 
