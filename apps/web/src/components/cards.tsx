@@ -294,6 +294,11 @@ export function Itinerary({ data }: { data: ItineraryAgentOutput }) {
               <strong>{d.destination}</strong>
               <p>{d.pitch}</p>
               <span className="destination-facts">
+                {d.driveTime && (
+                  <span title="Free-flow estimate from OpenStreetMap roads via OSRM; excludes traffic and stops">
+                    {d.driveTime.label} drive from {d.driveTime.from.split(",")[0]}, without traffic
+                  </span>
+                )}
                 {d.avgTempF != null && <span>Avg {Math.round(d.avgTempF)}°F</span>}
                 {d.flightPriceFrom && (
                   <span className="price">Flights from {usd(d.flightPriceFrom.amount)}</span>

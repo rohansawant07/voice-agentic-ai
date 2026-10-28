@@ -40,9 +40,41 @@ export interface ItineraryEvidence {
   closed: string[];
   /** search_web returned cited evidence, which the prompt allows for extra stops. */
   webEvidence: boolean;
+  /** Routed drives from get_drive_time results. */
+  drives?: EvidenceDrive[];
+  /** A get_drive_time call reported routing unavailable. */
+  routingUnavailable?: boolean;
   /** Trip range as YYYY-MM-DD, from the delegation context or forecast arguments. */
   start?: string;
   end?: string;
+}
+
+/** One routed drive as get_drive_time returned it. */
+export interface EvidenceDrive {
+  origin: string;
+  destination: string;
+  resolvedAs?: string;
+  label: string;
+  miles?: number;
+  withinWindow?: boolean;
+}
+
+/** Picks the routed drives out of an untrusted get_drive_time payload. */
+export function drivesFrom(payload: Record<string, unknown>): EvidenceDrive[] {
+  if (payload.source !== "osrm" || !Array.isArray(payload.drives)) return [];
+  const origin = text(payload.origin) ?? "";
+  return (payload.drives as Record<string, unknown>[]).flatMap((d) =>
+    typeof d?.destination === "string" && typeof d.label === "string"
+      ? [{
+          origin,
+          destination: d.destination,
+          resolvedAs: text(d.resolvedAs),
+          label: d.label,
+          miles: typeof d.miles === "number" ? d.miles : undefined,
+          withinWindow: typeof d.withinWindow === "boolean" ? d.withinWindow : undefined,
+        }]
+      : [],
+  );
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -198,3 +230,44 @@ export function guardItinerary(data: ItineraryAgentOutput, evidence: ItineraryEv
 /** An "ok" itinerary result must carry day plans or destination suggestions. */
 export const hasItineraryContent = (data: ItineraryAgentOutput | null | undefined) =>
   Boolean(data?.days?.length || data?.destinations?.length);
+
+const locality = (place: string) => normalize(place.split(",")[0] ?? place);
+
+/** The routed drive for a suggested destination: same place, or the only drive to that town. */
+export function matchDrive(destination: string, drives: EvidenceDrive[]): EvidenceDrive | undefined {
+  const d = normalize(destination);
+  // A later call (new candidates or a retry) supersedes an earlier one.
+  const exact = [...drives].reverse().find((r) => normalize(r.destination) === d || (r.resolvedAs && normalize(r.resolvedAs) === d));
+  if (exact) return exact;
+  const town = drives.filter((r) => locality(r.destination) === locality(destination));
+  return new Set(town.map((r) => normalize(r.resolvedAs ?? r.destination))).size === 1 ? town.at(-1) : undefined;
+}
+
+/**
+ * Drive times on destination cards come only from get_drive_time: suggestions
+ * routed outside the requested window are removed and driveTime is replaced
+ * with the routed value, or dropped when that destination was never routed.
+ */
+export function guardDestinations(data: ItineraryAgentOutput, evidence: ItineraryEvidence): ItineraryAgentOutput {
+  if (!data.destinations?.length) return data;
+  const drives = evidence.drives ?? [];
+  const outside: string[] = [];
+  let unverified = 0;
+  const destinations = data.destinations.flatMap(({ driveTime, ...suggestion }) => {
+    const drive = matchDrive(suggestion.destination, drives);
+    if (drive?.withinWindow === false) {
+      outside.push(`${suggestion.destination} (${drive.label})`);
+      return [];
+    }
+    if (drive) return [{ ...suggestion, driveTime: { from: drive.origin, label: drive.label, miles: drive.miles } }];
+    if (driveTime) unverified++;
+    return [suggestion];
+  });
+  const notes = [
+    outside.length && `Removed ${outside.length} suggestion(s) outside the requested drive window: ${outside.join("; ")}.`,
+    unverified && `Removed ${unverified} drive time(s) that were not routed.`,
+    evidence.routingUnavailable && !drives.length && "Drive times could not be verified because routing was unavailable.",
+  ].filter(Boolean);
+  if (!notes.length) return { ...data, destinations };
+  return { ...data, destinations, notes: [data.notes, ...notes].filter(Boolean).join(" ") };
+}

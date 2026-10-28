@@ -7,7 +7,7 @@ import type {
   DelegationResult,
   ItineraryAgentOutput,
 } from "@concierge/core";
-import { guardItinerary, hasItineraryContent, listingFrom, tripRange, type ItineraryEvidence } from "./itinerary-guard.js";
+import { drivesFrom, guardDestinations, guardItinerary, hasItineraryContent, listingFrom, tripRange, type ItineraryEvidence } from "./itinerary-guard.js";
 import { webTools, WEB_RULES, type WebSource } from "./web-search.js";
 import { bus } from "./bus.js";
 import { toolsFor } from "./mcp.js";
@@ -64,6 +64,10 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
               for (const a of payload.activities ?? [])
                 if (typeof a.title === "string") provenance.listings.push(listingFrom(a, payload.source ?? "inventory"));
               for (const c of payload.closedDuringTrip ?? []) if (typeof c === "string") provenance.closed.push(c);
+            }
+            if (name === "get_drive_time") {
+              (provenance.drives ??= []).push(...drivesFrom(payload));
+              if (payload.source === "unavailable") provenance.routingUnavailable = true;
             }
           } catch { /* Not every tool returns JSON text. */ }
         }
@@ -131,7 +135,7 @@ export async function runSpecialist(
     }
     // Titles, closures and trip dates are enforced in code, not left to model wording.
     if (def.id === "itinerary-agent" && result.status === "ok" && result.data) {
-      result.data = guardItinerary(result.data as ItineraryAgentOutput, provenance);
+      result.data = guardDestinations(guardItinerary(result.data as ItineraryAgentOutput, provenance), provenance);
       if (!hasItineraryContent(result.data as ItineraryAgentOutput))
         result = { status: "failed", summary: "The itinerary specialist did not return any sourced day plans.", reason: "missing_itinerary_days", suggestion: "Retry the itinerary request." };
     }

@@ -7,7 +7,7 @@ import { parsePlace } from "@concierge/mcp-kit";
  */
 
 const API = "https://en.wikivoyage.org/w/api.php";
-const USER_AGENT =
+export const USER_AGENT =
   "RoamTravelPrototype/0.1 (https://github.com/rohansawant07/voice-agentic-ai)";
 const TTL_MS = 6 * 60 * 60 * 1000;
 const cache = new Map<string, { at: number; value: WikivoyageGuide | null }>();

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { ItineraryAgentOutput } from "@concierge/core";
-import { describeListing, destinationKey, guardItinerary, hasItineraryContent, listingFrom, matchListing, tripRange, type ItineraryEvidence } from "../src/itinerary-guard.js";
+import { describeListing, destinationKey, drivesFrom, guardDestinations, guardItinerary, hasItineraryContent, listingFrom, matchDrive, matchListing, tripRange, type ItineraryEvidence } from "../src/itinerary-guard.js";
 
 const listings = ["Lake George Steamboat Company", "Gooney Golf", "Pirate's Cove Adventure Golf", "Mario's Restaurant", "Casa Blanca"];
 const wikivoyage = (title: string) => ({ title, source: "wikivoyage", kind: "activity", description: `${title} listing text.` });
@@ -91,4 +91,41 @@ test("no listings means titles are not enforced; empty results are not usable", 
   assert.equal(hasItineraryContent({ destinations: [{ destination: "Savannah, GA", pitch: "Squares" }] }), true);
   assert.deepEqual(tripRange({ startDate: "2026-12-04", endDate: "2026-12-06" }), { start: "2026-12-04", end: "2026-12-06" });
   assert.deepEqual(tripRange({ dates: "Dec 4-6" }), { start: undefined, end: undefined });
+});
+
+// get_drive_time payload shape from mcp-travel, NYC with a 4–5.5 hour window.
+const routed = drivesFrom({
+  source: "osrm",
+  origin: "New York, New York",
+  drives: [
+    { destination: "Lenox, MA", resolvedAs: "Lenox, Massachusetts", minutes: 215, miles: 141, label: "3 h 35 min", withinWindow: false },
+    { destination: "Harpers Ferry, WV", resolvedAs: "Harpers Ferry, West Virginia", minutes: 317, miles: 258, label: "5 h 17 min", withinWindow: true },
+    { destination: "Atlantis, NY", error: "place_not_found" },
+  ],
+});
+
+test("destination suggestions keep only routed, in-window drive times", () => {
+  assert.equal(routed.length, 2, "unrouted entries are not evidence");
+  assert.equal(matchDrive("Harpers Ferry", routed)?.label, "5 h 17 min");
+  assert.equal(matchDrive("Lenox, Massachusetts", routed)?.label, "3 h 35 min");
+  assert.equal(matchDrive("Lake Placid, NY", routed), undefined);
+  const out = guardDestinations({
+    destinations: [
+      { destination: "Lenox, MA", pitch: "About 4 h from New York." },
+      { destination: "Harpers Ferry, WV", pitch: "About 5 h 17 min from New York without traffic.", driveTime: { from: "NYC", label: "4 h" } },
+      { destination: "Lake Placid, NY", pitch: "Mountain town.", driveTime: { from: "NYC", label: "5 h" } },
+    ],
+  }, { ...evidence, drives: routed });
+  assert.deepEqual(out.destinations, [
+    { destination: "Harpers Ferry, WV", pitch: "About 5 h 17 min from New York without traffic.", driveTime: { from: "New York, New York", label: "5 h 17 min", miles: 258 } },
+    { destination: "Lake Placid, NY", pitch: "Mountain town." },
+  ]);
+  assert.equal(out.notes, "Removed 1 suggestion(s) outside the requested drive window: Lenox, MA (3 h 35 min). Removed 1 drive time(s) that were not routed.");
+});
+
+test("routing outages are disclosed and unchanged suggestions pass through", () => {
+  const data = { destinations: [{ destination: "Savannah, GA", pitch: "Squares" }] };
+  assert.deepEqual(guardDestinations(data, evidence), data);
+  assert.deepEqual(drivesFrom({ source: "unavailable", drives: [] }), []);
+  assert.match(guardDestinations(data, { ...evidence, routingUnavailable: true }).notes ?? "", /could not be verified/);
 });

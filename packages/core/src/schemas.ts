@@ -104,6 +104,10 @@ export const DestinationSuggestion = z.object({
   destination: z.string(),
   pitch: z.string().describe("one-line pitch"),
   avgTempF: z.number().optional(),
+  driveTime: z
+    .object({ from: z.string(), label: z.string().describe('e.g. "4 h 10 min"'), miles: z.number().optional() })
+    .optional()
+    .describe("only from get_drive_time; free-flow, without traffic"),
   flightPriceFrom: Money.optional(),
 });
 

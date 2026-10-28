@@ -13,6 +13,7 @@ import {
 
 import { searchAirbnb } from "./airbnb.js";
 import { destinationGuide } from "./guides.js";
+import { driveTimes } from "./drive.js";
 
 const PORT = Number(process.env.PORT ?? 8101);
 
@@ -69,6 +70,16 @@ function createServer(): McpServer {
       startDate: z.string().optional().describe("Trip start, YYYY-MM-DD. Removes places listed as closed then."),
     },
   }, async ({ destination, startDate }) => toolResult(await destinationGuide(destination, fetch, startDate)));
+
+  server.registerTool("get_drive_time", {
+    description: "Driving time and distance from one origin to up to 8 US destinations, in one call. Include states, e.g. \"Lenox, MA\". Pass the requested drive window as minHours/maxHours to get withinWindow per destination. Free-flow estimates from OpenStreetMap (OSRM): no traffic or stops. source \"unavailable\" means drive times are unverified.",
+    inputSchema: {
+      origin: z.string().describe('Starting city with state, e.g. "New York, NY"'),
+      destinations: z.array(z.string()).min(1).max(8),
+      minHours: z.number().min(0).optional(),
+      maxHours: z.number().positive().optional(),
+    },
+  }, async (input) => toolResult(await driveTimes(input)));
 
   server.registerTool(
     "search_flights",

@@ -56,7 +56,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
   {
     id: "itinerary-agent",
     description:
-      "Builds weather-aware day-by-day itineraries and compares candidate destinations. Input: destination (or 'suggest destinations' + preferences), dates, interests, and any dietary restrictions (pass as context.dietary, e.g. [\"vegetarian\", \"gluten-free\"]). Checks the forecast before recommending outdoor days. Returns ItineraryDay list and/or DestinationSuggestion list. Not for booking anything.",
+      "Builds weather-aware day-by-day itineraries and compares candidate destinations. Input: destination (or 'suggest destinations' + preferences), dates, interests, and any dietary restrictions (pass as context.dietary, e.g. [\"vegetarian\", \"gluten-free\"]). Checks the forecast before recommending outdoor days, and verifies drive times for \"within N hours' drive of <city>\" requests (pass the origin and window). Returns ItineraryDay list and/or DestinationSuggestion list. Not for booking anything.",
     systemPrompt: `You are the itinerary specialist. Build day-by-day plans only from listings your tools return.
 Steps:
 1. For each destination, call get_destination_guide with the place including its state (e.g. "Lake George, NY") and the trip startDate. Call search_activities with the same place for extra food picks or dietary filtering. Hotel inventory never limits coverage.
@@ -69,10 +69,14 @@ Stops:
 - For a seasonUnconfirmed listing, end the description with "Confirm it's open on your dates."
 - mealPick is optional: a food listing's title followed by "(Wikivoyage listing; confirm hours)".
 - If dietary restrictions are given, pass them to search_activities and fill dietaryNote; if nothing fits, say so there.
+Drive windows ("within 4–5 hours of NYC"):
+- Before building any plan, call get_drive_time once with the origin (city and state), every candidate, and the window as minHours/maxHours. Suggest only drives with withinWindow true; drop the rest and any with an error. If none fit, call it once more with new candidates.
+- In each DestinationSuggestion, set driveTime and put the verified time in pitch, e.g. "About 4 h 10 min from New York without traffic." Never state a drive time get_drive_time did not return.
+- If source is "unavailable", give no drive times and say in notes that drive times could not be verified.
 Output: fill data.days, data.sources (the guide sourceUrl and any listing websites you used) and data.notes (say Wikivoyage listings are community-edited and unverified). Never include costs. For comparisons, name the destination in each dayLabel.${SPECIALIST_RULES}`,
     mcpServers: ["mcp-weather", "mcp-travel"],
-    tools: ["get_destination_guide", "search_activities", "get_forecast", "get_climate_summary"],
-    maxSteps: 10,
+    tools: ["get_destination_guide", "search_activities", "get_forecast", "get_climate_summary", "get_drive_time"],
+    maxSteps: 11,
     outputSchema: ItineraryAgentOutput,
   },
   {

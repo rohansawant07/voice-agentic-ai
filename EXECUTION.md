@@ -58,6 +58,18 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-28 — Drive-time check for "within N hours of <city>"
+
+- Why: a live request for "a 4–5 hour drive from NYC over Thanksgiving, with a backup" returned Lenox MA, Harpers Ferry WV and Lake Placid NY. No tool checked drive times; the specialist's notes admitted it. Routed from New York they are about 3 h 35 min, 5 h 17 min and 5 h 56 min without traffic, so none fit a strict 4–5 hour window.
+- New `get_drive_time` tool in `services/mcp-travel/src/drive.ts`. It takes one origin, up to 8 destinations and an optional `minHours`/`maxHours` window, and returns minutes, miles, a label and `withinWindow` for each place.
+  - Geocoding uses Open-Meteo with the same state matching as mcp-weather ("Lenox, MA" is never Lenox, IA), plus a few aliases such as NYC and DC. Routing is one OSRM table request to the public demo server (`OSRM_URL` can point at a self-hosted router). Both are free and need no key; no new model calls.
+  - Results are labelled `source: "osrm"`, OpenStreetMap (ODbL) and `trafficIncluded: false`. Unknown places return `place_not_found`, roadless trips such as Honolulu return `no_road_route`, and a failed, slow (8 s timeout) or rate-limited router returns `source: "unavailable"` with an instruction not to estimate.
+- The itinerary specialist has the tool on its allowlist (max steps 10 → 11). Its prompt now says to route every candidate once with the window, keep only `withinWindow` drives, put the routed time in each pitch, and say in notes when routing is unavailable.
+- Enforced in code, like stop titles: `guardDestinations` in `itinerary-guard.ts` removes suggestions routed outside the window, replaces `driveTime` with the routed value, drops drive times that were never routed, and notes what it removed and when routing was down.
+- `DestinationSuggestion` gained an optional `driveTime` (`from`, `label`, `miles`). Destination cards show it as "5 h 17 min drive from New York, without traffic".
+- Validation: workspace typecheck, lint and tests pass (orchestrator 19 + 1 skipped PostgreSQL test, mcp-travel 16, web 5). New tests use injected geocoder and router responses only. One live call to the real services returned the times above. No live specialist turn was run, the card change was not checked in a browser, and nothing was deployed to AWS.
+- Limits: free-flow times run short over holidays such as Thanksgiving. The public OSRM server is for light use, about one request a second. The pitch text is model-written, so only `driveTime` and the window are guaranteed by code.
+
 ### 2026-10-28 — Compared destinations keep their own day plans
 
 - A live test on AWS asked for a 4–5 hour drive from New York City over Thanksgiving with a backup. It returned Lenox as the primary pick, Harpers Ferry as the backup and Lake Placid as a third option, but only Lenox kept day plans. The itinerary guard allowed one plan per date across the whole result, so it removed the other destinations' six days as "outside the trip dates".

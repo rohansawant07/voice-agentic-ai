@@ -55,6 +55,7 @@ See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is tri
 | Specialists | Six registered specialists: flight, hotel, itinerary, car rental, budget, support |
 | Travel | Seeded flights/hotels/cars/activities; dietary filters; car rentals offered only when relevant/requested |
 | Regional plans | Curated NPS planning facts for Harpers Ferry and Shenandoah; any other US destination uses live Wikivoyage listings (sourced, dated, community-edited), with places listed as closed on the trip dates removed in code |
+| Drive times | "Within N hours of <city>" suggestions are routed from the stated origin; candidates outside the window are removed in code, and cards show the routed time (free-flow, no traffic) |
 | Weather | Open-Meteo forecasts within 16 days; beyond that, a curated table for demo destinations or observed averages for the month over the last three years. Place names resolve by state and territory ("Lake George, NY", "San Juan, Puerto Rico"); optional mock weather |
 | Airbnb | Dated destination search links by default; opt-in independent connector with bounded concurrency/time and honest fallback |
 | Agency | Seeded customers/bookings, simulated modifications/cancellations, tickets and audit records |
@@ -72,6 +73,7 @@ Voice only converts speech. Deepgram turns recorded audio into text, which then 
 | Reasoning (orchestrator and specialists) | Anthropic Claude | Yes |
 | Speech to text / optional text to speech | Deepgram / OpenAI or ElevenLabs | Yes |
 | Forecasts, geocoding, typical climate | Open-Meteo forecast, geocoding and historical archive APIs | Yes |
+| Drive times and distances | OSRM public demo router over OpenStreetMap roads, Open-Meteo geocoding (free, no key; free-flow, no traffic) | Yes |
 | Things to do for most US places | Wikivoyage listings (community-edited, cited, cached 6 h) | Yes |
 | Harpers Ferry and Shenandoah planning facts | Curated National Park Service guides in code | No |
 | Flights, hotels, rental cars, activities for demo destinations | Seeded demo inventory in code | No |
@@ -84,7 +86,7 @@ Each specialist gets only the tools on its allowlist (`tools` in `packages/core/
 | --- | --- |
 | Flights | `search_flights`, `get_fare_rules`, `hold_booking` (only with confirmation) |
 | Stays | `search_vacation_rentals`, `search_hotels`, `get_hotel_details` |
-| Itinerary | `get_destination_guide`, `search_activities`, `get_forecast`, `get_climate_summary` |
+| Itinerary | `get_destination_guide`, `search_activities`, `get_forecast`, `get_climate_summary`, `get_drive_time` |
 | Rental cars | `search_car_rentals` |
 | Budget | `convert_currency` |
 | Bookings | Agency tools: lookup, list, get, cancel, modify, ticket (demo bookings; mutations disabled in Compose) |
@@ -106,6 +108,7 @@ flowchart LR
   O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
   AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
   T --> WV["Wikivoyage API"]
+  T --> OSRM["OSRM router + Open-Meteo geocoding"]
   AI --> W["Weather MCP :8102"]
   W --> OM["Open-Meteo forecast, geocoding, archive"]
   AI --> A["Agency MCP :8103: read-only demo in Compose"]
@@ -129,6 +132,7 @@ Without `DATABASE_URL`, conversations and agency demo records are process-local.
 | Customers/bookings/tickets/audit | Agency arrays | Shared demo store; mutations lost on agency restart |
 | MCP tool definitions | Orchestrator `Map` | Discovered once at startup; no automatic refresh |
 | Wikivoyage guide responses | Travel-service process-local cache | 6-hour TTL, at most 200 entries; lost on restart |
+| Drive-time geocodes | Travel-service process-local cache | 24-hour TTL, at most 500 places; routes are not cached |
 | Web search/weather/model responses | No application result cache | Repeated requests repeat tool/provider work |
 | Provider prompt cache | Orchestrator only: breakpoints on the system prompt (with tools), the last history message, and an automatic one per step | 5-minute TTL. In one measurement the second turn cost 46% less. Specialists are not cached. Set `ORCHESTRATOR_PROMPT_CACHE=off` to disable; see [PERFORMANCE.md](docs/PERFORMANCE.md#prompt-caching) |
 
@@ -182,7 +186,7 @@ CI runs these checks on pushes to `main` and pull requests. It does not deploy o
 | --- | --- |
 | `apps/web` | Next.js app and browser session hook |
 | `services/orchestrator` | Chat, voice, model delegation, session store and event bus |
-| `services/mcp-travel` | Mock travel inventory, curated NPS guides, Wikivoyage listings, Airbnb link/connector logic |
+| `services/mcp-travel` | Mock travel inventory, curated NPS guides, Wikivoyage listings, OSRM drive times, Airbnb link/connector logic |
 | `services/mcp-weather` | Open-Meteo forecasts, region-aware geocoding, curated and observed climate |
 | `services/mcp-agency` | Simulated customer and booking operations |
 | `packages/core` | Registry, schemas, event contracts |
