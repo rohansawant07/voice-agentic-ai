@@ -80,6 +80,7 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
   - New chat cleared the conversation, trip board and stored session while a reply was still running;
   - the confirmation fits at 375 px wide.
 - Not done: a turn already running when you start a new chat keeps running on the server for its old session.
+- Deployed the same day with `deploy.sh update` to `c67ea2b` in 391 s. All eight containers are healthy; `/healthz` 200, HTTP→HTTPS 308, anonymous 401, signed-in 200, empty `/api/chat` body 400. The served page script contains the new voice code. Synthesized speech sent to `/voice` was transcribed in 0.5 s and answered in 13 s.
 
 ### 2026-10-29 — AWS host updated with the longer time limits; live comparison works
 
