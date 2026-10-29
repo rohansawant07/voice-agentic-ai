@@ -13,6 +13,8 @@ import { bus } from "./bus.js";
 import { toolsFor } from "./mcp.js";
 
 const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL ?? "claude-haiku-5-5";
+/** Comparing several destinations takes the itinerary specialist past a minute. */
+export const SPECIALIST_TIMEOUT_MS = 90_000;
 
 /** Sensitive keys masked before tool args reach the activity feed. */
 const MASK_KEYS = new Set(["customerId", "email", "authorization", "token"]);
@@ -99,6 +101,8 @@ export async function runSpecialist(
   req: DelegationRequest,
   sessionId: string,
   observer?: SpecialistObserver,
+  /** The orchestrator turn's signal, so a timed-out turn stops its specialists too. */
+  turnSignal?: AbortSignal,
 ): Promise<DelegationResult> {
   const started = Date.now();
   await bus.emit({
@@ -114,7 +118,9 @@ export async function runSpecialist(
   let result: DelegationResult;
   try {
     const { output, totalUsage } = await generateText({
-    abortSignal: AbortSignal.timeout(60000),
+      abortSignal: turnSignal
+        ? AbortSignal.any([AbortSignal.timeout(SPECIALIST_TIMEOUT_MS), turnSignal])
+        : AbortSignal.timeout(SPECIALIST_TIMEOUT_MS),
       model: anthropic(def.model ?? SPECIALIST_MODEL),
       system: def.systemPrompt + WEB_RULES,
       tools: instrument({ ...toolsFor(def.mcpServers, def.tools), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance, observer),

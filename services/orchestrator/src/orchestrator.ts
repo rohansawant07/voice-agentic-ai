@@ -1,4 +1,4 @@
-import { generateText, isStepCount, tool, type LanguageModelUsage, type ModelMessage, type ToolSet } from "ai";
+import { generateText, isStepCount, tool, type LanguageModel, type LanguageModelUsage, type ModelMessage, type ToolSet } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { AGENT_REGISTRY } from "@concierge/core";
@@ -56,8 +56,8 @@ function delegateTools(sessionId: string): ToolSet {
             "Structured facts already known: startDate/endDate (YYYY-MM-DD), origin, partySize, budgetUSD, dietary, customerId, confirmed…",
           ),
       }),
-      execute: async ({ task, context }) =>
-        runSpecialist(def, { task, context }, sessionId),
+      execute: async ({ task, context }, { abortSignal }) =>
+        runSpecialist(def, { task, context }, sessionId, undefined, abortSignal),
     });
   }
   return tools;
@@ -66,6 +66,14 @@ function delegateTools(sessionId: string): ToolSet {
 /** Set ORCHESTRATOR_PROMPT_CACHE=off to send requests without cache breakpoints. */
 const PROMPT_CACHE = process.env.ORCHESTRATOR_PROMPT_CACHE !== "off";
 const CACHE = { anthropic: { cacheControl: { type: "ephemeral" as const } } };
+
+/**
+ * The whole turn, delegations included. The gateway gives /api/chat 180 s, so a
+ * slow turn ends here with a spoken apology rather than a dropped connection.
+ */
+export const TURN_TIMEOUT_MS = 170_000;
+export const TIMEOUT_REPLY =
+  "Sorry, that one took longer than I can wait, so I stopped before finishing. Try asking about fewer places at once, or ask me again.";
 
 /** Offline measurement hook: the turn's summed token usage, never sent to the bus. */
 export interface OrchestratorObserver {
@@ -89,12 +97,15 @@ export async function runOrchestrator(
   sessionId: string,
   history: ModelMessage[],
   observer?: OrchestratorObserver,
+  /** Test hooks: a stand-in model and a shorter turn limit. */
+  overrides: { model?: LanguageModel; timeoutMs?: number } = {},
 ): Promise<string> {
   const started = Date.now();
   const sources: WebSource[] = [];
-  const { text, totalUsage } = await generateText({
-    abortSignal: AbortSignal.timeout(120000),
-    model: anthropic(ORCHESTRATOR_MODEL),
+  const timeout = AbortSignal.timeout(overrides.timeoutMs ?? TURN_TIMEOUT_MS);
+  const text = await generateText({
+    abortSignal: timeout,
+    model: overrides.model ?? anthropic(ORCHESTRATOR_MODEL),
     instructions: {
       role: "system",
       content: SYSTEM + WEB_RULES,
@@ -111,10 +122,19 @@ export async function runOrchestrator(
         content: `[context] Today's date: ${new Date().toISOString().slice(0, 10)}. Respond to the conversation above.`,
       },
     ],
-  });
-  observer?.usage?.(totalUsage);
+  }).then(
+    ({ text, totalUsage }) => {
+      observer?.usage?.(totalUsage);
+      return text;
+    },
+    (err: unknown) => {
+      // Only the turn limit becomes an apology; other failures still fail the turn.
+      if (timeout.aborted) return TIMEOUT_REPLY;
+      throw err;
+    },
+  );
 
-  const reply = sources.length ? `${text}\n\nSources: ${sources.map(s => s.url).join("\n")}` : text;
+  const reply = sources.length && text !== TIMEOUT_REPLY ? `${text}\n\nSources: ${sources.map(s => s.url).join("\n")}` : text;
   await bus.emit({
     type: "assistant_message",
     sessionId,

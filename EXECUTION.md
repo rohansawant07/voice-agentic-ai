@@ -58,6 +58,23 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-29 — Longer time limits for comparisons; a timed-out turn apologises
+
+- Specialists now get 90 s instead of 60 s (`SPECIALIST_TIMEOUT_MS`). The whole orchestrator turn gets 170 s instead of 120 s (`TURN_TIMEOUT_MS`), which stays under the gateway's 180 s `proxy_read_timeout` on `/api/chat`. A test reads the gateway template and checks both limits.
+- When the turn limit is reached, `runOrchestrator` returns a short spoken apology instead of throwing.
+  - The apology is emitted as the assistant message and the run is marked finished, so `/api/chat` returns 200 with the text, voice speaks it, and the orb leaves "thinking".
+  - Other model failures still fail the turn.
+  - Tests use the AI SDK's `MockLanguageModelV4`.
+- A delegation now receives the turn's abort signal, so specialists still running when the turn times out stop instead of spending tokens in the background.
+- Local rerun of the Thanksgiving conversation, run once:
+  - Both turns finished, in 62 s and 93 s.
+  - The second itinerary call took 82 s, which would have failed under the old 60 s limit.
+  - Lake George (4 h 16 min), Ithaca (4 h 47 min) and Washington, DC (4 h 51 min, backup) each have three days for Nov 26–28, with routed drive times.
+- Seen in that run:
+  - The first message was planned without asking for dates. The model guessed Nov 25–29, so those days were not trimmed.
+  - One specialist summary came back as "x".
+  - 82 s is close to the new 90 s limit.
+
 ### 2026-10-28 — AWS host updated with the guard fix and drive-time check; comparisons time out
 
 - Ran `deploy.sh update` on `main` at `218becf`. That ships the per-destination guard fix (`e5997c4`) and the drive-time check (`00b7df0`). The run took 297 s, and all eight containers are healthy.
