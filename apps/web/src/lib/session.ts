@@ -31,6 +31,20 @@ export interface AgentActivity {
 }
 
 export type Connection = "connecting" | "open" | "reconnecting";
+/** "off" means the server has no speech-to-text configured. */
+export type VoiceStatus = "connecting" | "ready" | "off";
+
+/** What to tell the customer when the voice socket reports a problem. */
+const VOICE_ISSUES: [RegExp, string][] = [
+  [/empty transcript|no audio/, "I didn't catch that. Hold the mic a little longer, or type your message below."],
+  [/rate limited|in progress/, "Give me a few seconds between voice messages, then try again."],
+  [/stt_failed/, "I couldn't transcribe that. Try again, or type your message below."],
+  [/run_failed/, "I couldn't complete that request. Please try again in a moment."],
+];
+const VOICE_DROPPED = "The voice connection dropped. Try again in a moment.";
+export const voiceIssueFor = (message = "") =>
+  VOICE_ISSUES.find(([pattern]) => pattern.test(message))?.[1] ??
+  "Voice input didn't work that time. Try again, or type your message below.";
 
 const STORAGE_KEY = "roam.session.v1";
 
@@ -73,6 +87,9 @@ export interface SessionState {
   orb: OrbState;
   runningCount: number;
   voiceAvailable: boolean;
+  voice: VoiceStatus;
+  /** The last voice problem, in words for the customer; cleared on the next attempt. */
+  voiceIssue: string;
   connection: Connection;
   sendText: (text: string) => void;
   newTrip: () => void;
@@ -105,7 +122,8 @@ export function useSession(): SessionState {
   }, [sessionId, messages]);
   const [agents, setAgents] = useState<Map<string, AgentActivity>>(new Map());
   const [orb, setOrb] = useState<OrbState>("idle");
-  const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const [voice, setVoice] = useState<VoiceStatus>("connecting");
+  const [voiceIssue, setVoiceIssue] = useState("");
   const [connection, setConnection] = useState<Connection>("connecting");
   const runningCount = [...agents.values()].filter(
     (a) => a.state === "running",
@@ -115,6 +133,8 @@ export function useSession(): SessionState {
   const recorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Uint8Array[]>([]);
   const player = useRef<HTMLAudioElement | null>(null);
+  /** Audio was sent and the server has not answered with a transcript or error yet. */
+  const awaitingTranscript = useRef(false);
 
   // ── /ws activity feed ────────────────────────────────────────
   // Every (re)connect replays the session's events. Handlers are idempotent
@@ -216,12 +236,16 @@ export function useSession(): SessionState {
   }, [sessionId]);
 
   // ── /voice socket ────────────────────────────────────────────
+  // Reconnects like /ws. A deploy or the gateway's idle timeout closes it, and
+  // a closed socket used to leave the mic button doing nothing.
   useEffect(() => {
     if (!sessionId) return;
-    const ws = new WebSocket(`${socketBase()}/voice?sessionId=${sessionId}`);
-    ws.binaryType = "arraybuffer";
-    voiceWs.current = ws;
-    ws.onmessage = (m) => {
+    let ws: WebSocket | null = null;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    let closed = false;
+
+    const handle = (m: MessageEvent) => {
       if (m.data instanceof ArrayBuffer) {
         audioChunks.current.push(new Uint8Array(m.data));
         return;
@@ -235,9 +259,11 @@ export function useSession(): SessionState {
       };
       switch (msg.type) {
         case "ready":
-          setVoiceAvailable(Boolean(msg.stt));
+          attempts = 0;
+          setVoice(msg.stt ? "ready" : "off");
           break;
         case "transcript":
+          awaitingTranscript.current = false;
           // solidify the "listening…" placeholder into the final transcript
           setMessages((prev) => {
             const next = prev.filter((b) => !b.partial);
@@ -263,17 +289,46 @@ export function useSession(): SessionState {
           break;
         }
         case "error":
+          awaitingTranscript.current = false;
           // failed/empty STT: drop the "…" placeholder instead of stranding it
           setMessages((prev) => prev.filter((b) => !b.partial));
+          setVoiceIssue(voiceIssueFor(msg.message));
           setOrb("idle");
           break;
         default:
           break;
       }
     };
+
+    const connect = () => {
+      const socket = new WebSocket(`${socketBase()}/voice?sessionId=${sessionId}`);
+      ws = socket;
+      socket.binaryType = "arraybuffer";
+      voiceWs.current = socket;
+      socket.onmessage = handle;
+      socket.onclose = () => {
+        // A socket replaced by a new session (or React's dev remount) closes late; ignore it.
+        if (closed || voiceWs.current !== socket) return;
+        voiceWs.current = null;
+        setVoice("connecting");
+        if (recorder.current || awaitingTranscript.current) {
+          // The recording went down with the socket: no transcript will arrive.
+          recorder.current?.stop();
+          awaitingTranscript.current = false;
+          setMessages((prev) => prev.filter((b) => !b.partial));
+          setVoiceIssue(VOICE_DROPPED);
+          setOrb((o) => (o === "listening" || o === "thinking" ? "idle" : o));
+        }
+        // Starts at 1 s: the gateway allows 12 socket connections a minute.
+        retry = setTimeout(connect, Math.min(8000, 1000 * 2 ** attempts++));
+      };
+    };
+    connect();
     return () => {
+      closed = true;
+      clearTimeout(retry);
       voiceWs.current = null;
-      ws.close();
+      ws?.close();
     };
   }, [sessionId]);
 
@@ -307,7 +362,11 @@ export function useSession(): SessionState {
 
   const startListening = useCallback(async () => {
     const ws = voiceWs.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    setVoiceIssue("");
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      setVoiceIssue("Voice is reconnecting. Try again in a moment, or type your message below.");
+      return;
+    }
     // One recorder at a time — a second start while recording would interleave
     // two webm streams into one server buffer and corrupt the audio.
     if (recorder.current) return;
@@ -320,14 +379,30 @@ export function useSession(): SessionState {
       ? "audio/webm"
       : "audio/mp4";
     const rec = new MediaRecorder(stream, { mimeType: mime });
+    // Chunks are read asynchronously; one queue keeps them in order and makes
+    // audio_end wait for the last chunk instead of overtaking it.
+    let sending = Promise.resolve();
     rec.ondataavailable = (e) => {
-      if (e.data.size > 0 && ws.readyState === WebSocket.OPEN)
-        void e.data.arrayBuffer().then((buf) => ws.send(buf));
+      if (e.data.size === 0) return;
+      sending = sending
+        .then(() => e.data.arrayBuffer())
+        .then((buf) => {
+          if (ws.readyState === WebSocket.OPEN) ws.send(buf);
+        });
     };
     rec.onstop = () => {
       stream.getTracks().forEach((t) => t.stop());
       recorder.current = null;
-      ws.send(JSON.stringify({ type: "audio_end", mime }));
+      void sending.then(() => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          setMessages((prev) => prev.filter((b) => !b.partial));
+          setVoiceIssue(VOICE_DROPPED);
+          setOrb((o) => (o === "thinking" ? "idle" : o));
+          return;
+        }
+        awaitingTranscript.current = true;
+        ws.send(JSON.stringify({ type: "audio_end", mime }));
+      });
     };
     recorder.current = rec;
     rec.start(250);
@@ -346,6 +421,8 @@ export function useSession(): SessionState {
   const newTrip = useCallback(() => {
     recorder.current?.stop();
     player.current?.pause();
+    awaitingTranscript.current = false;
+    setVoiceIssue("");
     writeStored(null);
     setMessages([]);
     setAgents(new Map());
@@ -366,7 +443,9 @@ export function useSession(): SessionState {
     agents,
     orb,
     runningCount,
-    voiceAvailable,
+    voiceAvailable: voice === "ready",
+    voice,
+    voiceIssue,
     connection,
     sendText,
     newTrip,

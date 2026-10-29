@@ -875,7 +875,8 @@ h1 {
 
 
 /* ── Header actions & connection ─────────────────────────────── */
-.new-trip {
+.new-trip,
+.new-chat-confirm button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -884,10 +885,28 @@ h1 {
   color: var(--text);
   padding: 7px 13px;
   border-radius: 9px;
-  border: 1px solid var(--sage);
+  /* A surface button so it stands off the sage bar. */
+  background: var(--surface);
+  border: 1px solid var(--sage-line);
 }
-.new-trip:hover:not(:disabled) {
+.new-trip:hover,
+.new-chat-keep:hover {
   background: var(--sage-soft);
+}
+.new-chat-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+.new-chat-confirm .new-chat-clear {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.new-chat-confirm .new-chat-clear:hover {
+  background: var(--accent-hover);
 }
 .connection-banner {
   background: var(--warn-soft);
@@ -1907,9 +1926,16 @@ h1 {
   }
 }
 @media (max-width: 760px) {
-  .new-trip {
+  .new-trip,
+  .new-chat-confirm {
     margin-left: auto;
+  }
+  .new-trip,
+  .new-chat-confirm button {
     padding: 6px 10px;
+  }
+  .new-chat-confirm span {
+    display: none;
   }
   .header-tag {
     display: none;

@@ -58,6 +58,29 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-29 — Voice reconnects; New chat button
+
+- **Voice stopped working because the page's `/voice` socket never reconnected.** A deploy, the gateway's one-hour idle timeout or a network blip closed it for good.
+  - The mic button still looked enabled but did nothing.
+  - If the socket closed after a recording, the page stayed on "thinking", which also disabled Send and New trip.
+  - The server was fine: synthesized speech sent straight to `/voice` on AWS was transcribed in 0.5 s and answered in 11 s.
+- `/voice` now reconnects like `/ws`, with backoff starting at 1 s to stay inside the gateway's 12 socket connections a minute.
+  - While it reconnects, the mic is disabled and the label says "Connecting voice…".
+  - A recording lost with the socket clears its placeholder and says so, instead of leaving the page on "thinking".
+  - A superseded socket's late close is ignored. Before this, React's dev remount, or switching sessions, could mark a working socket as disconnected.
+- Recorded chunks now go through one queue, so `audio_end` waits for the last chunk instead of overtaking it and cutting off the end of an utterance.
+- Voice errors from the server now show as a plain message under the mic. They used to fail silently. The messages cover a missed recording, the 5-second gap between voice messages, a failed transcription and a failed turn. Covered by `apps/web/test/voice.test.ts`.
+- **New chat:** the existing New trip button had become sage-on-sage after the retheme, so it read as plain text. It was also disabled while a turn was running.
+  - It is now a surface button labelled New chat, shown whenever there is a conversation or trip board, and always enabled, so it is also the way out of a turn that seems stuck.
+  - It asks "Clear this chat and its trip board?" with Clear chat (oxblood) and Keep it. Escape dismisses the question.
+  - Clearing starts a new session ID, so the server-side history is separate.
+- Checked locally on spare ports (web 3100, orchestrator 8180) in the browser pane, with a fake microphone that played synthesized speech:
+  - after the orchestrator restarted, voice came back by itself in about 9 s;
+  - two voice messages in a row were transcribed exactly and answered;
+  - New chat cleared the conversation, trip board and stored session while a reply was still running;
+  - the confirmation fits at 375 px wide.
+- Not done: a turn already running when you start a new chat keeps running on the server for its old session.
+
 ### 2026-10-29 — AWS host updated with the longer time limits; live comparison works
 
 - Ran `deploy.sh update` on `main` at `74276f0`. It took 370 s, and all eight containers are healthy.

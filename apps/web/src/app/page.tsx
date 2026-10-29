@@ -52,6 +52,7 @@ export default function SessionPage() {
   );
   const [draft, setDraft] = useState("");
   const [voiceError, setVoiceError] = useState("");
+  const [confirmingNew, setConfirmingNew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const busy =
@@ -75,6 +76,7 @@ export default function SessionPage() {
       );
     const down = (event: KeyboardEvent) => {
       if (event.key === "Escape" && s.orb === "speaking") s.stopSpeaking();
+      if (event.key === "Escape") setConfirmingNew(false);
       if (
         event.code !== "Space" ||
         event.repeat ||
@@ -141,7 +143,17 @@ export default function SessionPage() {
           ? "Putting your trip together…"
           : s.voiceAvailable
             ? "Prefer to talk? I'm listening."
-            : "Type a message to start planning.";
+            : s.voice === "connecting"
+              ? "Connecting voice…"
+              : "Type a message to start planning.";
+  const startNewChat = () => {
+    s.newTrip();
+    setDraft("");
+    setVoiceError("");
+    setConfirmingNew(false);
+    setTab("results");
+    setMobilePane("conversation");
+  };
 
   return (
     <div className="shell">
@@ -158,21 +170,23 @@ export default function SessionPage() {
         <span className="header-tag">
           <Icon name="pin" size={14} /> US & territories
         </span>
-        {hasMessages && (
-          <button
-            className="new-trip"
-            onClick={() => {
-              s.newTrip();
-              setDraft("");
-              setVoiceError("");
-              setTab("results");
-              setMobilePane("conversation");
-            }}
-            disabled={s.runningCount > 0 || s.orb === "thinking"}
-          >
-            <Icon name="plus" size={16} /> New trip
-          </button>
-        )}
+        {(hasMessages || s.agents.size > 0) &&
+          (confirmingNew ? (
+            <div className="new-chat-confirm" role="group" aria-label="Start a new chat">
+              <span>Clear this chat and its trip board?</span>
+              <button className="new-chat-clear" onClick={startNewChat} autoFocus>
+                Clear chat
+              </button>
+              <button className="new-chat-keep" onClick={() => setConfirmingNew(false)}>
+                Keep it
+              </button>
+            </div>
+          ) : (
+            // Always enabled: it is also the way out of a turn that seems stuck.
+            <button className="new-trip" onClick={() => setConfirmingNew(true)}>
+              <Icon name="plus" size={16} /> New chat
+            </button>
+          ))}
       </header>
       {s.connection === "reconnecting" && (
         <div className="connection-banner" role="status">
@@ -319,9 +333,9 @@ export default function SessionPage() {
               </button>
               <span aria-live="polite">{voiceLabel}</span>
             </div>
-            {voiceError && (
+            {(voiceError || s.voiceIssue) && (
               <p className="voice-error" role="alert">
-                {voiceError}
+                {voiceError || s.voiceIssue}
               </p>
             )}
             <form
