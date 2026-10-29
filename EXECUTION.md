@@ -58,6 +58,18 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-29 — AWS host updated with the longer time limits; live comparison works
+
+- Ran `deploy.sh update` on `main` at `74276f0`. It took 370 s, and all eight containers are healthy.
+- The first two attempts stopped because AWS CLI sign-in had expired. `aws login` was rerun from the Terminal panel, and the user finished the browser step.
+- Public checks: `/healthz` 200, HTTP→HTTPS 308, anonymous 401, signed-in 200, empty `/api/chat` body 400.
+- Live Thanksgiving comparison on the host, the same two messages as before:
+  - The first message got a clarifying question (2.5 s).
+  - The second returned 200 in 75.7 s, after one itinerary delegation of 65.8 s.
+  - Three options each kept three days for Nov 26–28, with routed drive times: Newport, RI (4 h 9 min), Lake George, NY (4 h 16 min) and Rehoboth Beach, DE (4 h 28 min). Washington, DC (4 h 51 min) is the backup.
+  - Before this deploy the same request returned 500 after 128 s.
+- Small wording slips in the spoken reply: it says "two-night plan" for the three days, and it offers "estimated driving" even though drive times were already routed.
+
 ### 2026-10-29 — Longer time limits for comparisons; a timed-out turn apologises
 
 - Specialists now get 90 s instead of 60 s (`SPECIALIST_TIMEOUT_MS`). The whole orchestrator turn gets 170 s instead of 120 s (`TURN_TIMEOUT_MS`), which stays under the gateway's 180 s `proxy_read_timeout` on `/api/chat`. A test reads the gateway template and checks both limits.
