@@ -1,16 +1,16 @@
 # Roam — Current interface
 
-Implemented October 26, 2026; trip board redesigned October 27, 2026. This document supersedes the early orb/swipe/dark-theme concepts; their history remains in Git.
+Implemented October 26, 2026; trip board redesigned October 27, 2026; recoloured October 28; polished October 30. This document supersedes the early orb/swipe/dark-theme concepts; their history remains in Git.
 
 ## Product and visual direction
 
 Roam is a conversational US travel planner. A user starts with a rough idea, discusses constraints, and reviews structured trip research. The interface must distinguish demo inventory, direct search links and sourced planning facts from verified availability or real bookings.
 
-The visual system uses a white conversation area and a pale slate trip board, navy text and blue actions. Tokens live in `apps/web/src/app/globals.css`: background `#f3f5f8`, surface `#fff`, text `#172b45`, muted text `#68768a`, accent `#315ddd`, border `#e2e7ef`. Typography uses Avenir Next/Avenir with Segoe UI and sans-serif fallbacks; reading text is 13–15px (messages and composer 15px, 16px on mobile). Icons are local SVG components (no emoji); the inspiration photograph loads from Unsplash with a solid-color fallback. The trip summary is the one dark navy surface on the board, so the trip itself is the visual anchor.
+The visual system uses sand for the page, sage for navigation and quiet surfaces, and oxblood only for what should stand out. All colours and fonts are tokens at the top of `apps/web/src/app/globals.css`: background `#e8d2b5`, surface `#fbf5ec`, sage `#a5a79b`, text `#2b1d17`, muted text `#665446`, accent `#590907`, field edge `#74776a`. Typography uses Avenir Next/Avenir with Segoe UI and sans-serif fallbacks; reading text is 13–15px (messages and composer 15px, 16px on mobile). Icons are local SVG components (no emoji); the inspiration photograph loads from Unsplash with a solid-color fallback. The trip summary is the one large oxblood surface on the board, so the trip itself is the visual anchor.
 
 ## Desktop workspace
 
-- Header (68px): Roam identity, US/territories scope and, once a conversation exists, **New trip** (clears the stored session and picks).
+- Header (68px): Roam identity, US/territories scope and, once a conversation exists, **New chat**, always enabled, which asks for confirmation and then clears the stored session and picks. The top bar runs edge to edge; the working area below it is capped at 1800px.
 - Left pane: travel-companion status, welcome prompts or conversation, persistent composer, voice control and verification note.
 - Right pane: trip board with Overview and Planning activity views; the title sits in the tab row.
 - Empty board: scenic inspiration and direction prompts. These populate an editable draft; they do not submit requests automatically.
@@ -23,7 +23,7 @@ The visual system uses a white conversation area and a pale slate trip board, na
 
 After a reply, up to three follow-up suggestions appear, drawn only from specialists that returned usable results; like inspiration prompts, they fill the draft rather than sending. Enter submits a nonempty draft; Shift+Enter adds a line. IME composition does not submit prematurely. Send is disabled while listening/planning. A thinking indicator appears while waiting. New messages scroll the transcript to the end; an empty welcome screen stays at the top.
 
-The microphone button starts/stops recording; while a reply is speaking, it stops playback. Microphone permission failures produce a typed-input fallback message. Desktop Space supports push-to-talk outside interactive elements; Escape stops speech. Voice is available only when the backend reports STT enabled.
+The microphone button starts/stops recording; while a reply is speaking, it stops playback. Microphone permission failures produce a typed-input fallback message. Desktop Space supports push-to-talk outside interactive elements; Escape stops speech. Voice is available only when the backend reports STT enabled. The voice socket reconnects on its own, and problems appear in plain words under the microphone.
 
 The backend transcribes after recording ends. It does not stream partial recognition. The browser buffers TTS audio until `tts_end`, then plays. Interrupting speech does not abort the entire model/tool request.
 
@@ -47,6 +47,8 @@ At 760px and below, explicit Conversation / Trip board buttons replace the deskt
 Buttons have accessible names, form fields are labeled, toggles expose pressed states, keyboard focus is visible, and reduced-motion preference disables animations/transitions. Long messages wrap. Mobile input uses 16px text. Light appearance is intentional; no dark-theme toggle is implemented.
 
 ## Verification
+
+October 30 polish: desktop 1440×900, 1920×1080 and mobile 375×812 were inspected with a live San Juan run (three specialists).
 
 October 27 redesign: desktop 1440×900 and mobile 375×812 were inspected with a recorded San Juan run (four specialists) and a live Savannah run. The Savannah run produced Airbnb links only and an honestly failed itinerary. Picking options, totals, the jump bar, day tabs, planning activity, refresh resume and reconnect after an orchestrator restart were all exercised. Lint, type checks, production build and five new trip-logic unit tests passed (`apps/web/test/trip.test.ts`). Voice was not re-tested.
 

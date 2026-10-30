@@ -31,7 +31,8 @@ function mockFlights(origin: string, destination: string, date: string, pax: num
     const base = 120 + rand() * 320 + stops * -40;
     const fare = Math.round((base + (pax - 1) * 0) * (carrier.code === "NK" ? 0.7 : 1));
     const depart = `${date}T${String(departHour).padStart(2, "0")}:${rand() < 0.5 ? "15" : "40"}:00`;
-    const arriveMs = new Date(depart).getTime() + durationMinutes * 60_000;
+    // Parsed as UTC and written back as UTC, so the machine's time zone cannot shift it.
+    const arriveMs = new Date(`${depart}Z`).getTime() + durationMinutes * 60_000;
     return {
       id: `${carrier.code}-${1000 + Math.floor(rand() * 900)}-${date}-${i}`,
       carrier: carrier.name,

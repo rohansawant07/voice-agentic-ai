@@ -61,12 +61,12 @@ export function FlightRow({
       <span className="row-main">
         <strong>{flight.carrier}</strong>
         <small>
-          {flight.flightNumber} · {flight.fareClass}
+          {flight.flightNumber}, {flight.fareClass}
         </small>
       </span>
       <span className="row-times">
         <strong>
-          {clock(flight.departLocal)} – {clock(flight.arriveLocal)}
+          {clock(flight.departLocal)} to {clock(flight.arriveLocal)}
         </strong>
         <small>
           {flight.origin} → {flight.destination}
@@ -80,7 +80,7 @@ export function FlightRow({
         <strong className="price">{usd(flight.fare.amount)}</strong>
         <small>
           {travelers && travelers > 1
-            ? `per person · ${usd(flight.fare.amount * travelers)} total`
+            ? `per person, ${usd(flight.fare.amount * travelers)} total`
             : "per person"}
         </small>
       </span>

@@ -182,7 +182,7 @@ function TripSummary({
               <div className="budget-track">
                 <div
                   className={`budget-fill${total > cap ? " over" : ""}`}
-                  style={{ width: `${share}%` }}
+                  style={{ transform: `scaleX(${share / 100})` }}
                 />
                 <span className="price">
                   {!lines.length
@@ -260,9 +260,6 @@ export function ResultsCanvas({
     return (
       <div className="scroll inspiration-board">
         <div className="destination-hero">
-          <div className="photo-label">
-            <Icon name="compass" size={15} /> Go a little further
-          </div>
           <div className="destination-copy">
             <span>Fresh air. A fresh perspective.</span>
             <h3>
@@ -288,7 +285,7 @@ export function ResultsCanvas({
             rel="noopener noreferrer"
             aria-label="Photography from Unsplash"
           >
-            Photo · Unsplash
+            Photo: Unsplash
           </a>
         </div>
         <div className="board-intro">
@@ -444,7 +441,7 @@ export function ResultsCanvas({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <span className="tag quiet">Airbnb · verify availability</span>
+                  <span className="tag quiet">Airbnb: verify availability</span>
                   <strong>{rental.name}</strong>
                   {rental.priceText && <span className="price">{rental.priceText}</span>}
                   {rental.priceDetail && <small>{rental.priceDetail}</small>}
@@ -638,7 +635,7 @@ export function ActivityTimeline({
                     {a.sources.filter(s => /^https?:\/\//i.test(s.url)).map(s => (
                       <li key={s.url}>
                         <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}</a>
-                        {" — checked "}{s.retrievedAt.slice(0, 10)}
+                        {", checked "}{s.retrievedAt.slice(0, 10)}
                       </li>
                     ))}
                   </ul>

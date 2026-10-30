@@ -194,7 +194,7 @@ export default function SessionPage() {
           connection returns.
         </div>
       )}
-      <div className="mobile-nav" aria-label="Workspace view">
+      <div className="mobile-nav" role="group" aria-label="Workspace view">
         <button
           aria-pressed={mobilePane === "conversation"}
           onClick={() => setMobilePane("conversation")}

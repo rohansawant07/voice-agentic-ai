@@ -1,3 +1,10 @@
+/* Hallmark · checked: 2026-10-30 · genre: modern-minimal (inferred)
+ * floor: 1 FAIL open (40: the sloplint check reads the bare textarea; .composer draws the field's edge at 3.1:1)
+ * fixed: 10a, 19, 26a, 34, 39a, 48, 54, 26b · structural: none printed
+ * reflex: 1 open (39b: suggestion cards stand 71px to hold a title and a detail)
+ * built: the project · redesign: polish · v2.0.0 */
+/* Hallmark · dropped "Go a little further" · 54 names it */
+
 :root {
   color-scheme: light;
   /* Sand is the page, sage the navigation and quiet surfaces, oxblood only what should stand out. */
@@ -47,6 +54,24 @@
   --shadow: 0 4px 16px #2b1d1708;
   --radius-card: 16px;
   --radius-chip: 24px;
+  --font-sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* A field's edge, at 3:1 against the sand. */
+  --field-edge: #74776a;
+  /* Text and scrim over the inspiration photograph. */
+  --on-photo: #fff;
+  --on-photo-soft: #f1e4d2;
+  --photo-fallback: #6b5a4e;
+  --photo-scrim-top: #2b1d1730;
+  --photo-scrim-mid: #2b1d1780;
+  --photo-scrim-end: #1f1410eb;
+  /* Lines and washes on the oxblood trip summary. */
+  --panel-line-strong: #ffffff40;
+  --panel-line: #ffffff26;
+  --panel-wash: #ffffff14;
+  --panel-track: #ffffff33;
+  --rating-edge: #c98a2b;
+  --rating-fill: #e9b45c;
 }
 * {
   box-sizing: border-box;
@@ -56,11 +81,12 @@
 html,
 body {
   min-height: 100%;
+  overflow-x: clip;
 }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -78,7 +104,9 @@ button {
 }
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+}
+button:not(:disabled):active {
+  transform: translateY(1px);
 }
 a {
   color: var(--accent);
@@ -102,8 +130,6 @@ svg {
   vertical-align: middle;
 }
 .shell {
-  max-width: 1800px;
-  margin: auto;
   height: 100dvh;
   min-height: 620px;
   display: flex;
@@ -114,7 +140,8 @@ svg {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 0 42px;
+  /* The bar runs edge to edge; its content lines up with the capped split below. */
+  padding: 0 max(42px, calc((100% - 1800px) / 2 + 42px));
   gap: 32px;
   background: var(--sage);
   border-bottom: 1px solid var(--sage-line);
@@ -162,6 +189,9 @@ svg {
 }
 .split {
   flex: 1;
+  width: 100%;
+  max-width: 1800px;
+  margin-inline: auto;
   display: grid;
   grid-template-columns: minmax(360px, 43%) minmax(0, 57%);
   min-height: 0;
@@ -241,6 +271,7 @@ h1 {
   line-height: 1.17;
   letter-spacing: -1.8px;
   margin-bottom: 15px;
+  text-wrap: balance;
 }
 .welcome > p {
   color: var(--text-muted);
@@ -299,25 +330,40 @@ h1 {
   margin-top: 2px;
 }
 .composer-area {
-  padding: 13px 30px 17px;
+  padding: 9px 30px 15px;
   background: var(--bg);
 }
 .voice-row {
   display: flex;
   align-items: center;
   gap: 9px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: var(--text-muted);
   font-size: 13px;
 }
 .voice-button {
-  width: 32px;
-  height: 32px;
+  position: relative;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   color: var(--sage-ink);
   background: var(--sage-soft);
+}
+.voice-button::after,
+.send-button::after {
+  /* A 44px hit target around the smaller control. */
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.voice-button:disabled {
+  color: var(--text-faint);
+  background: var(--surface-sunken);
 }
 .voice-button.listening,
 .voice-button.speaking {
@@ -328,7 +374,7 @@ h1 {
 }
 .composer {
   padding: 12px 13px 9px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--field-edge);
   border-radius: 15px;
   background: var(--surface);
   box-shadow: 0 3px 12px var(--shadow-tint);
@@ -362,13 +408,19 @@ h1 {
   font-size: 12px;
 }
 .send-button {
+  position: relative;
   background: var(--accent);
   color: var(--on-accent);
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 9px;
   display: grid;
   place-items: center;
+}
+.send-button:disabled {
+  /* Oxblood is for what stands out; a send with nothing to send does not. */
+  color: var(--sage-ink);
+  background: var(--sage-soft);
 }
 .send-button:hover:not(:disabled) {
   background: var(--accent-hover);
@@ -377,7 +429,7 @@ h1 {
   text-align: center;
   font-size: 12px;
   color: var(--text-muted);
-  margin-top: 12px;
+  margin-top: 8px;
 }
 .voice-error {
   font-size: 12px;
@@ -480,32 +532,21 @@ h1 {
   padding: 24px 0;
 }
 .destination-hero {
+  --focus: var(--on-photo);
   position: relative;
   flex-shrink: 0;
   min-height: 340px;
   border-radius: 17px;
   overflow: hidden;
-  color: #fff;
+  color: var(--on-photo);
   background:
-    linear-gradient(180deg, #2b1d1710, #2b1d1760 35%, #1f1410eb),
+    linear-gradient(180deg, var(--photo-scrim-top), var(--photo-scrim-mid) 35%, var(--photo-scrim-end)),
     url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=85")
       center 45% / cover,
-    #6b5a4e;
+    var(--photo-fallback);
   display: flex;
   flex-direction: column;
   padding: 23px 27px;
-}
-.photo-label {
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid #ffffff50;
-  border-radius: 20px;
-  background: #2b1d1740;
-  backdrop-filter: blur(8px);
-  padding: 5px 10px;
-  font-size: 11px;
 }
 .destination-copy {
   margin-top: auto;
@@ -513,7 +554,7 @@ h1 {
 }
 .destination-copy > span {
   font-size: 12px;
-  color: #f1e4d2;
+  color: var(--on-photo-soft);
 }
 .destination-copy h3 {
   font-size: clamp(36px, 3.5vw, 52px);
@@ -521,10 +562,11 @@ h1 {
   font-weight: 500;
   line-height: 1.05;
   margin: 8px 0 10px;
+  text-wrap: balance;
 }
 .destination-copy p {
   font-size: 12px;
-  color: #eadbc6;
+  color: var(--on-photo-soft);
 }
 .destination-copy button {
   margin-top: 19px;
@@ -545,8 +587,8 @@ h1 {
   position: absolute;
   right: 14px;
   bottom: 10px;
-  color: #f1e4d2;
-  font-size: 11px;
+  color: var(--on-photo-soft);
+  font-size: 12px;
   text-decoration: none;
 }
 .board-intro h3 {
@@ -698,7 +740,7 @@ h1 {
     padding: 0 16px;
   }
   .suggestion small {
-    font-size: 11px;
+    font-size: 12px;
   }
   .destination-hero {
     padding: 21px;
@@ -803,10 +845,10 @@ h1 {
   }
   .composer-bottom > span,
   .composer-note {
-    font-size: 11px;
+    font-size: 12px;
   }
   .voice-row {
-    font-size: 11px;
+    font-size: 12px;
     margin-bottom: 10px;
   }
   .pane-canvas {
@@ -1001,12 +1043,12 @@ h1 {
   font-size: 13px;
   font-weight: 600;
   color: var(--on-panel);
-  border: 1px solid #ffffff40;
+  border: 1px solid var(--panel-line-strong);
   border-radius: 9px;
   padding: 7px 12px;
 }
 .ghost-button:hover {
-  background: #ffffff14;
+  background: var(--panel-wash);
 }
 .pick-slots {
   list-style: none;
@@ -1021,14 +1063,14 @@ h1 {
   min-width: 0;
   font-size: 13px;
   color: var(--on-panel-muted);
-  border: 1px dashed #ffffff33;
+  border: 1px dashed var(--panel-line-strong);
   border-radius: 11px;
   padding: 9px 11px;
 }
 .pick-slots li.filled {
   color: var(--on-panel);
-  border: 1px solid #ffffff26;
-  background: #ffffff10;
+  border: 1px solid var(--panel-line);
+  background: var(--panel-wash);
 }
 .pick-slots li > span {
   min-width: 0;
@@ -1068,16 +1110,18 @@ h1 {
   display: block;
   height: 6px;
   border-radius: 6px;
-  background: #ffffff1f;
+  background: var(--panel-track);
 }
 .budget-fill {
   position: absolute;
   left: 0;
   top: 0;
+  width: 100%;
   height: 6px;
   border-radius: 6px;
   background: var(--panel-good);
-  transition: width 0.3s ease;
+  transform-origin: left;
+  transition: transform 0.3s ease;
 }
 .budget-fill.over {
   background: var(--panel-bad);
@@ -1096,13 +1140,14 @@ h1 {
   font-size: 12px;
   line-height: 1.5;
   color: var(--on-panel-muted);
-  border-top: 1px solid #ffffff1a;
+  border-top: 1px solid var(--panel-line);
   padding-top: 12px;
 }
 .provenance svg {
   margin-top: 1px;
 }
 .jump-nav {
+  flex-shrink: 0;
   position: sticky;
   top: -20px;
   z-index: 2;
@@ -1210,10 +1255,10 @@ h1 {
 .failed-note {
   color: var(--danger);
   font-size: 13px;
-  border-left: 3px solid var(--danger-border);
+  border: 1px solid var(--danger-border);
   padding: 10px 14px;
   background: var(--danger-soft);
-  border-radius: 0 10px 10px 0;
+  border-radius: 10px;
 }
 .note-line {
   font-size: 13px;
@@ -1423,8 +1468,8 @@ h1 {
   margin-top: 6px;
 }
 .stay-rating svg {
-  color: #c98a2b;
-  fill: #e9b45c;
+  color: var(--rating-edge);
+  fill: var(--rating-fill);
 }
 .stay-rating strong {
   color: var(--text);
@@ -1698,6 +1743,7 @@ h1 {
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.6px;
+  font-variant-numeric: tabular-nums;
 }
 .budget-state {
   margin-left: auto;
@@ -1893,9 +1939,9 @@ h1 {
   overflow-wrap: anywhere;
 }
 .tool-calls code {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   flex-shrink: 0;
   padding-top: 2px;
 }

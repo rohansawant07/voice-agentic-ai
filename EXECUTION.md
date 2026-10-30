@@ -58,6 +58,24 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-30 — Interface polish with Hallmark; runaway notes; arrival times
+
+Checked the interface with the Hallmark skill at polish depth: the sand, sage and oxblood palette and the layout stay. Lint went from 27 hard failures to 1, and all 8 links, 15 fields, 24 handlers and 4 headings were kept. The remaining failure is the check reading the bare textarea; `.composer` draws the field's edge at 3.1:1. Not yet on the AWS host.
+
+- **Runaway notes:** a live San Juan run showed the flight specialist repeating one sentence in `notes` until a wall of text pushed the stays and itinerary far down the board. `tidyNotes` in `services/orchestrator/src/specialist.ts` keeps each sentence once and stops at 800 characters on a sentence boundary, before the guards add their removal notes. Flight, stay and car notes now ask for two short sentences in the schema.
+- **Arrival times:** `services/mcp-travel/src/index.ts` parsed the departure in the machine's time zone but wrote the arrival as UTC, so a 4 h 43 min flight from 5:15 PM showed 2:58 AM on a machine in New York. Containers running in UTC were not affected. Times still ignore the destination's time zone.
+- **Interface:**
+  - The top bar reaches both window edges on wide screens, and the working area stays capped at 1800px.
+  - Focus rings are visible on the photograph.
+  - The microphone is 40px and Send 36px, both with 44px hit targets.
+  - Disabled Send and microphone use sage and sand fills, not faded oxblood.
+  - The composer edge is 3.1:1 against the sand.
+  - The jump bar no longer collapses on phones.
+  - All colours and fonts are tokens, the budget bar animates with a transform, and buttons have a pressed state. The smallest text went from 11px to 12px.
+- **Copy changed:** removed the "Go a little further" label on the photograph. "Photo · Unsplash" is now "Photo: Unsplash", "Airbnb · verify availability" is "Airbnb: verify availability", and flight rows use "to", commas and "per person, $X total" in place of dashes and middle dots.
+- `DESIGN.md` still described the navy theme; it now matches the interface.
+- Checked with two live local San Juan turns: notes were 311, 271 and 87 characters afterward, and arrival times matched durations. The type check, lint and all orchestrator, web and travel tests pass; three tests are new.
+
 ### 2026-10-29 — Voice reconnects; New chat button
 
 - **Voice stopped working because the page's `/voice` socket never reconnected.** A deploy, the gateway's one-hour idle timeout or a network blip closed it for good.

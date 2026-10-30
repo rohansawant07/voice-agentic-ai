@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Roam",
-  description: "Voice-first US travel concierge — multi-agent demo",
+  description: "Voice-first US travel concierge: a multi-agent demo",
 };
 
 export default function RootLayout({

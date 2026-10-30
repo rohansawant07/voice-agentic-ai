@@ -1,0 +1,12 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "polish",
+  "scope": "app",
+  "prompt": "check this and improve the repo",
+  "waived": [
+   "39b"
+  ],
+  "date": "2026-10-30"
+ }
+]

@@ -38,9 +38,12 @@ export const FlightOption = z.object({
 });
 export type FlightOption = z.infer<typeof FlightOption>;
 
+/** Notes sit under the cards, so they carry only what the cards don't show. */
+const Notes = z.string().optional().describe("At most two short sentences of caveats the options don't already show.");
+
 export const FlightAgentOutput = z.object({
   options: z.array(FlightOption).max(5),
-  notes: z.string().optional(),
+  notes: Notes,
 });
 export type FlightAgentOutput = z.infer<typeof FlightAgentOutput>;
 
@@ -75,7 +78,7 @@ export const HotelAgentOutput = z.object({
   vacationRentals: z.array(VacationRentalOption).max(5).optional(),
   searchLinks: z.array(z.object({ destination: z.string(), url: AirbnbLink })).max(5).optional(),
   rentalSearchStatus: z.enum(["live_results", "search_link_only"]).optional(),
-  notes: z.string().optional(),
+  notes: Notes,
 });
 export type HotelAgentOutput = z.infer<typeof HotelAgentOutput>;
 
@@ -141,7 +144,7 @@ export type CarRentalOption = z.infer<typeof CarRentalOption>;
 
 export const CarRentalAgentOutput = z.object({
   options: z.array(CarRentalOption).max(5),
-  notes: z.string().optional(),
+  notes: Notes,
 });
 export type CarRentalAgentOutput = z.infer<typeof CarRentalAgentOutput>;
 

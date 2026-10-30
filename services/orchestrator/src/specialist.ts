@@ -81,6 +81,25 @@ function instrument(tools: ToolSet, sessionId: string, agentId: string,
   return wrapped;
 }
 
+const NOTES_MAX_CHARS = 800;
+
+/**
+ * A model can fall into repeating itself inside a free-text field, and the board
+ * prints notes in full: keep each sentence once and stop at a sentence boundary.
+ */
+export function tidyNotes(notes: string): string {
+  const seen = new Set<string>();
+  let kept = "";
+  for (const sentence of notes.trim().split(/(?<=[.!?])\s+/)) {
+    const key = sentence.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (kept && kept.length + sentence.length + 1 > NOTES_MAX_CHARS) break;
+    kept += (kept && " ") + sentence;
+  }
+  return kept;
+}
+
 /** Envelope the specialist fills — data validated against its outputSchema. */
 function resultSchema(def: AgentDefinition) {
   return z.object({
@@ -130,6 +149,9 @@ export async function runSpecialist(
     });
     observer?.usage?.(totalUsage);
     result = output as DelegationResult;
+    // Before the guards below, whose notes about removals must always survive.
+    const data = result.data as { notes?: string } | null | undefined;
+    if (data?.notes) data.notes = tidyNotes(data.notes);
     // Curated and community guides contain no verified prices: never display invented totals.
     if (def.id === "itinerary-agent" && provenance.unpricedGuide && result.data) {
       const data = result.data as { days?: { estimatedDailySpend?: unknown; stops: { estimatedCost?: unknown }[] }[]; notes?: string };
