@@ -58,6 +58,15 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-10-31 — AWS host updated with the interface polish and notes and arrival fixes
+
+- `deploy/aws/deploy.sh update` moved the host from `c67ea2b` to `ea4c7bf`. SSM command `961a5f4b` finished with Success at 00:27 EDT.
+- All eight containers report healthy on the host, `/healthz` returns 200 three times in a row, and the home page returns the expected 401 Basic auth prompt.
+- Not checked on AWS: no signed-in page view and no live trip was run, so the polish and both fixes are confirmed there only by the commit on the host and the container health.
+- The first attempts stopped because AWS CLI sign-in had expired. A plain `aws login` waits at a region prompt because `~/.aws/config` sets no region, so use `aws login --region us-east-1`.
+- `aws ssm list-commands` is not in date order. Reading the first row returned an old failed run from October 28; sort by `RequestedDateTime` or use the command ID.
+- The host disk is 94% full, with 1.4 GB free of 20 GB. Memory had 398 MB available right after the restart. Clearing old Docker images is a follow-up; a build can fail if the disk fills.
+
 ### 2026-10-30 — Interface polish with Hallmark; runaway notes; arrival times
 
 Checked the interface with the Hallmark skill at polish depth: the sand, sage and oxblood palette and the layout stay. Lint went from 27 hard failures to 1, and all 8 links, 15 fields, 24 handlers and 4 headings were kept. The remaining failure is the check reading the bare textarea; `.composer` draws the field's edge at 3.1:1. Not yet on the AWS host.
