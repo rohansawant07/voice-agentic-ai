@@ -58,6 +58,14 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-02 — AWS host disk cleared from 94% to 45%
+
+- The disk use came from Docker's build cache, at 14 GB of the 17 GB under `/var/lib/docker`. All 8 images belong to running containers, so removing images would have freed nothing.
+- `docker builder prune -f --keep-storage 3gb` freed 10.87 GB and kept the most recent 3.2 GB of cache, so the next deploy can still reuse layers. The disk went from 19 GB used with 1.4 GB free to 8.8 GB used with 12 GB free.
+- Images, containers and the three volumes (`roam_pgdata`, `roam_caddy_data`, `roam_caddy_config`) were not touched. Afterwards all seven containers with health checks still report healthy (Caddy has none), `/healthz` returns 200, and the home page returns 401.
+- The host's BuildKit is older than v0.17, so `--max-used-space` is rejected. Use `--keep-storage` there.
+- Each deploy adds several GB of cache. Run the same prune when `df -h /` passes about 80%.
+
 ### 2026-10-31 — AWS host updated with the interface polish and notes and arrival fixes
 
 - `deploy/aws/deploy.sh update` moved the host from `c67ea2b` to `ea4c7bf`. SSM command `961a5f4b` finished with Success at 00:27 EDT.
