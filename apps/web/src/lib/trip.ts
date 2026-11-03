@@ -172,7 +172,8 @@ export function hotelTags(options: HotelOption[]): Map<string, string[]> {
   const tags = new Map<string, string[]>(options.map((o) => [o.id, []]));
   if (options.length < 2) return tags;
   tags.get(minBy(options, (o) => o.totalForStay.amount).id)!.push("Lowest price");
-  tags.get(minBy(options, (o) => -o.reviewScore).id)!.push("Top rated");
+  const rated = options.filter((o) => o.reviewScore != null);
+  if (rated.length) tags.get(minBy(rated, (o) => -o.reviewScore!).id)!.push("Top rated");
   return tags;
 }
 

@@ -41,8 +41,23 @@ export type FlightOption = z.infer<typeof FlightOption>;
 /** Notes sit under the cards, so they carry only what the cards don't show. */
 const Notes = z.string().optional().describe("At most two short sentences of caveats the options don't already show.");
 
+/**
+ * Copied unchanged from a search tool's `search` object. The board builds the
+ * booking links from these fields, so models never write URLs themselves.
+ */
+export const FlightSearch = z.object({
+  source: z.enum(["google_flights", "demo"]),
+  origin: z.string().describe("IATA code(s), e.g. JFK or JFK,LGA,EWR"),
+  destination: z.string().describe("IATA code(s), e.g. SJU"),
+  departDate: z.string().describe("YYYY-MM-DD"),
+  returnDate: z.string().optional().describe("YYYY-MM-DD"),
+  passengers: z.number().int().min(1).max(9),
+});
+export type FlightSearch = z.infer<typeof FlightSearch>;
+
 export const FlightAgentOutput = z.object({
   options: z.array(FlightOption).max(5),
+  searches: z.array(FlightSearch).max(4).optional(),
   notes: Notes,
 });
 export type FlightAgentOutput = z.infer<typeof FlightAgentOutput>;
@@ -53,15 +68,26 @@ export const HotelOption = z.object({
   id: z.string(),
   name: z.string(),
   photoUrl: z.string().optional(),
-  starRating: z.number().min(1).max(5),
-  reviewScore: z.number().min(0).max(5),
-  neighborhood: z.string(),
+  // Live results don't always carry these; leave them out rather than guess.
+  starRating: z.number().min(1).max(5).optional(),
+  reviewScore: z.number().min(0).max(5).optional(),
+  neighborhood: z.string().optional(),
   pricePerNight: Money,
   totalForStay: Money,
   amenities: z.array(z.string()).max(4),
-  distanceNote: z.string().describe('e.g. "5 min walk to beach"'),
+  distanceNote: z.string().optional().describe('e.g. "5 min walk to beach"'),
 });
 export type HotelOption = z.infer<typeof HotelOption>;
+
+/** Copied unchanged from a search_hotels result's `search` object. */
+export const HotelSearch = z.object({
+  source: z.enum(["google_hotels", "demo"]),
+  destination: z.string(),
+  checkIn: z.string().describe("YYYY-MM-DD"),
+  checkOut: z.string().describe("YYYY-MM-DD"),
+  guests: z.number().int().min(1).max(8),
+});
+export type HotelSearch = z.infer<typeof HotelSearch>;
 
 export const AirbnbLink = z.string().url().refine((value) => {
   return /^https:\/\/www\.airbnb\.com\//.test(value);
@@ -75,6 +101,7 @@ export type VacationRentalOption = z.infer<typeof VacationRentalOption>;
 
 export const HotelAgentOutput = z.object({
   options: z.array(HotelOption).max(5),
+  hotelSearches: z.array(HotelSearch).max(4).optional(),
   vacationRentals: z.array(VacationRentalOption).max(5).optional(),
   searchLinks: z.array(z.object({ destination: z.string(), url: AirbnbLink })).max(5).optional(),
   rentalSearchStatus: z.enum(["live_results", "search_link_only"]).optional(),

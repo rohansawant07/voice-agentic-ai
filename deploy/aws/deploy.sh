@@ -54,12 +54,14 @@ has_param() { aws ssm get-parameter --name "/roam/$1" >/dev/null 2>&1; }
 env_value() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -1 | tr -d '"'"'"; }
 
 sync_secrets() {
-  local anthropic deepgram
+  local anthropic deepgram serpapi
   anthropic=$(env_value ANTHROPIC_API_KEY)
   [ -n "$anthropic" ] || fail "ANTHROPIC_API_KEY is missing from .env."
   put_secret anthropic-api-key "$anthropic" overwrite
   deepgram=$(env_value DEEPGRAM_API_KEY)
   if [ -n "$deepgram" ]; then put_secret deepgram-api-key "$deepgram" overwrite; fi
+  serpapi=$(env_value SERPAPI_API_KEY)
+  if [ -n "$serpapi" ]; then put_secret serpapi-api-key "$serpapi" overwrite; fi
   # Generated once and then kept: the database volume depends on its password.
   has_param postgres-password || put_secret postgres-password "$(openssl rand -hex 32)"
   has_param gateway-token || put_secret gateway-token "$(openssl rand -hex 32)"

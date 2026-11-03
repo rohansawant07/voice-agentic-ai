@@ -76,7 +76,9 @@ Voice only converts speech. Deepgram turns recorded audio into text, which then 
 | Drive times and distances | OSRM public demo router over OpenStreetMap roads, Open-Meteo geocoding (free, no key; free-flow, no traffic) | Yes |
 | Things to do for most US places | Wikivoyage listings (community-edited, cited, cached 6 h) | Yes |
 | Harpers Ferry and Shenandoah planning facts | Curated National Park Service guides in code | No |
-| Flights, hotels, rental cars, activities for demo destinations | Seeded demo inventory in code | No |
+| Flight fares and hotel rates | Google Flights and Google Hotels through SerpApi, only when `SERPAPI_API_KEY` is set; otherwise seeded demo inventory | Yes, with a key |
+| Booking links for flights and stays | Skyscanner, Google Flights, Google Hotels and Booking.com searches built on the board from the route, dates and party size | Link only |
+| Rental cars, activities for demo destinations | Seeded demo inventory in code | No |
 | Customers, bookings, refunds, tickets | Seeded demo agency data | No |
 | Airbnb stays | A dated airbnb.com search link (live lookup is opt-in and off by default) | Link only |
 
@@ -215,6 +217,6 @@ Set `WEB_SEARCH_ENABLED=false` to disable it or `WEB_SEARCH_MODEL` to choose a c
 
 Research returns a summary, HTTP(S) source URLs and retrieval timestamps. Sources are retained with specialist completion events and shown under **Planning activity → Web sources**; direct orchestrator research appends sources to its reply. Provider errors and results without citations return an explicit unavailable result. No application search cache is added.
 
-Search is for current public facts, not guaranteed real-time inventory. Mock flights/hotels/cars remain demo inventory; Airbnb remains direct links; private booking records still require agency tools. Agents are instructed to exclude personal/booking details from queries and treat retrieved content as untrusted evidence. These are model instructions, not a complete data-loss-prevention system.
+Search is for current public facts, not guaranteed real-time inventory. Flights and hotels are live only with a SerpApi key and cars are always demo inventory; Airbnb remains direct links; private booking records still require agency tools. Agents are instructed to exclude personal/booking details from queries and treat retrieved content as untrusted evidence. These are model instructions, not a complete data-loss-prevention system.
 
 Provider reference: https://ai-sdk.dev/providers/ai-sdk-providers/anthropic

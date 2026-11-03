@@ -14,6 +14,7 @@ import {
 import { searchAirbnb } from "./airbnb.js";
 import { destinationGuide } from "./guides.js";
 import { driveTimes } from "./drive.js";
+import { AIRPORTS, liveFlights, liveHotels, serpApiKey } from "./serpapi.js";
 
 const PORT = Number(process.env.PORT ?? 8101);
 
@@ -86,20 +87,51 @@ function createServer(): McpServer {
     "search_flights",
     {
       description:
-        "Search US domestic + territory flights for a date. Returns fare, stops, duration, hold availability. Prices are per person, round-trip if returnDate given.",
+        "Search US domestic + territory flights for a date. Returns fare, stops, duration, hold availability and a search object to copy into the output. Prices are per person, round-trip if returnDate given. Live Google Flights fares when available, otherwise demo fares.",
       inputSchema: {
-        origin: z.string().describe("IATA code or city, e.g. JFK or New York"),
-        destination: z.string().describe("IATA code or city, e.g. SJU or San Juan"),
-        date: z.string().describe("Departure date, YYYY-MM-DD"),
-        returnDate: z.string().optional(),
+        origin: z.string().describe("IATA airport code(s), e.g. JFK or JFK,LGA,EWR for all New York airports"),
+        destination: z.string().describe("IATA airport code(s), e.g. SJU"),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Departure date, YYYY-MM-DD"),
+        returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         passengers: z.number().int().min(1).max(9).default(1),
       },
     },
     async ({ origin, destination, date, returnDate, passengers }) => {
       const dest = destinationByQuery(destination);
-      const destCode = dest?.code ?? destination.toUpperCase().slice(0, 3);
-      const originCode = origin.length === 3 ? origin.toUpperCase() : "JFK";
-      let flights = mockFlights(originCode, destCode, date, passengers);
+      const code = (value: string) => value.toUpperCase().replace(/\s+/g, "");
+      const destCode = AIRPORTS.test(code(destination)) ? code(destination) : dest?.code;
+      const originCode = AIRPORTS.test(code(origin)) ? code(origin) : undefined;
+      // Booking links need real airport codes, so the search is only reported when both are known.
+      const search = originCode && destCode
+        ? { origin: originCode, destination: destCode, departDate: date, ...(returnDate ? { returnDate } : {}), passengers }
+        : undefined;
+      const key = serpApiKey();
+      let liveNote: string | undefined;
+      if (key && search) {
+        try {
+          const flights = await liveFlights({ origin: search.origin, destination: search.destination, date, returnDate }, { key });
+          if (flights.length) {
+            return toolResult({
+              search: { ...search, source: "google_flights" },
+              roundTrip: Boolean(returnDate),
+              perPersonUSD: true,
+              flights,
+              note: "Live Google Flights fares for one traveler, checked just now. They can change before booking, and Roam cannot hold them; book through the airline or a linked site.",
+            });
+          }
+          liveNote = "Google Flights returned no fares for this route and date, so these are demo fares.";
+        } catch {
+          liveNote = "Live fares could not be loaded, so these are demo fares.";
+        }
+      } else if (key) {
+        liveNote = "Live fares need airport codes for both ends, so these are demo fares.";
+      }
+      let flights = mockFlights(
+        originCode?.slice(0, 3) ?? "JFK",
+        destCode?.slice(0, 3) ?? destination.toUpperCase().slice(0, 3),
+        date,
+        passengers,
+      );
       if (returnDate) {
         flights = flights.map((f) => ({
           ...f,
@@ -107,9 +139,11 @@ function createServer(): McpServer {
         }));
       }
       return toolResult({
+        ...(search ? { search: { ...search, source: "demo" } } : {}),
         roundTrip: Boolean(returnDate),
         perPersonUSD: true,
         flights,
+        note: liveNote ?? "Demo fares from Roam's sample inventory, not real prices.",
       });
     },
   );
@@ -121,6 +155,13 @@ function createServer(): McpServer {
       inputSchema: { flightId: z.string() },
     },
     async ({ flightId }) => {
+      if (flightId.startsWith("gf-")) {
+        return toolResult({
+          flightId,
+          source: "google_flights",
+          note: "Fare rules for live fares are not available to Roam. Check changes, refunds and bag fees with the airline before booking.",
+        });
+      }
       const rand = seededRandom(flightId);
       return toolResult({
         flightId,
@@ -153,6 +194,12 @@ function createServer(): McpServer {
           message: "Customer must explicitly confirm before a hold is placed.",
         });
       }
+      if (flightId.startsWith("gf-")) {
+        return toolResult({
+          error: "hold_unavailable",
+          message: "Live Google Flights fares cannot be held by Roam. The traveler books with the airline or a linked site.",
+        });
+      }
       const holdId = `HOLD-${seededRandom(flightId + customerId)().toString(36).slice(2, 8).toUpperCase()}`;
       auditLog.push({
         ts: new Date().toISOString(),
@@ -167,22 +214,43 @@ function createServer(): McpServer {
     "search_hotels",
     {
       description:
-        "Search hotels/stays in a US destination by dates, guests, and optional max nightly budget.",
+        "Search hotels/stays in a US destination by dates, guests, and optional max nightly budget. Returns hotels and a search object to copy into the output. Live Google Hotels prices when available, otherwise demo hotels.",
       inputSchema: {
-        destination: z.string(),
-        checkIn: z.string().describe("YYYY-MM-DD"),
-        checkOut: z.string().describe("YYYY-MM-DD"),
+        destination: z.string().describe('City and state, e.g. "Savannah, GA"'),
+        checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("YYYY-MM-DD"),
+        checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("YYYY-MM-DD"),
         guests: z.number().int().min(1).max(8).default(2),
         maxNightlyUSD: z.number().optional(),
       },
     },
     async ({ destination, checkIn, checkOut, guests, maxNightlyUSD }) => {
-      const dest = destinationByQuery(destination);
-      if (!dest) return toolResult({ hotels: [], source: "mock", note: "No mock hotel inventory here. Use search_vacation_rentals for Airbnb stays at this destination; lack of hotel inventory is not an unsupported destination." });
       const nights = Math.max(
         1,
         Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 86_400_000),
       );
+      const search = { destination: destination.trim().slice(0, 120), checkIn, checkOut, guests };
+      const key = serpApiKey();
+      let liveNote: string | undefined;
+      if (key) {
+        try {
+          const hotels = await liveHotels({ destination: search.destination, checkIn, checkOut, guests, maxNightlyUSD }, nights, { key });
+          if (hotels.length) {
+            return toolResult({
+              search: { ...search, source: "google_hotels" },
+              destination: search.destination,
+              availabilityVerified: false,
+              nights,
+              hotels,
+              note: "Live Google Hotels prices, checked just now. Rates can change and rooms can sell out; book on the hotel's or a linked site. Missing stars or ratings were not provided, so leave them out.",
+            });
+          }
+          liveNote = "Google Hotels returned no prices for these dates.";
+        } catch {
+          liveNote = "Live hotel prices could not be loaded.";
+        }
+      }
+      const dest = destinationByQuery(destination);
+      if (!dest) return toolResult({ search: { ...search, source: "demo" }, hotels: [], source: "mock", note: `${liveNote ? `${liveNote} ` : ""}No mock hotel inventory here. Use search_vacation_rentals for Airbnb stays at this destination; lack of hotel inventory is not an unsupported destination.` });
       const rand = seededRandom(`${dest.code}|${checkIn}`);
       const hotels = dest.hotels
         .map((h) => {
@@ -203,7 +271,8 @@ function createServer(): McpServer {
         })
         .filter((h) => !maxNightlyUSD || h.pricePerNight.amount <= maxNightlyUSD)
         .sort((a, b) => b.reviewScore - a.reviewScore);
-      return toolResult({ destination: dest.city, source: "mock", availabilityVerified: false, nights, hotels });
+      return toolResult({ search: { ...search, source: "demo" }, destination: dest.city, source: "mock", availabilityVerified: false, nights, hotels,
+        note: `${liveNote ? `${liveNote} ` : ""}Demo hotels and prices from Roam's sample inventory.` });
     },
   );
 
@@ -214,6 +283,13 @@ function createServer(): McpServer {
       inputSchema: { hotelId: z.string() },
     },
     async ({ hotelId }) => {
+      if (hotelId.startsWith("gh-")) {
+        return toolResult({
+          hotelId,
+          source: "google_hotels",
+          note: "Policies and fees for live hotels are not available to Roam. Check cancellation, resort and parking fees with the hotel before booking.",
+        });
+      }
       const rand = seededRandom(hotelId);
       return toolResult({
         hotelId,

@@ -23,6 +23,39 @@ import {
   HotelCard,
   Itinerary,
 } from "./cards";
+import { flightLinks, hotelLinks, type BookingLink } from "../lib/links";
+
+/** "all" when every search was live, "some" when only part of it was. */
+function liveShare(sources: string[] | undefined, live: string): "all" | "some" | "none" {
+  const hits = sources?.filter((s) => s === live).length ?? 0;
+  return !hits ? "none" : hits === sources!.length ? "all" : "some";
+}
+
+const shortDate = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+/** One row per distinct search; models sometimes copy the same search twice. */
+function uniqueBy<T>(items: T[] | undefined, key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return (items ?? []).filter((item) => !seen.has(key(item)) && seen.add(key(item)));
+}
+
+function BookingLinks({ label, links }: { label: string; links: BookingLink[] }) {
+  if (!links.length) return null;
+  return (
+    <div className="book-links">
+      <span className="book-links-label">{label}</span>
+      <span className="book-links-sites">
+        {links.map((link) => (
+          <a key={link.site} href={link.url} target="_blank" rel="noopener noreferrer">
+            {link.site}
+            <Icon name="link" size={13} />
+          </a>
+        ))}
+      </span>
+    </div>
+  );
+}
 
 export const AGENTS: Record<string, { label: string; icon: IconName }> = {
   "flight-agent": { label: "Flights", icon: "plane" },
@@ -107,6 +140,22 @@ function Section({
       )}
     </section>
   );
+}
+
+function priceProvenance(trip: Trip, kinds: (keyof Selection)[]): string {
+  if (!kinds.length)
+    return "Nothing is booked. Airbnb links open a live search; Roam hasn't verified those listings or prices.";
+  const liveFlights = liveShare(trip.flights?.searches?.map((s) => s.source), "google_flights") === "all";
+  const liveStays = liveShare(trip.hotels?.hotelSearches?.map((s) => s.source), "google_hotels") === "all";
+  const live = kinds.filter((k) => (k === "flight" && liveFlights) || (k === "hotel" && liveStays));
+  if (!live.length)
+    return "Flights, stays and cars are sample prices from demo inventory. Nothing is booked or held until you confirm with Roam.";
+  const name = { flight: "flight", hotel: "hotel", car: "car" } as const;
+  const sample = kinds.filter((k) => !live.includes(k)).map((k) => `${name[k]}s`);
+  const sampleText = sample.length
+    ? ` ${sample.join(" and ").replace(/^./, (c) => c.toUpperCase())} are sample prices from demo inventory.`
+    : "";
+  return `Live ${live.map((k) => name[k]).join(" and ")} prices come from Google and can change before you book on the linked sites.${sampleText} Roam doesn't book or pay for anything.`;
 }
 
 function TripSummary({
@@ -198,9 +247,7 @@ function TripSummary({
       )}
       <p className="provenance">
         <Icon name="info" size={14} />
-        {slots.length
-          ? "Flights, stays and cars are sample prices from demo inventory. Nothing is booked or held until you confirm with Roam."
-          : "Nothing is booked. Airbnb links open a live search; Roam hasn't verified those listings or prices."}
+        {priceProvenance(trip, slots.map((s) => s.kind))}
       </p>
     </div>
   );
@@ -385,7 +432,13 @@ export function ResultsCanvas({
           agent={flight}
           skeleton="rows"
           count={plural(trip.flights?.options.length, "option")}
-          provenance="Round-trip sample fares, per person"
+          provenance={
+            {
+              all: "Live Google Flights fares, per person",
+              some: "Live and sample fares, per person",
+              none: "Round-trip sample fares, per person",
+            }[liveShare(trip.flights?.searches?.map((s) => s.source), "google_flights")]
+          }
         >
           <div className="option-list">
             {trip.flights?.options.map((f) => (
@@ -400,6 +453,13 @@ export function ResultsCanvas({
             ))}
           </div>
           {trip.flights?.notes && <p className="note-line">{trip.flights.notes}</p>}
+          {uniqueBy(trip.flights?.searches, (s) => `${s.origin}|${s.destination}|${s.departDate}|${s.returnDate}`).map((s) => (
+            <BookingLinks
+              key={`${s.origin}|${s.destination}|${s.departDate}`}
+              label={`Book ${s.origin.split(",")[0]} to ${s.destination.split(",")[0]}, ${shortDate(s.departDate)}${s.returnDate ? ` to ${shortDate(s.returnDate)}` : ""}`}
+              links={flightLinks(s)}
+            />
+          ))}
         </Section>
       )}
       {hotel && (
@@ -415,7 +475,15 @@ export function ResultsCanvas({
               "Airbnb link",
             )
           }
-          provenance={trip.hotels?.options.length ? "Sample nightly rates" : undefined}
+          provenance={
+            trip.hotels?.options.length
+              ? {
+                  all: "Live Google Hotels rates",
+                  some: "Live and sample nightly rates",
+                  none: "Sample nightly rates",
+                }[liveShare(trip.hotels.hotelSearches?.map((s) => s.source), "google_hotels")]
+              : undefined
+          }
         >
           {trip.hotels?.notes && <p className="note-line">{trip.hotels.notes}</p>}
           {trip.hotels?.options?.length ? (
@@ -431,6 +499,13 @@ export function ResultsCanvas({
               ))}
             </div>
           ) : null}
+          {uniqueBy(trip.hotels?.hotelSearches, (s) => `${s.destination}|${s.checkIn}|${s.checkOut}`).map((s) => (
+            <BookingLinks
+              key={`${s.destination}|${s.checkIn}`}
+              label={`Hotels in ${s.destination}, ${shortDate(s.checkIn)} to ${shortDate(s.checkOut)}`}
+              links={hotelLinks(s)}
+            />
+          ))}
           {trip.hotels?.vacationRentals?.length ? (
             <div className="link-grid">
               {trip.hotels.vacationRentals.map((rental) => (

@@ -35,7 +35,7 @@ services:
     <<: *service
     build: { context: ., target: service, args: { SERVICE: mcp-travel } }
     image: roam-travel:local
-    environment: { PORT: "8101", AIRBNB_SEARCH_MODE: links }
+    environment: { PORT: "8101", AIRBNB_SEARCH_MODE: links, SERPAPI_API_KEY: "${SERPAPI_API_KEY:-}" }
     healthcheck: *mcp-health
   weather:
     <<: *service

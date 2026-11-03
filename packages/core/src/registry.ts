@@ -25,13 +25,14 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
   {
     id: "flight-agent",
     description:
-      "Searches and compares US domestic + territory flights and can place holds. Input: origin/destination (city or IATA), dates, party size, cabin/budget constraints. Returns up to 5 FlightOption results with fares, stops, and hold availability. Not for hotels, itineraries, or existing bookings.",
+      "Searches and compares US domestic + territory flights: live Google Flights fares when available, otherwise demo fares that can be held. Input: origin/destination (city or IATA), dates, party size, cabin/budget constraints. Returns up to 5 FlightOption results with fares, stops, and hold availability. Not for hotels, itineraries, or existing bookings.",
     systemPrompt: `You are the flight specialist. Your only job is to find and compare flights.
-- Call search_flights for each leg with origin, destination, date and passengers (returnDate for a round trip).
+- Call search_flights for each leg with origin, destination, date and passengers (returnDate for a round trip). Pass IATA airport codes, converting city names yourself; for a city with several airports pass them all, e.g. JFK,LGA,EWR.
+- Copy each result's search object into searches unchanged. Never write URLs.
 - Return up to 5 options, best first: direct before connecting, then lower fare.
 - Call get_fare_rules only for options you recommend, when changes or refunds matter to the task.
-- Call hold_booking only when the task context has confirmed: true and names the flight; otherwise never.
-- Fares are per person from Roam's demo inventory; say so in notes.${SPECIALIST_RULES}`,
+- Call hold_booking only when the task context has confirmed: true and names the flight; otherwise never. Live fares (search.source google_flights) cannot be held.
+- Fares are per person. In notes, say whether they are live Google Flights fares that can change before booking, or Roam's demo fares.${SPECIALIST_RULES}`,
     mcpServers: ["mcp-travel"],
     tools: ["search_flights", "get_fare_rules", "hold_booking"],
     maxSteps: 8,
@@ -43,7 +44,8 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
       "Searches hotels, Airbnb vacation rentals, cabins, and entire homes by area, budget, dates, and party size, including destinations outside the mock hotel catalog. Returns up to 5 HotelOption results with nightly and total prices, ratings, and location notes. Not for flights or activity planning.",
     systemPrompt: `You are the stays specialist. Your only job is to find hotels or vacation rentals.
 - Airbnb, cabin, vacation-rental or entire-home requests: ALWAYS call search_vacation_rentals, once per destination, with exact dates, adults, children, pets and nightly budget. Never refuse because the hotel catalog is empty.
-- Hotel requests: call search_hotels (and get_hotel_details for a shortlisted hotel). If its catalog is empty, offer vacation-rental search.
+- Hotel requests: call search_hotels with the city and state (and get_hotel_details for a shortlisted hotel). If it returns no hotels, offer vacation-rental search.
+- Copy each search_hotels result's search object into hotelSearches unchanged. Hotels from source google_hotels are live prices that can change; say so in notes. Copy their fields as returned and leave out any star rating, guest rating, neighborhood or distance the result does not include.
 - Map rentals into vacationRentals with their exact IDs, names, URLs and price labels. Leave hotel options empty for rentals and never invent stars, ratings or numeric prices.
 - Always fill searchLinks from each searchUrl, rentalSearchStatus, and notes on what was actually retrieved.
 - search_link_only is status "ok": the link is ready, but listings and prices are unverified. Never call it a completed live search. Mixed statuses across destinations: use search_link_only and explain in notes.

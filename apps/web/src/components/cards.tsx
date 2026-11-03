@@ -110,23 +110,29 @@ export function HotelCard({
       aria-pressed={selected}
     >
       {hotel.photoUrl && (
-        // plain <img>: mock photo URLs, no next/image optimization needed
-        <img className="stay-photo" src={hotel.photoUrl} alt="" loading="lazy" />
+        // plain <img>: mock or Google Hotels thumbnails, no next/image optimization needed
+        <img className="stay-photo" src={hotel.photoUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
       )}
       <span className="stay-top">
         <Tags tags={tags} />
         <Picked selected={selected} />
       </span>
       <strong className="stay-name">{hotel.name}</strong>
-      <span className="stay-place">{hotel.neighborhood}</span>
-      <span className="stay-rating">
-        <Icon name="star" size={14} />
-        <strong>{hotel.reviewScore.toFixed(1)}</strong>
-        <span>guest rating</span>
-        <span className="sep" />
-        <span>{hotel.starRating.toFixed(1)}-star</span>
-      </span>
-      <span className="stay-distance">{hotel.distanceNote}</span>
+      {hotel.neighborhood && <span className="stay-place">{hotel.neighborhood}</span>}
+      {(hotel.reviewScore != null || hotel.starRating != null) && (
+        <span className="stay-rating">
+          {hotel.reviewScore != null && (
+            <>
+              <Icon name="star" size={14} />
+              <strong>{hotel.reviewScore.toFixed(1)}</strong>
+              <span>guest rating</span>
+            </>
+          )}
+          {hotel.reviewScore != null && hotel.starRating != null && <span className="sep" />}
+          {hotel.starRating != null && <span>{hotel.starRating.toFixed(1)}-star</span>}
+        </span>
+      )}
+      {hotel.distanceNote && <span className="stay-distance">{hotel.distanceNote}</span>}
       <span className="stay-amenities">
         {hotel.amenities
           .filter((a) => a !== hotel.distanceNote)

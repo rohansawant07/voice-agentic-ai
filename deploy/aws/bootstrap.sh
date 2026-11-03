@@ -75,11 +75,15 @@ cd "$APP"
 umask 077
 mkdir -p .secrets
 deepgram=$(param deepgram-api-key)
+serpapi=$(param serpapi-api-key)
 {
   echo "ANTHROPIC_API_KEY=$(required anthropic-api-key)"
   if [ -n "$deepgram" ] && [ "$deepgram" != None ]; then
     echo "DEEPGRAM_API_KEY=$deepgram"
     echo "VOICE_STT=deepgram"
+  fi
+  if [ -n "$serpapi" ] && [ "$serpapi" != None ]; then
+    echo "SERPAPI_API_KEY=$serpapi"
   fi
 } > .env
 {

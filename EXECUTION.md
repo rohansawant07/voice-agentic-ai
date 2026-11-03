@@ -58,6 +58,21 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-03 — Live flight and hotel prices with booking links
+
+- **Why not Skyscanner or Booking.com APIs:** both are partner-only. Skyscanner needs an approved partnership (reportedly an established site with about 100k monthly visitors), and Booking.com's Demand API needs a signed Managed Affiliate contract and covers stays only. Amadeus closed its self-service APIs on July 17, 2026. The user chose SerpApi plus booking links.
+- **Live prices:** `services/mcp-travel/src/serpapi.ts` calls SerpApi's Google Flights and Google Hotels engines when `SERPAPI_API_KEY` is set. Without it, or when a call fails or finds nothing, `search_flights` and `search_hotels` return demo data with a note saying so.
+  - Flights are searched for one adult, so every fare is per person; Google Flights prices are totals for the whole party.
+  - Live fares can't be held: `hold_booking` and `get_fare_rules` refuse `gf-` IDs, and `get_hotel_details` refuses `gh-` IDs, instead of returning made-up policies.
+  - Hotel star rating, guest rating, neighborhood and distance are now optional, so the stays agent leaves out what Google didn't return instead of guessing.
+  - The key is optional in `compose.yaml` and `.env.example`. On AWS it goes through SSM as `/roam/serpapi-api-key` (`deploy.sh up` uploads it from `.env`, and `bootstrap.sh` writes it to the host's `.env`). It is not set anywhere yet.
+- **Booking links:** each tool result carries a `search` object (airport codes or destination, dates, party size, source) that the agents copy into `searches` and `hotelSearches`. `apps/web/src/lib/links.ts` checks those fields and builds the URLs, so models never write links. Flights get Skyscanner, Google Flights and Booking.com; stays get Booking.com and Google Hotels.
+  - Opened each link in a browser for JFK to SJU, Dec 11 to 14, 2 adults: each site loaded that route, those dates and 2 travelers.
+  - Booking.com read "San Juan, PR" as San Juan in Spain and "Portland, ME" as a single hotel, so trailing US state and territory codes are spelled out ("San Juan, Puerto Rico", "Portland, Maine"). Both then found the right city.
+- **Board:** section headers and the trip summary say which prices are live Google prices that can change and which are demo prices. Cars stay demo.
+- **Checks:** workspace type check and lint pass. Tests: mcp-travel 20 (4 new for SerpApi parsing), web 11 (5 new for links), orchestrator 26 plus 1 skipped. One local planning turn (Boston to San Juan, no SerpApi key) ran the demo path: both agents copied the search details and the board showed both link rows with the right URLs. The live SerpApi path is tested only with recorded-shape fixtures, not a real key.
+- Not deployed to AWS.
+
 ### 2026-11-02 — AWS host disk cleared from 94% to 45%
 
 - The disk use came from Docker's build cache, at 14 GB of the 17 GB under `/var/lib/docker`. All 8 images belong to running containers, so removing images would have freed nothing.
