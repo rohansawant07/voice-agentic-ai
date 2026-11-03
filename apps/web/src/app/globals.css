@@ -365,6 +365,11 @@ h1 {
   color: var(--text-faint);
   background: var(--surface-sunken);
 }
+.voice-button.live {
+  /* A conversation is on even while Roam works: solid, but no pulse. */
+  color: var(--on-accent);
+  background: var(--accent);
+}
 .voice-button.listening,
 .voice-button.speaking {
   color: var(--on-accent);

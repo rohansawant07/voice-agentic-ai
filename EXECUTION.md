@@ -58,6 +58,18 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-03 — Real-time voice: Deepgram Flux turn-taking and Aura-2 streaming speech
+
+- **Before:** push-to-talk. The browser recorded a whole utterance, the orchestrator sent it to Deepgram's prerecorded endpoint after the button was released, and spoken replies were off on AWS.
+- **Now, with `VOICE_STT=deepgram`:** the mic button starts a hands-free conversation. `apps/web/public/pcm-capture.js` (an AudioWorklet) streams 80 ms frames of 16 kHz PCM over `/voice`; `services/orchestrator/src/voice/flux.ts` relays them to Deepgram Flux (`/v2/listen`, `flux-general-en`), which sends live captions and decides when each turn ends. The mic stays open between turns. Echo cancellation, noise suppression and auto gain are requested from the browser.
+- **Speech, with `VOICE_TTS=deepgram`:** Aura-2 (`aura-2-thalia-en`) over its streaming socket; the browser schedules the PCM as it arrives instead of waiting for an mp3. While specialists run, Roam says one status line such as "One moment, I'm checking flights and places to stay."
+- **Barge-in:** two heard words while Roam is speaking stop playback and cancel the rest of the speech; one word or a cough does not. Speaking while a request is still running gets "I'm still working on your last request" rather than a second turn.
+- **Cost caps:** a conversation stops after two minutes without speech or 15 minutes in total. Flux is $0.0077 a minute while open and Aura-2 $0.030 per 1,000 characters (Deepgram pay-as-you-go, checked November 3, 2026). `bootstrap.sh` now also sets `VOICE_TTS=deepgram` when a Deepgram key exists, so the next AWS deploy turns spoken replies on there.
+- Push-to-talk stays for `VOICE_STT=whisper`, and OpenAI and ElevenLabs speech still work without streaming.
+- **Checks:** workspace type check and lint pass. Tests: orchestrator 32 plus 1 skipped (6 new: Flux turn events, buffering, close, speech chunking, status line), web 14 (3 new: PCM conversion, barge-in rule, messages), mcp-travel 20.
+- **Live local tests with real Deepgram and Claude:** a Deepgram-generated recording ("Find me a hotel in Savannah, Georgia, from April third to April fifth, for two adults") played into `/voice` in real time. Captions updated every quarter second, Flux ended the turn 1.5 s after the speech, and the reply's 8.2 s of speech streamed in 2.6 s. In the browser, with the same recording as a fake mic, captions, the status line (3 s), the reply (9.4 s) and the return to listening all worked; an interruption clip stopped Roam 1.7 s into its status line, after two heard words. The tests used 3 planning turns and a few cents of Deepgram.
+- **Not tested:** a real microphone and speakers (echo from the speakers into the mic), Safari and mobile browsers, and AWS. Not deployed.
+
 ### 2026-11-03 — AWS host updated with live Google flight and hotel prices
 
 - With the user's go-ahead, the SerpApi key went into SSM as the SecureString `/roam/serpapi-api-key` (version 1), passed through a private temp file rather than the command line. `deploy.sh update` then moved the host to `9a7563b`, and `bootstrap.sh` wrote the key into the host's `.env`.

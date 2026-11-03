@@ -1,7 +1,8 @@
 /**
  * Speech-to-text, provider-switchable via VOICE_STT (README §4).
- * "deepgram" — nova-3 prerecorded endpoint (primary).
- * "whisper"  — OpenAI whisper-1 (fallback).
+ * "deepgram" — live conversation through Flux (flux.ts); nova-3 prerecorded
+ *              for the push-to-talk fallback.
+ * "whisper"  — OpenAI whisper-1, push-to-talk only.
  * "none"     — text-only mode; /voice reports voice disabled.
  */
 
@@ -12,6 +13,11 @@ const STT_PROVIDER = (process.env.VOICE_STT ?? "none") as
 
 export function sttEnabled(): boolean {
   return STT_PROVIDER !== "none";
+}
+
+/** Hands-free conversation needs a streaming provider. */
+export function liveSttKey(): string | undefined {
+  return STT_PROVIDER === "deepgram" ? process.env.DEEPGRAM_API_KEY || undefined : undefined;
 }
 
 export interface Transcription {

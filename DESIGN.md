@@ -23,9 +23,9 @@ The visual system uses sand for the page, sage for navigation and quiet surfaces
 
 After a reply, up to three follow-up suggestions appear, drawn only from specialists that returned usable results; like inspiration prompts, they fill the draft rather than sending. Enter submits a nonempty draft; Shift+Enter adds a line. IME composition does not submit prematurely. Send is disabled while listening/planning. A thinking indicator appears while waiting. New messages scroll the transcript to the end; an empty welcome screen stays at the top.
 
-The microphone button starts/stops recording; while a reply is speaking, it stops playback. Microphone permission failures produce a typed-input fallback message. Desktop Space supports push-to-talk outside interactive elements; Escape stops speech. Voice is available only when the backend reports STT enabled. The voice socket reconnects on its own, and problems appear in plain words under the microphone.
+With live voice (the backend reports `live`), the microphone button starts and ends a hands-free conversation: the mic stays open between turns, words appear in a faded bubble as they are heard, and Deepgram Flux ends each turn when the speaker stops. The label says what is happening ("Listening. Just talk, or tap to end", "Working on it", "Speaking. Talk to interrupt"). Two heard words while Roam speaks stop its speech (barge-in); a single word or cough does not. Speaking while a request is still running shows "I'm still working on your last request". Desktop Space starts or ends the conversation outside interactive elements; Escape stops speech. Without live voice, the button and Space keep push-to-talk. Microphone permission failures produce a typed-input fallback message. The voice socket reconnects on its own, and problems appear in plain words under the microphone.
 
-The backend transcribes after recording ends. It does not stream partial recognition. The browser buffers TTS audio until `tts_end`, then plays. Interrupting speech does not abort the entire model/tool request.
+Aura-2 speech arrives as raw PCM and plays as it streams. While specialists run, Roam speaks one short status line naming them. Interrupting speech does not abort the model/tool request. A conversation ends itself after two quiet minutes or 15 minutes, and says so.
 
 ## Trip results and provenance
 

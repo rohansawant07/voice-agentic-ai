@@ -74,6 +74,7 @@ services:
       VOICE_STT: ${VOICE_STT:-none}
       DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
       VOICE_TTS: ${VOICE_TTS:-none}
+      DEEPGRAM_TTS_MODEL: ${DEEPGRAM_TTS_MODEL:-aura-2-thalia-en}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
     depends_on:

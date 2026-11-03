@@ -81,6 +81,7 @@ serpapi=$(param serpapi-api-key)
   if [ -n "$deepgram" ] && [ "$deepgram" != None ]; then
     echo "DEEPGRAM_API_KEY=$deepgram"
     echo "VOICE_STT=deepgram"
+    echo "VOICE_TTS=deepgram"
   fi
   if [ -n "$serpapi" ] && [ "$serpapi" != None ]; then
     echo "SERPAPI_API_KEY=$serpapi"

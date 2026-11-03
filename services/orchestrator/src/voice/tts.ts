@@ -1,10 +1,13 @@
+import WebSocket from "ws";
+
 /**
  * Text-to-speech, provider-switchable via VOICE_TTS (README §4).
- * Returns a chunked byte stream to /voice. The current browser buffers those
- * chunks until tts_end before playback; first-audio latency is not instrumented.
+ * Returns a chunked byte stream to /voice. "deepgram" streams raw PCM that the
+ * browser plays as it arrives; the mp3 providers are buffered until tts_end.
  */
 
 const TTS_PROVIDER = (process.env.VOICE_TTS ?? "none") as
+  | "deepgram"
   | "openai"
   | "elevenlabs"
   | "none";
@@ -20,6 +23,8 @@ export interface TtsStream {
 
 export async function synthesize(text: string): Promise<TtsStream | null> {
   switch (TTS_PROVIDER) {
+    case "deepgram":
+      return synthesizeDeepgram(text);
     case "openai":
       return synthesizeOpenAI(text);
     case "elevenlabs":
@@ -27,6 +32,76 @@ export async function synthesize(text: string): Promise<TtsStream | null> {
     case "none":
       return null;
   }
+}
+
+export const DEEPGRAM_TTS_RATE = 24_000;
+/** Aura rejects a Speak message over 2,000 characters. */
+const SPEAK_LIMIT = 1_500;
+
+/** Text as it should be read aloud: no markdown marks, no raw links. */
+export function speakable(text: string): string {
+  return text
+    .replace(/https?:\/\/\S+/g, "the link")
+    .replace(/[*_#`>]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Sentence-sized pieces no longer than the Speak limit. */
+export function speakChunks(text: string, limit = SPEAK_LIMIT): string[] {
+  const chunks: string[] = [];
+  let current = "";
+  for (const sentence of text.match(/[^.!?]+[.!?]*\s*/g) ?? []) {
+    if (current && (current + sentence).length > limit) {
+      chunks.push(current.trim());
+      current = "";
+    }
+    current += sentence.length > limit ? sentence.slice(0, limit) : sentence;
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks;
+}
+
+/** Aura-2 over its streaming socket: audio starts while later sentences render. */
+async function synthesizeDeepgram(text: string): Promise<TtsStream> {
+  const key = process.env.DEEPGRAM_API_KEY;
+  if (!key) throw new Error("DEEPGRAM_API_KEY missing");
+  const url = new URL("wss://api.deepgram.com/v1/speak");
+  url.searchParams.set("model", process.env.DEEPGRAM_TTS_MODEL ?? "aura-2-thalia-en");
+  url.searchParams.set("encoding", "linear16");
+  url.searchParams.set("sample_rate", String(DEEPGRAM_TTS_RATE));
+  const socket = new WebSocket(url, { headers: { Authorization: `Token ${key}` } });
+  const chunks = speakChunks(speakable(text));
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const timer = setTimeout(() => socket.close(), 60_000);
+      socket.on("open", () => {
+        for (const chunk of chunks) socket.send(JSON.stringify({ type: "Speak", text: chunk }));
+        socket.send(JSON.stringify({ type: "Flush" }));
+      });
+      socket.on("message", (data: Buffer, isBinary: boolean) => {
+        if (isBinary) {
+          controller.enqueue(new Uint8Array(data));
+          return;
+        }
+        const msg = JSON.parse(data.toString()) as { type?: string };
+        if (msg.type === "Flushed") socket.close();
+      });
+      socket.on("error", (err) => controller.error(err));
+      socket.on("close", () => {
+        clearTimeout(timer);
+        try {
+          controller.close();
+        } catch {
+          // already errored or cancelled
+        }
+      });
+    },
+    cancel() {
+      socket.close();
+    },
+  });
+  return { mime: `audio/pcm;rate=${DEEPGRAM_TTS_RATE}`, stream };
 }
 
 async function synthesizeOpenAI(text: string): Promise<TtsStream> {

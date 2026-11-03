@@ -55,8 +55,11 @@ export default function SessionPage() {
   const [confirmingNew, setConfirmingNew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // In a hands-free conversation the mic is always listening; typing still works.
   const busy =
-    s.orb === "thinking" || s.runningCount > 0 || s.orb === "listening";
+    s.orb === "thinking" ||
+    s.runningCount > 0 ||
+    (s.orb === "listening" && !s.live);
   const hasMessages = s.messages.length > 0;
   const lastIsAssistant = s.messages.at(-1)?.role === "assistant";
   const ideas = useMemo(() => followUps(s.agents), [s.agents]);
@@ -82,13 +85,17 @@ export default function SessionPage() {
         event.repeat ||
         isInteractive(event.target) ||
         !s.voiceAvailable ||
-        busy
+        (busy && !s.live)
       )
         return;
       event.preventDefault();
       setVoiceError("");
-      void s
-        .startListening()
+      // Hands-free: Space starts the conversation; the button or Space again ends it.
+      if (s.live) {
+        s.stopConversation();
+        return;
+      }
+      void (s.liveAvailable ? s.startConversation() : s.startListening())
         .catch(() =>
           setVoiceError(
             "Microphone access is unavailable. Check your browser permissions, or type your message below.",
@@ -99,7 +106,8 @@ export default function SessionPage() {
       if (
         event.code === "Space" &&
         !isInteractive(event.target) &&
-        s.orb === "listening"
+        s.orb === "listening" &&
+        !s.liveAvailable
       ) {
         event.preventDefault();
         s.stopListening();
@@ -116,7 +124,7 @@ export default function SessionPage() {
   const beginVoice = async () => {
     setVoiceError("");
     try {
-      await s.startListening();
+      await (s.liveAvailable ? s.startConversation() : s.startListening());
     } catch {
       setVoiceError(
         "Microphone access is unavailable. Check your browser permissions, or type your message below.",
@@ -134,18 +142,25 @@ export default function SessionPage() {
     setMobilePane("conversation");
     requestAnimationFrame(() => inputRef.current?.focus());
   };
-  const voiceLabel =
-    s.orb === "listening"
+  const voiceLabel = s.live
+    ? s.orb === "speaking"
+      ? "Speaking. Talk to interrupt"
+      : busy
+        ? "Working on it. Tap the mic to end voice"
+        : "Listening. Just talk, or tap to end"
+    : s.orb === "listening"
       ? "Listening. Tap to finish"
       : s.orb === "speaking"
         ? "Speaking. Tap to stop"
         : busy
           ? "Putting your trip together…"
-          : s.voiceAvailable
-            ? "Prefer to talk? I'm listening."
-            : s.voice === "connecting"
-              ? "Connecting voice…"
-              : "Type a message to start planning.";
+          : s.liveAvailable
+            ? "Prefer to talk? Tap the mic and just talk."
+            : s.voiceAvailable
+              ? "Prefer to talk? I'm listening."
+              : s.voice === "connecting"
+                ? "Connecting voice…"
+                : "Type a message to start planning.";
   const startNewChat = () => {
     s.newTrip();
     setDraft("");
@@ -304,27 +319,32 @@ export default function SessionPage() {
           <div className="composer-area">
             <div className="voice-row">
               <button
-                className={`voice-button ${s.orb}`}
-                disabled={!s.voiceAvailable || s.orb === "thinking"}
+                className={`voice-button ${s.orb}${s.live ? " live" : ""}`}
+                disabled={!s.voiceAvailable || (s.orb === "thinking" && !s.live)}
                 aria-label={
-                  s.orb === "listening"
-                    ? "Finish recording"
-                    : s.orb === "speaking"
-                      ? "Stop speaking"
-                      : "Start voice input"
+                  s.live
+                    ? "End voice conversation"
+                    : s.orb === "listening"
+                      ? "Finish recording"
+                      : s.orb === "speaking"
+                        ? "Stop speaking"
+                        : s.liveAvailable
+                          ? "Start voice conversation"
+                          : "Start voice input"
                 }
-                aria-pressed={s.orb === "listening"}
-                onClick={() =>
-                  s.orb === "listening"
-                    ? s.stopListening()
-                    : s.orb === "speaking"
-                      ? s.stopSpeaking()
-                      : void beginVoice()
-                }
+                aria-pressed={s.live || s.orb === "listening"}
+                onClick={() => {
+                  if (s.live) {
+                    s.stopSpeaking();
+                    s.stopConversation();
+                  } else if (s.orb === "listening") s.stopListening();
+                  else if (s.orb === "speaking") s.stopSpeaking();
+                  else void beginVoice();
+                }}
               >
                 <Icon
                   name={
-                    s.orb === "listening" || s.orb === "speaking"
+                    s.live || s.orb === "listening" || s.orb === "speaking"
                       ? "wave"
                       : "mic"
                   }

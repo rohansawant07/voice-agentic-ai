@@ -32,7 +32,7 @@ pnpm build
 
 Open **http://localhost:3000**. The script loads the root `.env` and starts five processes on ports 3000, 8080, 8101, 8102 and 8103. Start with those ports free. It sets each service's port separately so a global environment variable cannot put all services on the same port. Stop the stack with Ctrl+C. Package names still use the internal `@concierge/*` scope.
 
-For voice input, set `VOICE_STT=deepgram` and `DEEPGRAM_API_KEY`, then restart the stack. Spoken replies are separate: set `VOICE_TTS=openai` plus `OPENAI_API_KEY`, or configure ElevenLabs. Deepgram credits currently cover transcription only. Voice uses recorded utterances, not live streaming recognition.
+For a hands-free voice conversation, set `VOICE_STT=deepgram`, `VOICE_TTS=deepgram` and `DEEPGRAM_API_KEY`, then restart the stack. Deepgram Flux transcribes while you talk and decides when your turn has ended, and Aura-2 speaks the reply as it streams; talking over Roam stops its speech. Flux bills per minute the mic is open ($0.0077 a minute at pay-as-you-go rates) and Aura-2 per character ($0.030 per 1,000), so a conversation stops itself after two quiet minutes or 15 minutes in total. `VOICE_TTS=openai` or `elevenlabs` still work, without streaming. `VOICE_STT=whisper` keeps push-to-talk with recorded utterances.
 
 Individual package commands do **not** load root `.env` automatically. If running services separately, export the relevant variables yourself. Do not run a Next.js production build over a running development server's `.next` output; stop the web process, build, then restart it.
 
@@ -50,7 +50,7 @@ See [testing and hosting requirements](docs/OPERATIONS.md). No deployment is tri
 | Area | Implemented behavior |
 | --- | --- |
 | Conversation | Text requests, session history, same-session overlapping model turns rejected |
-| Voice | Deepgram Nova-3 or Whisper transcription; optional OpenAI or ElevenLabs synthesis |
+| Voice | Deepgram Flux live transcription with turn detection and Aura-2 streaming speech; push-to-talk fallback with Nova-3 or Whisper; optional OpenAI or ElevenLabs synthesis |
 | UI | Responsive conversation / trip board; trip summary with picks, estimated total vs. budget and copyable plan; comparison rows with computed tags; live skeletons and step labels; day-tab itinerary; planning-activity timeline; follow-up suggestions; refresh-safe sessions with socket reconnect |
 | Specialists | Six registered specialists: flight, hotel, itinerary, car rental, budget, support |
 | Travel | Seeded flights/hotels/cars/activities; dietary filters; car rentals offered only when relevant/requested |
@@ -65,13 +65,13 @@ Picking a flight, stay or car updates the trip summary's estimated total and is 
 
 ## Where the data comes from
 
-Voice only converts speech. Deepgram turns recorded audio into text, which then follows exactly the same path as a typed message. Optional OpenAI or ElevenLabs synthesis reads the reply aloud. Planning is done by Claude: one orchestrator delegates to six specialists, and each specialist has its scoped MCP tools plus shared **public web search**. The orchestrator also has web search. Research includes source links and retrieval dates; it does not turn demo inventory into live availability.
+Voice only converts speech. The browser streams the mic to the orchestrator, which relays it to Deepgram Flux; each finished turn's text then follows exactly the same path as a typed message. Deepgram Aura-2 (or OpenAI or ElevenLabs) reads the reply aloud, and while specialists work Roam says which ones it is checking. Planning is done by Claude: one orchestrator delegates to six specialists, and each specialist has its scoped MCP tools plus shared **public web search**. The orchestrator also has web search. Research includes source links and retrieval dates; it does not turn demo inventory into live availability.
 
 | Data | Source | Live internet? |
 | --- | --- | --- |
 | Public web research | Anthropic native `web_search_20250305`, through the shared `search_web` tool | Yes; retrieved pages may still be stale |
 | Reasoning (orchestrator and specialists) | Anthropic Claude | Yes |
-| Speech to text / optional text to speech | Deepgram / OpenAI or ElevenLabs | Yes |
+| Speech to text / text to speech | Deepgram Flux and Aura-2, or OpenAI or ElevenLabs speech | Yes |
 | Forecasts, geocoding, typical climate | Open-Meteo forecast, geocoding and historical archive APIs | Yes |
 | Drive times and distances | OSRM public demo router over OpenStreetMap roads, Open-Meteo geocoding (free, no key; free-flow, no traffic) | Yes |
 | Things to do for most US places | Wikivoyage listings (community-edited, cited, cached 6 h) | Yes |
@@ -107,7 +107,7 @@ flowchart LR
   O --> SEARCH["Shared Anthropic web research: citations + timestamps"]
   AI --> SEARCH
   O --> AI["Claude orchestrator + six specialist calls"]
-  O <-->|Recorded speech / optional synthesis| VOICE["Deepgram STT / optional TTS provider"]
+  O <-->|Streaming speech in and out| VOICE["Deepgram Flux STT / Aura-2 TTS"]
   AI --> T["Travel MCP :8101: mocks, guides, Airbnb links"]
   T --> WV["Wikivoyage API"]
   T --> OSRM["OSRM router + Open-Meteo geocoding"]
