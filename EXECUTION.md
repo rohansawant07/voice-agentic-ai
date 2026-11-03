@@ -58,6 +58,14 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-03 — AWS host updated with live Google flight and hotel prices
+
+- With the user's go-ahead, the SerpApi key went into SSM as the SecureString `/roam/serpapi-api-key` (version 1), passed through a private temp file rather than the command line. `deploy.sh update` then moved the host to `9a7563b`, and `bootstrap.sh` wrote the key into the host's `.env`.
+- On the host: all containers healthy, `/healthz` 200 three times, the home page 401 as expected. Inside `roam-travel-1` the key is set (64 characters), and SerpApi's account endpoint, which uses no searches, answered: Free Plan, 248 searches left this month.
+- Not checked on AWS: no signed-in planning turn was run there. The live path was checked locally with the same key and code.
+- The host disk is at 52% after the rebuild (11 GB used of 20 GB).
+- AWS CLI sign-in expired again within a day; `aws login --region us-east-1` was run from a Terminal panel tab, and the user finished it in the browser.
+
 ### 2026-11-03 — Live flight and hotel prices with booking links
 
 - **Why not Skyscanner or Booking.com APIs:** both are partner-only. Skyscanner needs an approved partnership (reportedly an established site with about 100k monthly visitors), and Booking.com's Demand API needs a signed Managed Affiliate contract and covers stays only. Amadeus closed its self-service APIs on July 17, 2026. The user chose SerpApi plus booking links.
