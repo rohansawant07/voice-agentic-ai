@@ -116,7 +116,9 @@ function createServer(): McpServer {
               roundTrip: Boolean(returnDate),
               perPersonUSD: true,
               flights,
-              note: "Live Google Flights fares for one traveler, checked just now. They can change before booking, and Roam cannot hold them; book through the airline or a linked site.",
+              note: `Live Google Flights fares for one traveler, checked just now. ${returnDate
+                ? `Each fare is the round-trip price per person, outbound and return on ${returnDate} together; the times shown are the outbound flight, and the return flight is chosen when booking.`
+                : "Each fare is the one-way price per person."} Fares can change before booking, and Roam cannot hold them; book through the airline or a linked site.`,
             });
           }
           liveNote = "Google Flights returned no fares for this route and date, so these are demo fares.";

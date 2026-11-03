@@ -434,7 +434,9 @@ export function ResultsCanvas({
           count={plural(trip.flights?.options.length, "option")}
           provenance={
             {
-              all: "Live Google Flights fares, per person",
+              all: trip.flights?.searches?.every((s) => s.returnDate)
+                ? "Round-trip live Google Flights fares, per person"
+                : "Live Google Flights fares, per person",
               some: "Live and sample fares, per person",
               none: "Round-trip sample fares, per person",
             }[liveShare(trip.flights?.searches?.map((s) => s.source), "google_flights")]

@@ -70,8 +70,10 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
   - Opened each link in a browser for JFK to SJU, Dec 11 to 14, 2 adults: each site loaded that route, those dates and 2 travelers.
   - Booking.com read "San Juan, PR" as San Juan in Spain and "Portland, ME" as a single hotel, so trailing US state and territory codes are spelled out ("San Juan, Puerto Rico", "Portland, Maine"). Both then found the right city.
 - **Board:** section headers and the trip summary say which prices are live Google prices that can change and which are demo prices. Cars stay demo.
-- **Checks:** workspace type check and lint pass. Tests: mcp-travel 20 (4 new for SerpApi parsing), web 11 (5 new for links), orchestrator 26 plus 1 skipped. One local planning turn (Boston to San Juan, no SerpApi key) ran the demo path: both agents copied the search details and the board showed both link rows with the right URLs. The live SerpApi path is tested only with recorded-shape fixtures, not a real key.
-- Not deployed to AWS.
+- **Checks:** workspace type check and lint pass. Tests: mcp-travel 20 (4 new for SerpApi parsing), web 11 (5 new for links), orchestrator 26 plus 1 skipped. One local planning turn (Boston to San Juan, no SerpApi key) ran the demo path: both agents copied the search details and the board showed both link rows with the right URLs.
+- **Live check with the user's SerpApi key** (in the main checkout's `.env`, never committed): Boston to San Juan, Dec 11 to 14, returned 8 fares in 1.5 s and 5 hotels in 2.2 s, with real stars, guest ratings and photos. Two local planning turns showed "Live Google Flights fares" and "Live Google Hotels rates" on the board.
+  - The first turn called the round-trip fares one-way and said the return was unpriced. The live tool note now says each fare covers outbound and return per person, the flight prompt forbids calling it one-way, and the header reads "Round-trip live Google Flights fares, per person". The second turn described them correctly.
+  - The live check used 6 SerpApi searches and 3 local planning turns in total.
 
 ### 2026-11-02 — AWS host disk cleared from 94% to 45%
 

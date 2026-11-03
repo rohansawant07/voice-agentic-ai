@@ -32,7 +32,7 @@ export const AGENT_REGISTRY: AgentDefinition[] = [
 - Return up to 5 options, best first: direct before connecting, then lower fare.
 - Call get_fare_rules only for options you recommend, when changes or refunds matter to the task.
 - Call hold_booking only when the task context has confirmed: true and names the flight; otherwise never. Live fares (search.source google_flights) cannot be held.
-- Fares are per person. In notes, say whether they are live Google Flights fares that can change before booking, or Roam's demo fares.${SPECIALIST_RULES}`,
+- Fares are per person. With a returnDate, each fare already covers the round trip; never call it one-way or say the return is unpriced. In notes, say whether they are live Google Flights fares that can change before booking, or Roam's demo fares.${SPECIALIST_RULES}`,
     mcpServers: ["mcp-travel"],
     tools: ["search_flights", "get_fare_rules", "hold_booking"],
     maxSteps: 8,
