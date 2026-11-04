@@ -58,6 +58,13 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-04 — AWS host updated with hands-free voice
+
+- With the user's go-ahead, `deploy.sh update` moved the host from `9a7563b` to `eedab83`.
+- On the host: all containers healthy, `/healthz` 200 three times, the home page 401 as expected. The orchestrator runs with `VOICE_STT=deepgram`, `VOICE_TTS=deepgram` and `aura-2-thalia-en`, so spoken replies are now on there, at about 1 cent per reply.
+- Not checked on AWS: the `/voice` socket answers 401 without a signed-in session, so no live conversation was run there. Hands-free voice is still untested with a real microphone and speakers, Safari and phones.
+- The host disk is at 58% after the rebuild (12 GB used of 20 GB).
+
 ### 2026-11-03 — Real-time voice: Deepgram Flux turn-taking and Aura-2 streaming speech
 
 - **Before:** push-to-talk. The browser recorded a whole utterance, the orchestrator sent it to Deepgram's prerecorded endpoint after the button was released, and spoken replies were off on AWS.
