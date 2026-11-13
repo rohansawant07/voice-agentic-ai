@@ -58,6 +58,13 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-13 — AWS host updated with the mic worklet fix
+
+- With the user's go-ahead, `deploy.sh update` moved the host from `eedab83` to `d93735a`.
+- On the host: all containers healthy, `/healthz` 200 three times, the home page 401 as expected. Inside `roam-web-1`, `apps/web/public/pcm-capture.js` exists and the web server returns it (200, 1,486 bytes). Through Caddy it answers 401 without the tester login, like every page.
+- Not checked: the user's real-mic test on the site is still to be rerun.
+- The host disk is at 66% after the rebuild (14 GB used of 20 GB). Prune the build cache past about 80%.
+
 ### 2026-11-13 — Hands-free voice fixed on AWS: the web image now ships `public/`
 
 - **Found in the user's first real-mic test on AWS:** tapping the mic showed "Microphone access is unavailable. Check your browser permissions" although the browser had already allowed the mic. The web image copies only Next.js's standalone output and `.next/static`, and standalone output leaves out `public/`, so `/pcm-capture.js` (the AudioWorklet that captures the mic) was missing there. `audioWorklet.addModule` failed, and the page blamed permissions for any failure. Local tests ran `next dev`, which serves `public/`, so they missed it.
