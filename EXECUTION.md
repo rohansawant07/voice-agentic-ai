@@ -58,6 +58,12 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-13 — Hands-free voice fixed on AWS: the web image now ships `public/`
+
+- **Found in the user's first real-mic test on AWS:** tapping the mic showed "Microphone access is unavailable. Check your browser permissions" although the browser had already allowed the mic. The web image copies only Next.js's standalone output and `.next/static`, and standalone output leaves out `public/`, so `/pcm-capture.js` (the AudioWorklet that captures the mic) was missing there. `audioWorklet.addModule` failed, and the page blamed permissions for any failure. Local tests ran `next dev`, which serves `public/`, so they missed it.
+- **Fix:** the `web` stage of the `Dockerfile` now copies `apps/web/public/`. `micIssueFor` in `apps/web/src/lib/session.ts` blames permissions only for `NotAllowedError` or `SecurityError`, names a missing microphone, and otherwise says voice couldn't start.
+- **Checks:** web tests 15 (1 new), workspace type check and lint pass. Docker wasn't running locally, so the image's layout was rebuilt by hand from a production build (standalone output plus `.next/static`): `/pcm-capture.js` returned 404 without `public/` and 200 with it.
+
 ### 2026-11-04 — AWS host updated with hands-free voice
 
 - With the user's go-ahead, `deploy.sh update` moved the host from `9a7563b` to `eedab83`.

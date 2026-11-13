@@ -28,5 +28,7 @@ ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 COPY --from=build --chown=node:node /app/apps/web/.next/standalone/ ./
 COPY --from=build --chown=node:node /app/apps/web/.next/static/ ./apps/web/.next/static/
+# Standalone output leaves out public/, which holds the mic's audio worklet.
+COPY --from=build --chown=node:node /app/apps/web/public/ ./apps/web/public/
 USER node
 CMD ["node", "apps/web/server.js"]

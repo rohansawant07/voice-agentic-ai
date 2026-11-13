@@ -64,6 +64,15 @@ export const voiceIssueFor = (message = "") =>
   VOICE_ISSUES.find(([pattern]) => pattern.test(message))?.[1] ??
   "Voice input didn't work that time. Try again, or type your message below.";
 
+/** Blame the browser's permissions only when the browser said so; the worklet can fail too. */
+export const micIssueFor = (error: unknown) => {
+  const name = error instanceof DOMException ? error.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError")
+    return "Microphone access is blocked. Allow it in your browser's site settings, or type your message below.";
+  if (name === "NotFoundError") return "No microphone was found. Connect one, or type your message below.";
+  return "Voice couldn't start. Reload the page and try again, or type your message below.";
+};
+
 const STORAGE_KEY = "roam.session.v1";
 
 interface StoredSession {

@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isBargeIn, pcmToFloat, voiceIssueFor } from "../src/lib/session";
+import { isBargeIn, micIssueFor, pcmToFloat, voiceIssueFor } from "../src/lib/session";
+
+test("mic errors blame permissions only when the browser refused them", () => {
+  assert.match(micIssueFor(new DOMException("denied", "NotAllowedError")), /blocked/);
+  assert.match(micIssueFor(new DOMException("none", "NotFoundError")), /No microphone/);
+  assert.match(micIssueFor(new DOMException("worklet 404", "AbortError")), /couldn't start/);
+  assert.match(micIssueFor(new Error("other")), /couldn't start/);
+});
 
 test("pcmToFloat reads 16-bit little-endian samples, even from an offset view", () => {
   const bytes = new Uint8Array([0xaa, 0x00, 0x00, 0xff, 0x7f, 0x00, 0x80]);

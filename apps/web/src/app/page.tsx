@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSession, type AgentActivity } from "../lib/session";
+import { micIssueFor, useSession, type AgentActivity } from "../lib/session";
 import { ActivityTimeline, ResultsCanvas } from "../components/canvas";
 import { Icon } from "../components/icon";
 
@@ -96,11 +96,7 @@ export default function SessionPage() {
         return;
       }
       void (s.liveAvailable ? s.startConversation() : s.startListening())
-        .catch(() =>
-          setVoiceError(
-            "Microphone access is unavailable. Check your browser permissions, or type your message below.",
-          ),
-        );
+        .catch((error: unknown) => setVoiceError(micIssueFor(error)));
     };
     const up = (event: KeyboardEvent) => {
       if (
@@ -125,10 +121,8 @@ export default function SessionPage() {
     setVoiceError("");
     try {
       await (s.liveAvailable ? s.startConversation() : s.startListening());
-    } catch {
-      setVoiceError(
-        "Microphone access is unavailable. Check your browser permissions, or type your message below.",
-      );
+    } catch (error) {
+      setVoiceError(micIssueFor(error));
     }
   };
 
