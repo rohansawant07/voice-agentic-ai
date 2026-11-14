@@ -62,7 +62,7 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 - With the user's go-ahead, `deploy.sh update` moved the host from `eedab83` to `d93735a`.
 - On the host: all containers healthy, `/healthz` 200 three times, the home page 401 as expected. Inside `roam-web-1`, `apps/web/public/pcm-capture.js` exists and the web server returns it (200, 1,486 bytes). Through Caddy it answers 401 without the tester login, like every page.
-- Not checked: the user's real-mic test on the site is still to be rerun.
+- After the update, the user reran the real-mic test on the AWS site in Chrome with laptop speakers and reported that it worked. The server logs from that test were not read, because the AWS sign-in had expired. Safari and phones remain untested.
 - The host disk is at 66% after the rebuild (14 GB used of 20 GB). Prune the build cache past about 80%.
 
 ### 2026-11-13 — Hands-free voice fixed on AWS: the web image now ships `public/`
