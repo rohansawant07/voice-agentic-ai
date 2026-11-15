@@ -1,5 +1,5 @@
 import { generateText, isStepCount, Output, type ToolSet } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { claude, gatewayTags } from "./llm.js";
 import { z } from "zod";
 import type {
   AgentDefinition,
@@ -140,7 +140,8 @@ export async function runSpecialist(
       abortSignal: turnSignal
         ? AbortSignal.any([AbortSignal.timeout(SPECIALIST_TIMEOUT_MS), turnSignal])
         : AbortSignal.timeout(SPECIALIST_TIMEOUT_MS),
-      model: anthropic(def.model ?? SPECIALIST_MODEL),
+      model: claude(def.model ?? SPECIALIST_MODEL),
+      headers: gatewayTags(def.id, `session:${sessionId}`),
       system: def.systemPrompt + WEB_RULES,
       tools: instrument({ ...toolsFor(def.mcpServers, def.tools), ...webTools(undefined, undefined, sources) }, sessionId, def.id, provenance, observer),
       stopWhen: isStepCount(def.maxSteps),

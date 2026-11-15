@@ -169,6 +169,21 @@ Existing activity events record total model-turn and specialist duration. There 
 
 `DATABASE_URL` now enables PostgreSQL conversation/event persistence. `AUTH_MODE=proxy` and `GATEWAY_TOKEN` protect deployed backend access. `REDIS_URL`, `LANGFUSE_*`, `TRAVEL_PROVIDER` and Amadeus credentials remain unimplemented placeholders. `JUDGE_MODEL` is read only by the offline itinerary eval ([docs/evals](docs/evals/README.md)). Docker Compose and a single-host AWS stack (CloudFormation, Caddy HTTPS, SSM secrets, daily snapshots) are present; Helm, EKS, an active AWS deployment and tracing are not. A paid, offline itinerary grounding eval exists (`scripts/eval-itinerary.mjs`); other specialists have no evals yet.
 
+### LLM gateway (optional, local)
+
+Set `LLM_GATEWAY_URL` and `LLM_GATEWAY_KEY` to send every Claude call (orchestrator, specialists, web research, eval judge) through [LiteLLM](https://docs.litellm.ai/)'s Anthropic pass-through. The gateway then holds the real Anthropic key, records each call's tokens and cost, and stops a virtual key once it passes its budget. Each call is tagged with the agent that made it and `session:<id>`, so one trip's cost can be summed by agent. The pass-through forwards requests unchanged, so prompt caching, structured output and web search keep working. Unset, calls go straight to Anthropic.
+
+```bash
+# In LiteLLM's own folder: the gateway needs ANTHROPIC_API_KEY in its environment.
+curl -s localhost:4000/key/generate -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H 'content-type: application/json' -d '{"key_alias":"roam-local","max_budget":5,"budget_duration":"30d"}'
+# Then in Roam's .env:
+LLM_GATEWAY_URL=http://localhost:4000/anthropic/v1   # http://host.docker.internal:4000/... from Compose
+LLM_GATEWAY_KEY=<the key from key/generate>
+```
+
+The AWS host doesn't run a gateway; it still calls Anthropic directly.
+
 ## Known research-quality limits
 
 The latest committed itinerary evaluation passed **0 of 4 cases** despite passing judge calibration. Findings include invented or retitled stops, unsupported descriptions, incorrect day counts and structured-output failures. Web search is available, but the specialist did not choose it in those four cases. The successful NPS search smoke test confirms connectivity, not itinerary correctness. See [evaluation evidence](docs/evals/README.md). Historical latency measurements above predate web search and are not current search-enabled benchmarks.

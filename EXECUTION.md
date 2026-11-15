@@ -58,6 +58,16 @@ Checks: `pnpm lint && pnpm typecheck && pnpm test && pnpm build` (also CI on eve
 
 ## Changelog
 
+### 2026-11-14 — Optional LiteLLM gateway for every Claude call
+
+- **What:** `services/orchestrator/src/llm.ts` exports `claude`, the AI SDK Anthropic provider. With `LLM_GATEWAY_URL` and `LLM_GATEWAY_KEY` set, it points at that base URL with the gateway's virtual key; unset, it is the default provider, so nothing changes. The orchestrator, specialists, web research and the eval judge all use it. `gatewayTags` adds an `x-litellm-tags` header naming the agent and `session:<id>`. Setting the URL without the key stops startup, instead of the provider falling back to `ANTHROPIC_API_KEY` and handing the real key to the gateway.
+- **Why the pass-through route** (`/anthropic/v1`) rather than LiteLLM's translated `/v1/messages`: it forwards Anthropic requests unchanged, so prompt caching, structured output and the web search server tool behave as they do against Anthropic. LiteLLM still logs tokens and cost for pass-through calls.
+- **Local setup** (outside the repository): the user's LiteLLM 1.106.6 in `~/litellm` now gets `ANTHROPIC_API_KEY` from its own `.env` (copied from Roam's `.env`, never printed; the file is mode 600). A virtual key `roam-local` with a $5, 30-day budget is in the main checkout's ignored `.env` as `LLM_GATEWAY_KEY`. `LLM_GATEWAY_URL` is not set there, so the normal dev servers still call Anthropic directly. LiteLLM's price table has Opus 4.8, Haiku 5.5, Haiku 4.5 and Sonnet 5.5 at Anthropic's list prices.
+- **Live check through the gateway:** one planning turn (Boston to San Juan, Dec 11 to 14, two adults, demo inventory) took 21 s. LiteLLM logged 6 calls at $0.057: orchestrator (Opus 4.8) 2 calls, $0.054; hotel agent (Haiku 5.5) 2 calls, $0.0018; flight agent (Haiku 5.5) 2 calls, $0.0014. The orchestrator is about 95% of a turn's model cost.
+- **Budget check:** a throwaway key with a $0.000001 budget was refused with 422 "Budget has been exceeded" once its first call was recorded, then deleted. LiteLLM records spend about a minute after each call, so a key can run slightly past its budget.
+- **Checks:** orchestrator tests 35 plus 1 skipped (3 new for the gateway settings), workspace type check and lint pass. The live checks cost about $0.06 of Claude usage.
+- **Not done:** AWS doesn't run a gateway; the t4g.small has no memory to spare for LiteLLM and its database.
+
 ### 2026-11-13 — AWS host updated with the mic worklet fix
 
 - With the user's go-ahead, `deploy.sh update` moved the host from `eedab83` to `d93735a`.

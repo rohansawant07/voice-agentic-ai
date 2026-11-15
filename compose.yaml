@@ -68,6 +68,9 @@ services:
       WEB_SEARCH_ENABLED: ${WEB_SEARCH_ENABLED:-true}
       WEB_SEARCH_MODEL: ${WEB_SEARCH_MODEL:-claude-haiku-4-5}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # From a container, a gateway on the host is http://host.docker.internal:4000/anthropic/v1.
+      LLM_GATEWAY_URL: ${LLM_GATEWAY_URL:-}
+      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY:-}
       ORCHESTRATOR_MODEL: ${ORCHESTRATOR_MODEL:-claude-opus-4-8}
       ORCHESTRATOR_PROMPT_CACHE: ${ORCHESTRATOR_PROMPT_CACHE:-on}
       SPECIALIST_MODEL: ${SPECIALIST_MODEL:-claude-haiku-5-5}

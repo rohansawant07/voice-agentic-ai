@@ -1,5 +1,5 @@
 import { generateText, isStepCount, tool, type LanguageModel, type LanguageModelUsage, type ModelMessage, type ToolSet } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { claude, gatewayTags } from "./llm.js";
 import { z } from "zod";
 import { AGENT_REGISTRY } from "@concierge/core";
 import { webTools, WEB_RULES, type WebSource } from "./web-search.js";
@@ -105,7 +105,8 @@ export async function runOrchestrator(
   const timeout = AbortSignal.timeout(overrides.timeoutMs ?? TURN_TIMEOUT_MS);
   const text = await generateText({
     abortSignal: timeout,
-    model: overrides.model ?? anthropic(ORCHESTRATOR_MODEL),
+    model: overrides.model ?? claude(ORCHESTRATOR_MODEL),
+    headers: gatewayTags("orchestrator", `session:${sessionId}`),
     instructions: {
       role: "system",
       content: SYSTEM + WEB_RULES,

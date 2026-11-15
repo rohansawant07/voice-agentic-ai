@@ -11,7 +11,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { generateText, Output } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { claude, gatewayTags } from "../src/llm.js";
 import { z } from "zod";
 import { agentById, type ItineraryAgentOutput } from "@concierge/core";
 import { connectMcp } from "../src/mcp.js";
@@ -202,7 +202,8 @@ async function judge(calls: ToolCall[], days: NonNullable<ItineraryAgentOutput["
   const itinerary = days.map(({ dayLabel, stops, mealPick }) => ({ dayLabel, stops, mealPick }));
   const { output, totalUsage } = await generateText({
     abortSignal: AbortSignal.timeout(120000),
-    model: anthropic(JUDGE_MODEL),
+    model: claude(JUDGE_MODEL),
+    headers: gatewayTags("eval-judge"),
     system: JUDGE_SYSTEM,
     output: Output.object({ schema: JudgeVerdict }),
     prompt: `<trip_request>\n${JSON.stringify(request)}\n</trip_request>\n\n<tool_results>\n${JSON.stringify(evidence, null, 1)}\n</tool_results>\n\n<itinerary>\n${JSON.stringify(itinerary, null, 1)}\n</itinerary>`,
